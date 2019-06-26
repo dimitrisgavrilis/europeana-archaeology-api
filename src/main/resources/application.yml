@@ -1,0 +1,64 @@
+name: devel-YAML
+environment: development
+#jwt_auth_header_key: "X-Authorization"
+#jwt_validation_url: "https://localhost/auth"
+info:
+  app:
+    name: Europeana Archaelogy Mapping Tool
+    description: Europeana Archaelogy Mapping Tool Api
+    version: 1.0.0
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, loggers, metrics
+server:
+  port: 8085
+
+# For logging use logback-spring.xml
+#logging:
+#  level:
+#    ROOT: INFO
+
+spring:
+  datasource:
+    url: "jdbc:mysql://127.0.0.1:3306/share3d_mapping?autoReconnect=true&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC"
+    username: ${SHARE3D_DB_USER:share3d}
+    password: ${SHARE3D_DB_PASSWORD:share3d}
+    driver-class-name: com.mysql.jdbc.Driver
+  hikari:
+    minimumIdle: 1
+    maximunPoolSize: 1
+    idleTimeout: 10000
+    poolName: "revstarDatabaseConnectionPool"
+  jpa:
+    show-sql: false
+    database-platform: org.hibernate.dialect.MySQLInnoDBDialect
+
+    hibernate:
+      ddl-auto: none
+      query:
+        immutable_entity_update_query_handling_mode: exception
+      naming:
+        #implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyLegacyJpaImpl
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLInnoDBDialect
+        format_sql: true
+        temp:
+          use_jdbc_metadata_defaults: false
+
+  # Enable multipart uploads
+#  servlet:
+#      multipart:
+#          enabled: true
+#          file-size-threshold: 2KB
+#          multipart.max-file-size: 20MB
+#          max-request-size: 215MB
+
+## File Storage Properties
+# All files uploaded through the REST API will be stored in this directory
+#storage.file.dir: /data/services/share3d_storage
+file.upload-dir: /data/services/share3d_storage
+          
