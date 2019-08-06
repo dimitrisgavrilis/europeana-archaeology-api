@@ -1,7 +1,5 @@
 name: devel-YAML
 environment: development
-#jwt_auth_header_key: "X-Authorization"
-#jwt_validation_url: "https://localhost/auth"
 info:
   app:
     name: Europeana Archaelogy Mapping Tool
