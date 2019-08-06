@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -64,63 +65,13 @@ public class MappingController {
     @Autowired
     private ResourceLoader resourceLoader;
     
-    @GetMapping("/upload/test")
-    public String testUpload() {
-        
-        log.info("trying to upload...");
-        try {
-            String filename = "Subject_Mapping_Template.xlsx";
-            Resource resource = resourceLoader.getResource("classpath:" + filename);
-            File templateFile = resource.getFile();
-            if(templateFile.exists()) {
-                log.info("File exists!!!");
-                
-                List<MappingTerm> mappingTerms = 
-                        excelService.loadMappingTermsFromExcel(filename, 2, 1, -1);
-                
-                mappingTermRepository.saveAll(mappingTerms);
-                
-                log.info("Parsing finished...");
-            }
-            
-        } catch(IOException ex) {
-            log.error("File not found.");
-        }
-        
-        return "OK";
-    }
-    
-    
-    
-    @PostMapping("/mappings/{id}/upload")
-    public List<MappingTerm> uploadMapping(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
-        
-        // Check existemce of mapping
-        SubjectMapping mapping = subjectMappingRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(id));
-        
-        // Store mapping file
-        
-        Path filePath = fileStorageService.store(file);
-        
-        List<MappingTerm> termList = 
-                excelService.loadMappingTermsFromExcel(filePath.toString(), id, 1, -1);
-        
-        // Save terms
-        log.info("Saving terms. #Terms:{}", termList.size());
-        
-        mappingTermRepository.saveAll(termList);
-        
-        return termList;
-    }
-    
     @GetMapping("/mappings")
     public List<SubjectMapping> getAllMappings() {
         return subjectMappingRepository.findAll();
     }
     
     @GetMapping("/mappings/{id}")
-    public SubjectMapping getMapping(@PathVariable Long id /* @RequestHeader("Authorization") String authorizationHeader */) { 
+    public SubjectMapping getMapping(@PathVariable Long id, @RequestHeader("Authorization") String authorizationHeader) { 
         
         return subjectMappingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(id));
@@ -243,4 +194,55 @@ public class MappingController {
     public void deleteTerms(@PathVariable Long id) { 
         mappingTermRepository.deleteByMappingId(id);
     } 
+    
+    
+    @GetMapping("/upload/test")
+    public String testUpload() {
+        
+        log.info("trying to upload...");
+        try {
+            String filename = "Subject_Mapping_Template.xlsx";
+            Resource resource = resourceLoader.getResource("classpath:" + filename);
+            File templateFile = resource.getFile();
+            if(templateFile.exists()) {
+                log.info("File exists!!!");
+                
+                List<MappingTerm> mappingTerms = 
+                        excelService.loadMappingTermsFromExcel(filename, 2, 1, -1);
+                
+                mappingTermRepository.saveAll(mappingTerms);
+                
+                log.info("Parsing finished...");
+            }
+            
+        } catch(IOException ex) {
+            log.error("File not found.");
+        }
+        
+        return "OK";
+    }
+    
+    
+    
+    @PostMapping("/mappings/{id}/upload")
+    public List<MappingTerm> uploadMapping(@PathVariable Long id, @RequestParam("file") MultipartFile file) throws IOException {
+        
+        // Check existemce of mapping
+        SubjectMapping mapping = subjectMappingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(id));
+        
+        // Store mapping file
+        
+        Path filePath = fileStorageService.store(file);
+        
+        List<MappingTerm> termList = 
+                excelService.loadMappingTermsFromExcel(filePath.toString(), id, 1, -1);
+        
+        // Save terms
+        log.info("Saving terms. #Terms:{}", termList.size());
+        
+        mappingTermRepository.saveAll(termList);
+        
+        return termList;
+    }
 }
