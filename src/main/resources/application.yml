@@ -58,5 +58,6 @@ spring:
 ## File Storage Properties
 # All files uploaded through the REST API will be stored in this directory
 #storage.file.dir: /data/services/share3d_storage
-file.upload-dir: /data/services/share3d_storage
+#file.upload-dir: /data/services/tmp_storage
+file.storage-home: /data/services/tmp_storage
           
