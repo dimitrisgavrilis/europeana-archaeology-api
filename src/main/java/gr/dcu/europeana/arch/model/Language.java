@@ -1,4 +1,4 @@
-package gr.dcu.share3d.entity;
+package gr.dcu.europeana.arch.model;
 
 import java.io.Serializable;
 import javax.persistence.Column;

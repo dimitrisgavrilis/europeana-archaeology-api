@@ -1,9 +1,9 @@
 package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.model.AatSubject;
+import gr.dcu.europeana.arch.model.Language;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import gr.dcu.europeana.arch.repository.LanguageRepository;
-import gr.dcu.share3d.entity.Language;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
