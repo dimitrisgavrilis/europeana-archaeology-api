@@ -18,6 +18,11 @@ import org.springframework.context.annotation.Configuration;
 @ConfigurationProperties (prefix = "file")
 public class FileStorageProperties {
     
+    public static final String UPLOAD_MAPPING_DIR     = "upload";
+    public static final String UPLOAD_EDM_PACKAGE_DIR = "upload_edm";
+    public static final String EXPORT_MAPPING_DIR     = "export";
+    
+    
     @NotBlank
     private String storageHome;
 }

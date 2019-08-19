@@ -19,12 +19,12 @@ import org.hibernate.annotations.CreationTimestamp;
  * @author Vangelis Nomikos
  */
 @Entity 
-@Table(name = "subject_mapping_upload")
+@Table(name = "enrich_request")
 @Getter
 @Setter
 @ToString
 @NoArgsConstructor
-public class UploadRequest implements Serializable {
+public class EnrichRequest implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,8 +39,17 @@ public class UploadRequest implements Serializable {
     @Column (name="filepath")
     private String filepath;
     
+    @Column (name="enriched_filename")
+    private String enrichedFilename;
+    
+    @Column (name="enriched_filepath")
+    private String enrichedFilepath;
+    
+    @Column (name="details")
+    private String details;
+    
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
-
+    
 }

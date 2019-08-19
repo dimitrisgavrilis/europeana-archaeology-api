@@ -237,9 +237,6 @@ public class ExcelService {
         
         try {
             
-            // Resource resource = resourceLoader.getResource("classpath:" + filename);
-            // File excelFile = resource.getFile();
-            
             File excelFile = new File(filename);
             if(excelFile.exists() && excelFile.isFile()) {
                 log.info("URI: {}", excelFile.getAbsolutePath());
@@ -341,13 +338,11 @@ public class ExcelService {
     
     /**
      * 
-     * @param filename
+     * @param filePath
      * @param terms
      * @throws IOException 
      */
-    public String exportMappingTermsToExcel(String filename, List<MappingTerm> terms) throws IOException {
-        
-        String filePathStr;
+    public String exportMappingTermsToExcel(Path filePath, List<MappingTerm> terms) throws IOException {
         
         try {
            
@@ -409,17 +404,7 @@ public class ExcelService {
                 sheet.autoSizeColumn(i);
             }
 
-            // log.info("-----> Saving...");
-            // Path fileStorageLocation = fileStorageService.getFileStorageLocation();
-            // log.info("******************** 1 * {}", fileStorageService.getFileStorageProperties().getUploadDir());
-            // log.info("-----> {}", fileStorageLocation.toAbsolutePath());
-            
-            Path uploadDirPath = Paths.get(fileStorageService.getFileStorageProperties().getStorageHome()).toAbsolutePath().normalize();
-            Path filePath = Paths.get(uploadDirPath.toString(), filename);
-            filePathStr = filePath.toString();
-            log.info("File path: {}", filePath.toString());
-            
-            // Write the output to a excelFile
+            // Write the output to an excelFile
             FileOutputStream fileOut = new FileOutputStream(filePath.toString());
             workbook.write(fileOut);
             fileOut.close();
@@ -427,13 +412,13 @@ public class ExcelService {
             // Closing the workbook
             workbook.close();
             
-            log.info("Export saved at {}", filename);
+            // log.info("Export saved at {}", filePath);
             
         } catch (IOException ex) {
             throw ex;
         }
         
-        return filePathStr;
+        return filePath.toString();
     }
     
 }

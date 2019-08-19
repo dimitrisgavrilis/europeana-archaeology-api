@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:oai_dc="http://www.openarchives.org/OAI/2.0/oai_dc/" xmlns:edm="http://www.europeana.eu/schemas/edm/" xmlns:wgs84_pos="http://www.w3.org/2003/01/geo/wgs84_pos#" xmlns:ore="http://www.openarchives.org/ore/terms/" xmlns:skos="http://www.w3.org/2004/02/skos/core#" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:dcterms="http://purl.org/dc/terms/">
+  <edm:ProvidedCHO rdf:about="share3d:66">
+    <dc:description xml:lang="en">This is a test model</dc:description>
+    <dc:format>3D</dc:format>
+    <dc:identifier>share3d:66</dc:identifier>
+    <dc:language>ell</dc:language>
+    <dc:title xml:lang="en">37-a3</dc:title>
+    <dc:type>3D</dc:type>
+    <dcterms:spatial rdf:resource="">Athens, Greece</dcterms:spatial>
+    <dcterms:temporal rdf:resource="">Medieval</dcterms:temporal>
+    <dc:subject>Retro--Cyprus</dc:subject>
+    <dc:subject rdf:resource="http://test113.ait.co.at/tematres/Archeological_Objects/xml.php?skosTema=260" />
+  </edm:ProvidedCHO>
+  <edm:Place rdf:about="">
+    <wgs84_pos:lat>23.7167</wgs84_pos:lat>
+    <wgs84_pos:long>38.0</wgs84_pos:long>
+  </edm:Place>
+  <ore:Aggregation rdf:about="share3d:66#aggregation">
+    <edm:dataProvider>Share3D</edm:dataProvider>
+    <edm:isShownAt rdf:resource="https://sketchfab.com/models/c14f8cb6c64842d2ad69ef2ed76ea58b/embed" />
+    <edm:isShownBy rdf:resource="https://sketchfab.com/models/c14f8cb6c64842d2ad69ef2ed76ea58b" />
+    <edm:object rdf:resource="https://media.sketchfab.com/urls/c14f8cb6c64842d2ad69ef2ed76ea58b/dist/thumbnails/4f13ae414fc246e7af5c0d8db1ff1fef/343da5b7853d4696bcfd70b3f91d4c0e.jpeg" />
+    <edm:provider>Vangelis</edm:provider>
+    <edm:rights rdf:resource="http://www.europeana.eu/rights/rr-f/" />
+  </ore:Aggregation>
+</rdf:RDF>

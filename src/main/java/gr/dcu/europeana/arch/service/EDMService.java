@@ -25,7 +25,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class EDMService {
     
-    
+    /**
+     * 
+     * @param filename
+     * @param mappingId
+     * @param skipLineCount
+     * @param limitCount
+     * @return 
+     */
     public List<MappingTerm> loadMappingTermsFromExcel(String filename, long mappingId, 
             int skipLineCount, int limitCount) {
 
