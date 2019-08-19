@@ -42,5 +42,8 @@ public class UploadRequest implements Serializable {
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
+    
+    @Column(name = "created_by")
+    private int createdBy;
 
 }

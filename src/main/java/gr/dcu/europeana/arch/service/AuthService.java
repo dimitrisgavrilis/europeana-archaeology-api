@@ -226,7 +226,6 @@ public class AuthService {
         
         int userId = -1;
         
-            
         String authorizationHeader = requestContext.getHeader(HEADER_AUTHORIZATION);
         String ipAddress = requestContext.getRemoteAddr();
         String requestUrl = requestContext.getRequestURL().toString();

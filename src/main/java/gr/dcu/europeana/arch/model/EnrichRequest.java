@@ -52,4 +52,7 @@ public class EnrichRequest implements Serializable {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
+    @Column(name = "created_by")
+    private int createdBy;
+    
 }
