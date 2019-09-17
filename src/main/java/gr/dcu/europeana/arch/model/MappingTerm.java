@@ -42,4 +42,7 @@ public class MappingTerm implements Serializable {
     @Column (name="aat_uid")
     private String aatUid;
     
+    @Column (name="language")
+    private String language;
+    
 }

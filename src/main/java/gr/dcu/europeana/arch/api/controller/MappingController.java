@@ -152,12 +152,14 @@ public class MappingController {
 
         mapping.setId(termId);
         mapping.setMappingId(id);
+        mapping.setLanguage(mapping.getLanguage());
         
         return mappingTermRepository.save(mapping);
     }
     
     @PostMapping("/mappings/{id}/terms")
-    public MappingTerm saveMappingTerm(HttpServletRequest requestContext, @PathVariable Long id, @RequestBody MappingTerm mapping) { 
+    public MappingTerm saveMappingTerm(HttpServletRequest requestContext, 
+            @PathVariable Long id, @RequestBody MappingTerm mapping) { 
         
         int userId = authService.authorize(requestContext);
         

@@ -2,14 +2,12 @@ package gr.dcu.europeana.arch.service;
 
 import gr.dcu.europeana.arch.model.MappingTerm;
 import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
-import gr.dcu.europeana.arch.model.AatSubject;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,14 +16,11 @@ import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Font;
-import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.stereotype.Service;
 
 /**
@@ -37,190 +32,12 @@ import org.springframework.stereotype.Service;
 public class ExcelService {
     
     @Autowired
-    private ResourceLoader resourceLoader;
-    
-    @Autowired
     FileStorageService fileStorageService;
     
     @Autowired
     private AatSubjectRepository aatSubjectRepository;
     
-    // e.g. http://vocab.getty.edu/page/aat/300387302
-    private static final String AAT_URI_PREFIX = "http://vocab.getty.edu/page/aat/";
-    
-    private static final String AAT_LOD_URI_PREFIX = "http://vocab.getty.edu/aat/";
-    
     private static final String DEFAULT_EXPORT_FILENAME = "mappings.xlsx";
-    
-    // Types of aat subjects
-    private static final String AAT_SUBJECT_FACET_OBJECTS            = "objects";
-    private static final String AAT_SUBJECT_FACET_STYLES_AND_PERIODS = "styles and periods";
-    private static final String AAT_SUBJECT_FACET_AGENTS             = "agents";
-    private static final String AAT_SUBJECT_FACET_MATERIALS          = "materials";
-    private static final String AAT_SUBJECT_FACET_ACTIVITIES         = "activities";
-    private static final String AAT_SUBJECT_FACET_OTHER              = "other";
-    
-    /**
-     * 
-     * @param filename 
-     */
-    public void loadAatSubjectsFromFile(String filename) {
-
-        /*
-        File excelFile = new File(getClass().getResource(filename).getFile());
-        if(excelFile.exists()) {
-            log.info("Exists!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-        }*/
-        
-        try {
-            
-            Resource resource = resourceLoader.getResource("classpath:" + filename);
-            File excelFile = resource.getFile();
-//            if(excelFile.exists()) {
-//                log.info("Exists!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-//            }
-            
-            // log.info("URI: {}" + resource.getURI());
-        
-            FileInputStream excelFileInputStream = new FileInputStream(excelFile);
-            Workbook workbook = new XSSFWorkbook(excelFileInputStream);
-            
-            List<AatSubject> aatSubjectList;
-            String type;
-            // Parse Aat Objects facet
-            type = AAT_SUBJECT_FACET_OBJECTS;
-            aatSubjectList = processAatSheet(workbook, type, 0, 2, -1);
-            log.info("Saving {} facet. #Aat Subjects: {}" , type, aatSubjectList.size());
-            aatSubjectRepository.saveAll(aatSubjectList);
-            
-             // Parse Aat Styles and Periods facet
-            type = AAT_SUBJECT_FACET_STYLES_AND_PERIODS;
-            aatSubjectList = processAatSheet(workbook, type, 1, 2, -1);
-             log.info("Saving {} facet. #Aat Subjects: {}" , type, aatSubjectList.size());
-            aatSubjectRepository.saveAll(aatSubjectList);
-            
-            // Parse Aat Agents facet
-            type = AAT_SUBJECT_FACET_AGENTS;
-            aatSubjectList = processAatSheet(workbook, type, 2, 2, -1);
-            log.info("Saving {} facet. #Aat Subjects: {}" , type, aatSubjectList.size());
-            aatSubjectRepository.saveAll(aatSubjectList);
-            
-            // Parse Materials facet
-            type = AAT_SUBJECT_FACET_MATERIALS;
-            aatSubjectList = processAatSheet(workbook, type, 3, 2, -1);
-            log.info("Saving {} facet. #Aat Subjects: {}" , type, aatSubjectList.size());
-            aatSubjectRepository.saveAll(aatSubjectList);
-            
-            // Parse Activities facet
-            type = AAT_SUBJECT_FACET_ACTIVITIES;
-            aatSubjectList = processAatSheet(workbook, type, 4, 2, -1);
-            log.info("Saving {} facet. #Aat Subjects: {}" , type, aatSubjectList.size());
-            aatSubjectRepository.saveAll(aatSubjectList);
-            
-            // Parse other facet
-            type = AAT_SUBJECT_FACET_OTHER;
-            aatSubjectList = processAatSheet(workbook, type, 5, 2, -1);
-            log.info("Saving {} facet. #Aat Subjects: {}" , type, aatSubjectList.size());
-            aatSubjectRepository.saveAll(aatSubjectList);
-            
-            
-        } catch(IOException ex) {
-            log.error("FileNotFound", ex);
-        }
-        
-    }
-    
-    /**
-     * 
-     * @param workbook
-     * @param type
-     * @param index
-     * @param skipLineCount
-     * @param limitCount
-     * @return 
-     */
-    public List<AatSubject> processAatSheet(Workbook workbook, String type, 
-            int index, int skipLineCount, int limitCount) {
-        
-        List<AatSubject> aatSubjectList = new LinkedList<>();
-        
-        // Process sheet
-        Sheet datatypeSheet = workbook.getSheetAt(index);
-        Iterator<Row> iterator = datatypeSheet.iterator();
-
-        int rowCount = 0;
-
-        // Process each row...
-        while (iterator.hasNext()) {
-
-            Row currentRow = iterator.next();
-
-            rowCount++;
-
-            // Skip first rows
-            if(rowCount <= skipLineCount) {
-                continue;
-            }
-
-            String aatUid;
-            String label;
-            String uri;
-            String lodUri;
-
-            Iterator<Cell> cellIterator = currentRow.iterator();
-            while (cellIterator.hasNext()) {
-
-                Cell currentCell = cellIterator.next();
-                //getCellTypeEnum ill be renamed to getCellType starting from version 4.0
-                if (currentCell.getCellTypeEnum() == CellType.STRING) {
-
-                    AatSubject currentAatSubject = new AatSubject();
-                    currentAatSubject.setId(-1);
-
-                    // Set name
-                    label = currentCell.getStringCellValue();
-                    if(label.startsWith("<") && label.endsWith(">")) {
-                        continue;
-                    }
-                    currentAatSubject.setLabel(label);
-
-                    // Set type
-                    currentAatSubject.setType(type);
-
-                    // Set uploadDirPath
-                    // currentAatSubject.setPath("");
-
-                    // Set uri & aat_id
-                    Hyperlink link = currentCell.getHyperlink();
-                    if(link != null) {
-                        aatUid = link.getAddress().substring(link.getAddress().lastIndexOf("=") + 1);
-                        uri = AAT_URI_PREFIX + aatUid;
-                        lodUri = AAT_LOD_URI_PREFIX + aatUid; 
-                                
-                        currentAatSubject.setAatUid(aatUid);
-                        currentAatSubject.setUri(uri);
-                        currentAatSubject.setLodUri(lodUri);
-                        
-
-                    } else {
-                        log.warn("Link is missing");
-                    }
-
-                    aatSubjectList.add(currentAatSubject);
-
-                    // System.out.println(currentAatSubject.toString());
-                }
-            }
-
-            // Stop processing
-            if(rowCount == skipLineCount + limitCount) {
-                break;
-            }
-        }
-        
-        return aatSubjectList;
-    }
-    
     
     /**
      * 
