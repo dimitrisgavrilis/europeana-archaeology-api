@@ -5,12 +5,11 @@ import gr.dcu.europeana.arch.api.resource.EnrichDetails;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
 import gr.dcu.europeana.arch.model.EnrichRequest;
 import gr.dcu.europeana.arch.model.ExportRequest;
-import gr.dcu.europeana.arch.model.MappingTerm;
+import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.model.SubjectMapping;
 import gr.dcu.europeana.arch.model.UploadRequest;
 import gr.dcu.europeana.arch.repository.EnrichRequestRepository;
 import gr.dcu.europeana.arch.repository.ExportRequestRepository;
-import gr.dcu.europeana.arch.repository.MappingTermRepository;
 import gr.dcu.europeana.arch.repository.SubjectMappingRepository;
 import gr.dcu.europeana.arch.repository.UploadRequestRepository;
 import gr.dcu.utils.XMLUtils;
@@ -33,6 +32,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import gr.dcu.europeana.arch.repository.SubjectTermRepository;
 
 /**
  *
@@ -46,7 +46,7 @@ public class MappingService {
     SubjectMappingRepository subjectMappingRepository;
     
     @Autowired
-    MappingTermRepository mappingTermRepository;
+    SubjectTermRepository mappingTermRepository;
     
     @Autowired
     FileStorageService fileStorageService;
@@ -122,7 +122,7 @@ public class MappingService {
                     .orElseThrow(() -> new ResourceNotFoundException(mappingId));
 
             // Get terms
-            List<MappingTerm> termList = mappingTermRepository.findByMappingId(mappingId);
+            List<SubjectTerm> termList = mappingTermRepository.findByMappingId(mappingId);
             log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, termList.size());
 
             // Export to tmp file
@@ -154,7 +154,7 @@ public class MappingService {
      * @param file
      * @throws IOException 
      */
-    public List<MappingTerm> uploadTerms(long mappingId, MultipartFile file, int userId) throws IOException {
+    public List<SubjectTerm> uploadTerms(long mappingId, MultipartFile file, int userId) throws IOException {
         
         // Check existemce of mapping
         SubjectMapping mapping = subjectMappingRepository.findById(mappingId)
@@ -165,7 +165,7 @@ public class MappingService {
         fileStorageService.upload(filePath, file);
         
         // Load terms
-        List<MappingTerm> termList = 
+        List<SubjectTerm> termList = 
                 excelService.loadMappingTermsFromExcel(filePath.toString(), mappingId, 1, -1);
         
         // Save terms
@@ -199,9 +199,9 @@ public class MappingService {
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Get mapping terms. Convert them to map
-        List<MappingTerm> terms = mappingTermRepository.findByMappingId(mappingId);
-        Map<String,MappingTerm> termsMap = new HashMap<>();
-        for(MappingTerm mp : terms) {
+        List<SubjectTerm> terms = mappingTermRepository.findByMappingId(mappingId);
+        Map<String,SubjectTerm> termsMap = new HashMap<>();
+        for(SubjectTerm mp : terms) {
             termsMap.put(mp.getNativeTerm(), mp);
         }
         log.info("Mapping: {} #Terms: {}", mappingId, terms.size());

@@ -1,7 +1,7 @@
 package gr.dcu.europeana.arch.service;
 
 import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
-import gr.dcu.europeana.arch.model.MappingTerm;
+import gr.dcu.europeana.arch.model.SubjectTerm;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -33,10 +33,10 @@ public class EDMService {
      * @param limitCount
      * @return 
      */
-    public List<MappingTerm> loadMappingTermsFromExcel(String filename, long mappingId, 
+    public List<SubjectTerm> loadMappingTermsFromExcel(String filename, long mappingId, 
             int skipLineCount, int limitCount) {
 
-        List<MappingTerm> mappings = new LinkedList<>();
+        List<SubjectTerm> mappings = new LinkedList<>();
         
         /*
         try {

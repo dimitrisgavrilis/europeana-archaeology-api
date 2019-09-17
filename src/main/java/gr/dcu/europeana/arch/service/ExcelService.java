@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.service;
 
-import gr.dcu.europeana.arch.model.MappingTerm;
+import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import java.io.File;
@@ -47,10 +47,10 @@ public class ExcelService {
      * @param limitCount
      * @return 
      */
-    public List<MappingTerm> loadMappingTermsFromExcel(String filename, long mappingId, 
+    public List<SubjectTerm> loadMappingTermsFromExcel(String filename, long mappingId, 
             int skipLineCount, int limitCount) {
 
-        List<MappingTerm> mappings = new LinkedList<>();
+        List<SubjectTerm> mappings = new LinkedList<>();
         
         try {
             
@@ -124,7 +124,7 @@ public class ExcelService {
                         }
 
                         // Create mapping term
-                        MappingTerm mappingTerm = new MappingTerm();
+                        SubjectTerm mappingTerm = new SubjectTerm();
                         // mappingTerm.setId((long) -1);
                         mappingTerm.setMappingId(mappingId);
                         mappingTerm.setNativeTerm(nativeTerm);
@@ -159,7 +159,7 @@ public class ExcelService {
      * @param terms
      * @throws IOException 
      */
-    public String exportMappingTermsToExcel(Path filePath, List<MappingTerm> terms) throws IOException {
+    public String exportMappingTermsToExcel(Path filePath, List<SubjectTerm> terms) throws IOException {
         
         try {
            
@@ -196,7 +196,7 @@ public class ExcelService {
 
             // Create Other rows and cells with employees data
             int rowNum = 1;
-            for(MappingTerm term: terms) {
+            for(SubjectTerm term: terms) {
                 Row row = sheet.createRow(rowNum++);
 
                 row.createCell(0)

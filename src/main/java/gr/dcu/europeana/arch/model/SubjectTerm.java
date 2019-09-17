@@ -18,12 +18,12 @@ import lombok.ToString;
  * @author Vangelis Nomikos
  */
 @Entity 
-@Table(name = "subject_mapping_terms")
+@Table(name = "subject_terms")
 @Getter
 @Setter
 @ToString
 @NoArgsConstructor
-public class MappingTerm implements Serializable {
+public class SubjectTerm implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

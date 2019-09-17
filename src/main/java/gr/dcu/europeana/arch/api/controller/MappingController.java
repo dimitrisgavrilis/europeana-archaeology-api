@@ -1,10 +1,11 @@
 package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.api.resource.EnrichDetails;
-import gr.dcu.europeana.arch.model.MappingTerm;
+import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
+import gr.dcu.europeana.arch.model.SpatialTerm;
 import gr.dcu.europeana.arch.model.SubjectMapping;
-import gr.dcu.europeana.arch.repository.MappingTermRepository;
+import gr.dcu.europeana.arch.repository.SpatialTermRepository;
 import gr.dcu.europeana.arch.repository.SubjectMappingRepository;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.MappingService;
@@ -29,6 +30,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import gr.dcu.europeana.arch.repository.SubjectTermRepository;
+import gr.dcu.europeana.arch.repository.TemporalTermRepository;
 
 /**
  *
@@ -49,7 +52,14 @@ public class MappingController {
     SubjectMappingRepository subjectMappingRepository;
     
     @Autowired
-    MappingTermRepository mappingTermRepository;
+    SubjectTermRepository subjectTermRepository;
+    
+    @Autowired
+    SpatialTermRepository spatialTermRepository;
+    
+    @Autowired
+    TemporalTermRepository temporalTermRepository;
+    
     
     @GetMapping("/mappings")
     public List<SubjectMapping> getAllMappings(HttpServletRequest requestContext) {
@@ -130,71 +140,6 @@ public class MappingController {
 
     }
    
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~ TERMS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
-    
-    @GetMapping("/mappings/{id}/terms")
-    public List<MappingTerm> getAllMappingTerms(HttpServletRequest requestContext, @PathVariable Long id) {
-        return mappingTermRepository.findByMappingId(id);
-    }
-    
-    @GetMapping("/mappings/{id}/terms/{termId}")
-    public MappingTerm getMappingTerm(HttpServletRequest requestContext, @PathVariable Long id, @PathVariable Long termId) { 
-        return mappingTermRepository.findById(termId)
-                .orElseThrow(() -> new ResourceNotFoundException(termId));
-    }
-    
-    @PutMapping("/mappings/{id}/terms/{termId}")
-    public MappingTerm updateMappingTerm(HttpServletRequest requestContext, @PathVariable Long id, @PathVariable Long termId, 
-            @RequestBody MappingTerm mapping) { 
-        
-        MappingTerm existingTerm = mappingTermRepository.findById(termId)
-                .orElseThrow(() -> new ResourceNotFoundException(termId));
-
-        mapping.setId(termId);
-        mapping.setMappingId(id);
-        mapping.setLanguage(mapping.getLanguage());
-        
-        return mappingTermRepository.save(mapping);
-    }
-    
-    @PostMapping("/mappings/{id}/terms")
-    public MappingTerm saveMappingTerm(HttpServletRequest requestContext, 
-            @PathVariable Long id, @RequestBody MappingTerm mapping) { 
-        
-        int userId = authService.authorize(requestContext);
-        
-        mapping.setMappingId(id);
-        return mappingTermRepository.save(mapping);
-    }
-    
-    /*
-    @PostMapping("/mappings/{id}/terms")
-    public List<MappingTerm> saveMappingTerm(@RequestBody List<MappingTerm> mappings) { 
-        
-        return subjectMappingRepository.saveAll(mappings);
-    }*/
-    
-    @DeleteMapping("/mappings/{id}/terms/{termId}")
-    public void deleteMappingTerm(HttpServletRequest requestContext, @PathVariable Long id, @PathVariable Long termId) { 
-        
-        int userId = authService.authorize(requestContext);
-        
-        mappingTermRepository.deleteById(termId);
-    }
-    
-    /**
-     * Delete all terms of a mapping.
-     * @param id
-     * @param termId 
-     */
-    @DeleteMapping("/mappings/{id}/terms")
-    public void deleteTerms(HttpServletRequest requestContext, @PathVariable Long id) { 
-        
-        int userId = authService.authorize(requestContext);
-        
-        mappingTermRepository.deleteByMappingId(id);
-    } 
-    
     
     /**
      * 
@@ -204,7 +149,7 @@ public class MappingController {
      * @throws IOException 
      */
     @PostMapping("/mappings/{id}/upload")
-    public List<MappingTerm> uploadTerms(HttpServletRequest requestContext, @PathVariable Long id, 
+    public List<SubjectTerm> uploadTerms(HttpServletRequest requestContext, @PathVariable Long id, 
             @RequestParam("file") MultipartFile file) throws IOException {
         
         int userId = authService.authorize(requestContext);
@@ -267,7 +212,7 @@ public class MappingController {
                 List<MappingTerm> mappingTerms = 
                         excelService.loadMappingTermsFromExcel(filename, 2, 1, -1);
                 
-                mappingTermRepository.saveAll(mappingTerms);
+                subjectTermRepository.saveAll(mappingTerms);
                 
                 log.info("Parsing finished...");
             }
