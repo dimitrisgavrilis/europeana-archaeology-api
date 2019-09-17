@@ -161,7 +161,7 @@ public class TermController {
      * @param requestContext
      * @param id 
      */
-    @DeleteMapping("/mappings/{id}/terms")
+    @DeleteMapping("/mappings/{id}/spatial_terms")
     public void deleteAllSpatialTerms(HttpServletRequest requestContext, @PathVariable Long id) { 
         
         int userId = authService.authorize(requestContext);
@@ -214,7 +214,7 @@ public class TermController {
      * @param requestContext
      * @param id 
      */
-    @DeleteMapping("/mappings/{id}/terms")
+    @DeleteMapping("/mappings/{id}/temporal_terms")
     public void deleteAllTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id) { 
         
         int userId = authService.authorize(requestContext);
