@@ -35,6 +35,9 @@ public class SubjectMapping implements Serializable {
     @Column (name="description")
     private String description;
     
+    @Column (name="type")
+    private String type;
+    
     @Column (name="language")
     private String language;
     
