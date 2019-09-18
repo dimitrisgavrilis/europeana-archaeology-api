@@ -1,6 +1,5 @@
-package gr.dcu.europeana.arch.geonames;
+package gr.dcu.europeana.arch.api.resource;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,23 +12,17 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class Geonames {
+public class GeonamesDto {
     
     private long geonameId;
     private String name;
     
     private String countryCode;
     private String countryName;
-    
-    @JsonProperty("lat")
+   
     private String latitude;
-    
-    @JsonProperty("lng")
     private String longitude;
     
-    
-    
-    
+    private String label;
     
 }

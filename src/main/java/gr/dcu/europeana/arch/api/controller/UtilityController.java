@@ -1,5 +1,7 @@
 package gr.dcu.europeana.arch.api.controller;
 
+import gr.dcu.europeana.arch.api.resource.GeonamesDto;
+import gr.dcu.europeana.arch.api.resource.GeonamesMapper;
 import gr.dcu.europeana.arch.geonames.Geonames;
 import gr.dcu.europeana.arch.geonames.GeonamesSearchResult;
 import gr.dcu.europeana.arch.geonames.GeonamesService;
@@ -38,6 +40,9 @@ public class UtilityController {
     @Autowired
     GeonamesService geonamesService;
     
+    @Autowired
+    GeonamesMapper geonamesMapper;
+    
     @ApiOperation("Search Subjects by name")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = AatSubject.class)})
     @PostMapping("/subjects/search")
@@ -49,7 +54,7 @@ public class UtilityController {
     @ApiOperation("Search geonames by name")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = Geonames.class)})
     @PostMapping("/geonames/search")
-    public List<Geonames> searchGeonamesByName(@RequestParam String q, 
+    public List<GeonamesDto> searchGeonamesByName(@RequestParam String q, 
             @RequestParam(required = false, defaultValue = "en") String lang) {
         
         GeonamesSearchResult searchResult = geonamesService.search(q, lang, 10);
@@ -58,7 +63,7 @@ public class UtilityController {
         
         log.info("Search geonames. Query: {} , #Results: {}", q, geonames.size());
         
-        return geonames;
+        return geonamesMapper.toDtoList(geonames);
     }
     
     @ApiOperation("Get all languages")
