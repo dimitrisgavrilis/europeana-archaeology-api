@@ -21,7 +21,9 @@ public class GeonamesMapper {
         geonamesDto.setCountryName(geonames.getCountryName());
         geonamesDto.setLatitude(geonames.getLatitude());
         geonamesDto.setLongitude(geonames.getLongitude());
-        geonamesDto.setLabel(geonames.getName() + ", " + geonames.getCountryName());
+        // geonamesDto.setLabel(geonames.getName() + ", " + geonames.getCountryName());
+        geonamesDto.setLabel(geonames.getName());
+        
         
         return geonamesDto;
     }
