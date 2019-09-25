@@ -4,7 +4,7 @@ import gr.dcu.europeana.arch.api.resource.EnrichDetails;
 import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
 import gr.dcu.europeana.arch.model.SpatialTerm;
-import gr.dcu.europeana.arch.model.SubjectMapping;
+import gr.dcu.europeana.arch.model.Mapping;
 import gr.dcu.europeana.arch.repository.SpatialTermRepository;
 import gr.dcu.europeana.arch.repository.SubjectMappingRepository;
 import gr.dcu.europeana.arch.service.AuthService;
@@ -62,7 +62,7 @@ public class MappingController {
     
     
     @GetMapping("/mappings")
-    public List<SubjectMapping> getAllMappings(HttpServletRequest requestContext) {
+    public List<Mapping> getAllMappings(HttpServletRequest requestContext) {
         
         // int userId = authService.authorize(requestContext);
          
@@ -70,7 +70,7 @@ public class MappingController {
     }
     
     @GetMapping("/mappings/{id}")
-    public SubjectMapping getMapping(HttpServletRequest requestContext, @PathVariable Long id) { 
+    public Mapping getMapping(HttpServletRequest requestContext, @PathVariable Long id) { 
         
         // int userId = authService.authorize(requestContext);
                 
@@ -79,7 +79,7 @@ public class MappingController {
     }
     
     @PostMapping("/mappings")
-    public SubjectMapping saveMapping(HttpServletRequest requestContext, @RequestBody SubjectMapping mapping) { 
+    public Mapping saveMapping(HttpServletRequest requestContext, @RequestBody Mapping mapping) { 
         
         int userId = authService.authorize(requestContext);
         
@@ -87,9 +87,9 @@ public class MappingController {
     }
     
     @PutMapping("/mappings/{id}")
-    public SubjectMapping updateMapping(HttpServletRequest requestContext, @PathVariable Long id, @RequestBody SubjectMapping mapping) { 
+    public Mapping updateMapping(HttpServletRequest requestContext, @PathVariable Long id, @RequestBody Mapping mapping) { 
         
-        SubjectMapping existingMapping = subjectMappingRepository.findById(Long.MIN_VALUE)
+        Mapping existingMapping = subjectMappingRepository.findById(Long.MIN_VALUE)
                 .orElseThrow(() -> new ResourceNotFoundException(id));
          
         mapping.setId(id);

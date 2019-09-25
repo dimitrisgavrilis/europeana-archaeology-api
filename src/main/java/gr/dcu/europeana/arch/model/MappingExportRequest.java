@@ -19,12 +19,12 @@ import org.hibernate.annotations.CreationTimestamp;
  * @author Vangelis Nomikos
  */
 @Entity 
-@Table(name = "subject_mapping_upload")
+@Table(name = "mapping_export")
 @Getter
 @Setter
 @ToString
 @NoArgsConstructor
-public class UploadRequest implements Serializable {
+public class MappingExportRequest implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,8 +33,8 @@ public class UploadRequest implements Serializable {
     @Column (name="mapping_id")
     private Long mappingId;
     
-    @Column (name="filename")
-    private String filename;
+    // @Column (name="filename")
+    // private String filename;
     
     @Column (name="filepath")
     private String filepath;
@@ -45,5 +45,5 @@ public class UploadRequest implements Serializable {
     
     @Column(name = "created_by")
     private int createdBy;
-
+    
 }

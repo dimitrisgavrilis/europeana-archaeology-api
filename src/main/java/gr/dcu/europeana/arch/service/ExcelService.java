@@ -2,6 +2,7 @@ package gr.dcu.europeana.arch.service;
 
 import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
+import gr.dcu.europeana.arch.model.SpatialTerm;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import java.io.File;
 import java.io.FileInputStream;
@@ -159,7 +160,7 @@ public class ExcelService {
      * @param terms
      * @throws IOException 
      */
-    public String exportMappingTermsToExcel(Path filePath, List<SubjectTerm> terms) throws IOException {
+    public String exportSubjectTermsToExcel(Path filePath, List<SubjectTerm> terms) throws IOException {
         
         try {
            
@@ -184,8 +185,8 @@ public class ExcelService {
             // Create a Row
             Row headerRow = sheet.createRow(0);
 
-            // 3 columns 
-            String[] columns = {"Native Term", "Aat concept label", "Aat uid"};
+            // 4 columns 
+            String[] columns = {"Native Term", "Language", "Aat concept label", "Aat uid"};
             
             // Create cells
             for(int i = 0; i < columns.length; i++) {
@@ -201,11 +202,12 @@ public class ExcelService {
 
                 row.createCell(0)
                         .setCellValue(term.getNativeTerm());
-
                 row.createCell(1)
+                        .setCellValue(term.getLanguage());
+                row.createCell(2)
                         .setCellValue(term.getAatConceptLabel());
                 
-                row.createCell(2)
+                row.createCell(3)
                         .setCellValue(term.getAatUid());
 
 //                Cell dateOfBirthCell = row.createCell(2);
@@ -214,6 +216,79 @@ public class ExcelService {
 //
 //                row.createCell(3)
 //                        .setCellValue(employee.getSalary());
+            }
+
+            // Resize all columns to fit the content size
+            for(int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Write the output to an excelFile
+            FileOutputStream fileOut = new FileOutputStream(filePath.toString());
+            workbook.write(fileOut);
+            fileOut.close();
+
+            // Closing the workbook
+            workbook.close();
+            
+            // log.info("Export saved at {}", filePath);
+            
+        } catch (IOException ex) {
+            throw ex;
+        }
+        
+        return filePath.toString();
+    }
+    
+    public String exportSpatialTermsToExcel(Path filePath, List<SpatialTerm> terms) throws IOException {
+        
+        try {
+           
+            log.info("Export to excel file...");
+            
+            // Create a Workbook
+            Workbook workbook = new XSSFWorkbook();
+
+            // Create a Sheet
+            Sheet sheet = workbook.createSheet("Mappings");
+
+            // Create a Font for styling header cells
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            // headerFont.setFontHeightInPoints((short) 14);
+            // headerFont.setColor(IndexedColors.RED.getIndex());
+
+            // Create a CellStyle with the font
+            CellStyle headerCellStyle = workbook.createCellStyle();
+            headerCellStyle.setFont(headerFont);
+
+            // Create a Row
+            Row headerRow = sheet.createRow(0);
+
+            // 4 columns 
+            String[] columns = {"Native Term", "Language", "Geoname Name", "Geoname ID"};
+            
+            // Create cells
+            for(int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerCellStyle);
+            }
+
+            // Create Other rows and cells with employees data
+            int rowNum = 1;
+            for(SpatialTerm term: terms) {
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0)
+                        .setCellValue(term.getNativeTerm());
+                row.createCell(1)
+                        .setCellValue(term.getLanguage());
+                row.createCell(2)
+                        .setCellValue(term.getGeonameName());
+                
+                row.createCell(3)
+                        .setCellValue(term.getGeonameId());
             }
 
             // Resize all columns to fit the content size

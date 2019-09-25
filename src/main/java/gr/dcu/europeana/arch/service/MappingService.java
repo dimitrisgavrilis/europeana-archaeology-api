@@ -4,12 +4,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.dcu.europeana.arch.api.resource.EnrichDetails;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
 import gr.dcu.europeana.arch.model.EnrichRequest;
-import gr.dcu.europeana.arch.model.ExportRequest;
+import gr.dcu.europeana.arch.model.MappingExportRequest;
+import gr.dcu.europeana.arch.model.MappingType;
+import gr.dcu.europeana.arch.model.SpatialTerm;
 import gr.dcu.europeana.arch.model.SubjectTerm;
-import gr.dcu.europeana.arch.model.SubjectMapping;
-import gr.dcu.europeana.arch.model.UploadRequest;
+import gr.dcu.europeana.arch.model.Mapping;
+import gr.dcu.europeana.arch.model.MappingUploadRequest;
 import gr.dcu.europeana.arch.repository.EnrichRequestRepository;
 import gr.dcu.europeana.arch.repository.ExportRequestRepository;
+import gr.dcu.europeana.arch.repository.SpatialTermRepository;
 import gr.dcu.europeana.arch.repository.SubjectMappingRepository;
 import gr.dcu.europeana.arch.repository.UploadRequestRepository;
 import gr.dcu.utils.XMLUtils;
@@ -33,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import gr.dcu.europeana.arch.repository.SubjectTermRepository;
+import gr.dcu.europeana.arch.repository.TemporalTermRepository;
 
 /**
  *
@@ -46,7 +50,13 @@ public class MappingService {
     SubjectMappingRepository subjectMappingRepository;
     
     @Autowired
-    SubjectTermRepository mappingTermRepository;
+    SubjectTermRepository subjectTermRepository;
+    
+    @Autowired
+    SpatialTermRepository spatialTermRepository;
+    
+    @Autowired
+    TemporalTermRepository temporalTermRepository;
     
     @Autowired
     FileStorageService fileStorageService;
@@ -67,7 +77,7 @@ public class MappingService {
      * 
      * @return 
      */
-    public List<SubjectMapping> findAll() {
+    public List<Mapping> findAll() {
         
         return subjectMappingRepository.findAll();
     }
@@ -77,7 +87,7 @@ public class MappingService {
      * @param userId
      * @return 
      */
-    public List<SubjectMapping> findAllByUserId(int userId) {
+    public List<Mapping> findAllByUserId(int userId) {
         
         return subjectMappingRepository.findAllByCreatedBy(userId);
     }
@@ -88,7 +98,7 @@ public class MappingService {
      * @param mapping
      * @return 
      */
-    public SubjectMapping save(int userId, SubjectMapping mapping) {
+    public Mapping save(int userId, Mapping mapping) {
         
         mapping.setCreatedBy(userId);
         
@@ -118,23 +128,41 @@ public class MappingService {
         
         try {
             // Check if mapping exists
-            SubjectMapping subjectMapping = subjectMappingRepository.findById(mappingId)
+            Mapping mapping = subjectMappingRepository.findById(mappingId)
                     .orElseThrow(() -> new ResourceNotFoundException(mappingId));
-
-            // Get terms
-            List<SubjectTerm> termList = mappingTermRepository.findByMappingId(mappingId);
-            log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, termList.size());
 
             // Export to tmp file
             Path filePath = fileStorageService.buildExportFilePath(mappingId);
-            excelService.exportMappingTermsToExcel(filePath, termList);
+            
+            switch(mapping.getType()) {
+                case MappingType.MAPPING_TYPE_SUBJECT:
+                    // Get terms
+                    List<SubjectTerm> termList = subjectTermRepository.findByMappingId(mappingId);
+                    log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, termList.size());
+            
+                    // Export
+                    excelService.exportSubjectTermsToExcel(filePath, termList);
+                    break;
+                case MappingType.MAPPING_TYPE_SPATIAL:
+                    List<SpatialTerm> spatialTermList = spatialTermRepository.findByMappingId(mappingId);
+                    log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, spatialTermList.size());
+                    excelService.exportSpatialTermsToExcel(filePath, spatialTermList);
+                    break;
+                case MappingType.MAPPING_TYPE_TEMPORAL:
+                    
+                    // excelService.exportSubjectTermsToExcel(filePath, termList);
+                    break;
+                default:
+                    log.warn("Unknown mapping type.");
+            }
+            
             log.info("Export saved at {}", filePath);
 
             // Load exportTerms file
             resource = fileStorageService.loadFileAsResource(filePath);
 
             // Create exportTerms enrichRequest
-            ExportRequest exportRequest = new ExportRequest();
+            MappingExportRequest exportRequest = new MappingExportRequest();
             exportRequest.setMappingId(mappingId);
             exportRequest.setFilepath(filePath.toString());
             exportRequest.setCreatedBy(userId);
@@ -157,7 +185,7 @@ public class MappingService {
     public List<SubjectTerm> uploadTerms(long mappingId, MultipartFile file, int userId) throws IOException {
         
         // Check existemce of mapping
-        SubjectMapping mapping = subjectMappingRepository.findById(mappingId)
+        Mapping mapping = subjectMappingRepository.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Upload mapping file
@@ -172,10 +200,10 @@ public class MappingService {
         log.info("Saving terms. #Terms:{}", termList.size());
         
         // TODO: Do not save automatically. Preview first.
-        mappingTermRepository.saveAll(termList);
+        subjectTermRepository.saveAll(termList);
         
         // Create upload enrichRequest
-        UploadRequest uploadRequest = new UploadRequest();
+        MappingUploadRequest uploadRequest = new MappingUploadRequest();
         uploadRequest.setMappingId(mappingId);
         uploadRequest.setFilename(file.getOriginalFilename());
         uploadRequest.setFilepath(filePath.toString());
@@ -195,11 +223,11 @@ public class MappingService {
     public EnrichDetails enrich(long mappingId, MultipartFile file, int userId) throws IOException {
          
         // Check existemce of mapping
-        SubjectMapping mapping = subjectMappingRepository.findById(mappingId)
+        Mapping mapping = subjectMappingRepository.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Get mapping terms. Convert them to map
-        List<SubjectTerm> terms = mappingTermRepository.findByMappingId(mappingId);
+        List<SubjectTerm> terms = subjectTermRepository.findByMappingId(mappingId);
         Map<String,SubjectTerm> termsMap = new HashMap<>();
         for(SubjectTerm mp : terms) {
             termsMap.put(mp.getNativeTerm(), mp);

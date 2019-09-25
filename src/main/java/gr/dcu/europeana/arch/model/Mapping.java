@@ -1,5 +1,6 @@
 package gr.dcu.europeana.arch.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import javax.persistence.Column;
@@ -11,39 +12,47 @@ import javax.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 /**
  *
  * @author Vangelis Nomikos
  */
-@Entity 
-@Table(name = "subject_mapping_export")
+@Entity
+@Table (name = "mapping")
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
-public class ExportRequest implements Serializable {
+public class Mapping implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column (name="mapping_id")
-    private Long mappingId;
+    @Column (name="label")
+    private String label;
     
-    // @Column (name="filename")
-    // private String filename;
+    @Column (name="description")
+    private String description;
     
-    @Column (name="filepath")
-    private String filepath;
+    @Column (name="type")
+    private String type;
     
+    @Column (name="language")
+    private String language;
+    
+    @Column (name="provider_name")
+    private String providerName;
+    
+    @Column (name="vocabulary_name")
+    private String vocabularyName;
+    
+    @JsonIgnore
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
-    @Column(name = "created_by")
+    @JsonIgnore
+    @Column (name="created_by")
     private int createdBy;
-    
 }
