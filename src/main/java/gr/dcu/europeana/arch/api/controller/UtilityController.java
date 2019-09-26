@@ -46,9 +46,14 @@ public class UtilityController {
     @ApiOperation("Search Subjects by name")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = AatSubject.class)})
     @PostMapping("/subjects/search")
-    public List<AatSubject> searchSubjectsByName(@RequestParam String q) {
+    public List<AatSubject> searchSubjectsByName(@RequestParam String q, 
+            @RequestParam(value = "type", required=false) String type) {
         
-        return aatSubjectRepository.findAllByLabelContainingIgnoreCase(q);
+        if(type == null || type.isEmpty()) {
+            return aatSubjectRepository.findAllByLabelContainingIgnoreCase(q);
+        } else {
+            return aatSubjectRepository.findAllByLabelContainingIgnoreCaseAndType(q, type);
+        }
     }
     
     @ApiOperation("Search geonames by name")

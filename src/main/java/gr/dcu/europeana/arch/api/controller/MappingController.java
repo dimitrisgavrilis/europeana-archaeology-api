@@ -1,6 +1,5 @@
 package gr.dcu.europeana.arch.api.controller;
 
-import gr.dcu.europeana.arch.api.resource.EnrichDetails;
 import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
 import gr.dcu.europeana.arch.model.SpatialTerm;
@@ -8,13 +7,11 @@ import gr.dcu.europeana.arch.model.Mapping;
 import gr.dcu.europeana.arch.repository.SpatialTermRepository;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.MappingService;
-import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -49,7 +46,7 @@ public class MappingController {
     MappingService mappingService;
     
     @Autowired
-    MappingRepository subjectMappingRepository;
+    MappingRepository mappingRepository;
     
     @Autowired
     SubjectTermRepository subjectTermRepository;
@@ -61,7 +58,7 @@ public class MappingController {
     TemporalTermRepository temporalTermRepository;
     
     
-    @GetMapping("/mappings")
+    @GetMapping("/mappings/all")
     public List<Mapping> getAllMappings(HttpServletRequest requestContext) {
         
         // int userId = authService.authorize(requestContext);
@@ -69,12 +66,20 @@ public class MappingController {
         return mappingService.findAll();
     }
     
+    @GetMapping("/mappings")
+    public List<Mapping> getUserMappings(HttpServletRequest requestContext) {
+        
+        int userId = authService.authorize(requestContext);
+         
+        return mappingService.findAllByUserId(userId);
+    }
+    
     @GetMapping("/mappings/{id}")
     public Mapping getMapping(HttpServletRequest requestContext, @PathVariable Long id) { 
         
         // int userId = authService.authorize(requestContext);
                 
-        return subjectMappingRepository.findById(id)
+        return mappingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(id));
     }
     
@@ -87,14 +92,19 @@ public class MappingController {
     }
     
     @PutMapping("/mappings/{id}")
-    public Mapping updateMapping(HttpServletRequest requestContext, @PathVariable Long id, @RequestBody Mapping mapping) { 
+    public Mapping updateMapping(HttpServletRequest requestContext, 
+            @PathVariable Long id, @RequestBody Mapping mapping) { 
         
-        Mapping existingMapping = subjectMappingRepository.findById(Long.MIN_VALUE)
+        Mapping existingMapping = mappingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(id));
-         
-        mapping.setId(id);
         
-        return subjectMappingRepository.save(mapping);
+        existingMapping.setLabel(mapping.getLabel());
+        existingMapping.setDescription(mapping.getDescription());
+        existingMapping.setLanguage(mapping.getLanguage());
+        existingMapping.setProviderName(mapping.getProviderName());
+        existingMapping.setVocabularyName(mapping.getVocabularyName());
+        
+        return mappingRepository.save(mapping);
     }
     
     @DeleteMapping("/mappings/{id}")
@@ -166,70 +176,12 @@ public class MappingController {
         return mappingService.uploadSpatialTerms(id, file, userId);
     }
     
-    /**
-     * Upload an EDM package and enrich the EDM files based on subject mapping.
-     * @param id
-     * @param file
-     * @return
-     * @throws IOException 
-     */
-    @PostMapping("/mappings/{id}/enrich")
-    public EnrichDetails enrichEdmArchive(HttpServletRequest requestContext, @PathVariable Long id, 
+    @PostMapping("/mappings/{id}/upload_temporal")
+    public List<SpatialTerm> uploadTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id, 
             @RequestParam("file") MultipartFile file) throws IOException {
         
         int userId = authService.authorize(requestContext);
         
-        return mappingService.enrich(id, file, userId);
-
+        return mappingService.uploadSpatialTerms(id, file, userId);
     }
-    
-    /**
-     * Download enriched archive
-     * @param requestContext
-     * @param id
-     * @param requestId
-     * @return
-     * @throws IOException 
-     */
-    @GetMapping("/mappings/{id}/enrich/{requestId}/download")
-    public ResponseEntity<?> downloadEnrichedEdmArchive(HttpServletRequest requestContext, @PathVariable Long id, 
-            @PathVariable Long requestId) throws IOException {
-        
-        File file = mappingService.loadEnrichedArchive(requestId);
-        
-        String filename = file.getName();
-        // String filepath = file.getAbsolutePath();
-        
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_TYPE, "application/force-download")
-                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\"" + filename + "\"")
-                .body(new FileSystemResource(file));
-    }
-    
-    /*
-    @GetMapping("/upload/test")
-    public String testUpload() {
-        
-        log.info("trying to upload...");
-        try {
-            String filename = "Subject_Mapping_Template.xlsx";
-            Resource resource = resourceLoader.getResource("classpath:" + filename);
-            File templateFile = resource.getFile();
-            if(templateFile.exists()) {
-                log.info("File exists!!!");
-                
-                List<MappingTerm> mappingTerms = 
-                        excelService.loadMappingTermsFromExcel(filename, 2, 1, -1);
-                
-                subjectTermRepository.saveAll(mappingTerms);
-                
-                log.info("Parsing finished...");
-            }
-            
-        } catch(IOException ex) {
-            log.error("File not found.");
-        }
-        
-        return "OK";
-    } */
 }

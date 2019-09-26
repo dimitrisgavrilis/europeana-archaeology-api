@@ -10,6 +10,7 @@ import gr.dcu.europeana.arch.model.SpatialTerm;
 import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.model.Mapping;
 import gr.dcu.europeana.arch.model.MappingUploadRequest;
+import gr.dcu.europeana.arch.model.TemporalTerm;
 import gr.dcu.europeana.arch.repository.EnrichRequestRepository;
 import gr.dcu.europeana.arch.repository.ExportRequestRepository;
 import gr.dcu.europeana.arch.repository.SpatialTermRepository;
@@ -37,6 +38,8 @@ import org.xml.sax.SAXException;
 import gr.dcu.europeana.arch.repository.SubjectTermRepository;
 import gr.dcu.europeana.arch.repository.TemporalTermRepository;
 import gr.dcu.europeana.arch.repository.MappingRepository;
+import javax.transaction.TransactionScoped;
+import javax.transaction.Transactional;
 
 /**
  *
@@ -108,11 +111,30 @@ public class MappingService {
     /**
      * 
      * @param userId
-     * @param id 
+     * @param mappingId
      */
-    public void delete(int userId, long id) {
+    @Transactional
+    public void delete(int userId, long mappingId) {
         
-        mappingRepository.deleteById(id);
+        // Check if mapping exists
+        Mapping mapping = mappingRepository.findById(mappingId)
+                    .orElseThrow(() -> new ResourceNotFoundException(mappingId));
+        
+         switch(mapping.getType()) {
+            case MappingType.MAPPING_TYPE_SUBJECT:
+                subjectTermRepository.deleteByMappingId(mappingId);
+                break;
+            case MappingType.MAPPING_TYPE_SPATIAL:
+                spatialTermRepository.deleteByMappingId(mappingId);
+                break;
+            case MappingType.MAPPING_TYPE_TEMPORAL:
+                temporalTermRepository.deleteByMappingId(mappingId);
+                break;
+            default:
+                log.warn("Unknown mapping type.");
+         }
+        
+        mappingRepository.deleteById(mappingId);
     }
     
     /**
@@ -242,6 +264,37 @@ public class MappingService {
         
         // TODO: Do not save automatically. Preview first.
         spatialTermRepository.saveAll(termList);
+        
+        // Create upload enrichRequest
+        MappingUploadRequest uploadRequest = new MappingUploadRequest();
+        uploadRequest.setMappingId(mappingId);
+        uploadRequest.setFilename(file.getOriginalFilename());
+        uploadRequest.setFilepath(filePath.toString());
+        uploadRequest.setCreatedBy(userId);
+        uploadRequestRepository.save(uploadRequest);
+        
+        return termList;
+    }
+    
+    public List<TemporalTerm> uploadTemporalTerms(long mappingId, MultipartFile file, int userId) throws IOException {
+        
+        // Check existemce of mapping
+        Mapping mapping = mappingRepository.findById(mappingId)
+                .orElseThrow(() -> new ResourceNotFoundException(mappingId));
+        
+        // Upload mapping file
+        Path filePath = fileStorageService.buildUploadFilePath(mappingId, file.getOriginalFilename());
+        fileStorageService.upload(filePath, file);
+        
+        // Load terms
+        List<TemporalTerm> termList = 
+                excelService.loadTemporalTermsFromExcel(filePath.toString(), mappingId, 1, -1);
+        
+        // Save terms
+        log.info("Saving terms. #Terms:{}", termList.size());
+        
+        // TODO: Do not save automatically. Preview first.
+        temporalTermRepository.saveAll(termList);
         
         // Create upload enrichRequest
         MappingUploadRequest uploadRequest = new MappingUploadRequest();

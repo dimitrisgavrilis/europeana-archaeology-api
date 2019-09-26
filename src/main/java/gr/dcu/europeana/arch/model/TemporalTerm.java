@@ -2,6 +2,7 @@ package gr.dcu.europeana.arch.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -12,6 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.CreationTimestamp;
 
 /**
  *
@@ -38,5 +40,15 @@ public class TemporalTerm implements Serializable {
     
     @Column (name="language")
     private String language;
+    
+    @Column (name="aat_concept_label")
+    private String aatConceptLabel;
+    
+    @Column (name="aat_uid")
+    private String aatUid;
+    
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
     
 }

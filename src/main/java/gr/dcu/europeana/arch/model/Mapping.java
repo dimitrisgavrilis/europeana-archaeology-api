@@ -49,7 +49,7 @@ public class Mapping implements Serializable {
     
     @JsonIgnore
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
     
     @JsonIgnore

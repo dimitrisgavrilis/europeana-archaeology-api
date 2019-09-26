@@ -67,9 +67,10 @@ public class TermController {
         SubjectTerm existingTerm = subjectTermRepository.findById(termId)
                 .orElseThrow(() -> new ResourceNotFoundException(termId));
 
-        term.setId(termId);
-        term.setMappingId(id);
-        term.setLanguage(term.getLanguage());
+        existingTerm.setMappingId(id);
+        existingTerm.setLanguage(term.getLanguage());
+        existingTerm.setAatConceptLabel(term.getAatConceptLabel());
+        existingTerm.setAatUid(term.getAatUid());
         
         return subjectTermRepository.save(term);
     }
@@ -105,6 +106,7 @@ public class TermController {
      * @param requestContext
      * @param id 
      */
+    @Deprecated // define DELETE /mappings/{id}/terms
     @DeleteMapping("/mappings/{id}/terms")
     public void deleteAllTerms(HttpServletRequest requestContext, @PathVariable Long id) { 
         
@@ -128,9 +130,10 @@ public class TermController {
         SpatialTerm existingTerm = spatialTermRepository.findById(termId)
                 .orElseThrow(() -> new ResourceNotFoundException(termId));
 
-        term.setId(termId);
-        term.setMappingId(id);
-        term.setLanguage(term.getLanguage());
+        existingTerm.setMappingId(id);
+        existingTerm.setLanguage(term.getLanguage());
+        existingTerm.setGeonameName(term.getGeonameName());
+        existingTerm.setGeonameId(term.getGeonameId());
         
         return spatialTermRepository.save(term);
     }
@@ -159,6 +162,7 @@ public class TermController {
      * @param requestContext
      * @param id 
      */
+    @Deprecated // define DELETE /mappings/{id}/terms
     @DeleteMapping("/mappings/{id}/spatial_terms")
     public void deleteAllSpatialTerms(HttpServletRequest requestContext, @PathVariable Long id) { 
         
@@ -181,9 +185,10 @@ public class TermController {
         TemporalTerm existingTerm = temporalTermRepository.findById(termId)
                 .orElseThrow(() -> new ResourceNotFoundException(termId));
 
-        term.setId(termId);
-        term.setMappingId(id);
-        term.setLanguage(term.getLanguage());
+        existingTerm.setMappingId(id);
+        existingTerm.setLanguage(term.getLanguage());
+        existingTerm.setAatConceptLabel(term.getAatConceptLabel());
+        existingTerm.setAatUid(term.getAatUid());
         
         return temporalTermRepository.save(term);
     }
@@ -212,6 +217,7 @@ public class TermController {
      * @param requestContext
      * @param id 
      */
+    @Deprecated // define DELETE /mappings/{id}/terms
     @DeleteMapping("/mappings/{id}/temporal_terms")
     public void deleteAllTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id) { 
         

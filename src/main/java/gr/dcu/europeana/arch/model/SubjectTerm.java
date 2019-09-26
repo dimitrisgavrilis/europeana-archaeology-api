@@ -36,13 +36,12 @@ public class SubjectTerm implements Serializable {
     @Column (name="native_term")
     private String nativeTerm;
     
+    @Column (name="language")
+    private String language;
+    
     @Column (name="aat_concept_label")
     private String aatConceptLabel;
     
     @Column (name="aat_uid")
     private String aatUid;
-    
-    @Column (name="language")
-    private String language;
-    
 }

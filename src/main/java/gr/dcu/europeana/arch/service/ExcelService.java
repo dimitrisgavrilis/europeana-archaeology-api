@@ -3,6 +3,7 @@ package gr.dcu.europeana.arch.service;
 import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
 import gr.dcu.europeana.arch.model.SpatialTerm;
+import gr.dcu.europeana.arch.model.TemporalTerm;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import java.io.File;
 import java.io.FileInputStream;
@@ -270,6 +271,119 @@ public class ExcelService {
                         spatialTerm.setGeonameId(geonameId);
 
                         terms.add(spatialTerm);
+                    }
+
+                    // Stop processing
+                    if(rowCount == skipLineCount + limitCount) {
+                        break;
+                    }
+                }
+            } else {
+                log.error("File not found " + filename);
+                throw new MyFileNotFoundException("File not found " + filename);
+            }
+           
+        } catch(IOException ex) {
+            log.error("File not found " + filename);
+                throw new MyFileNotFoundException("File not found " + filename);
+        }
+        
+        return terms;
+        
+    }
+    
+    public List<TemporalTerm> loadTemporalTermsFromExcel(String filename, long mappingId, 
+            int skipLineCount, int limitCount) {
+
+        List<TemporalTerm> terms = new LinkedList<>();
+        
+        try {
+            
+            File excelFile = new File(filename);
+            if(excelFile.exists() && excelFile.isFile()) {
+                log.info("URI: {}", excelFile.getAbsolutePath());
+                
+                // Open and process excel 
+                FileInputStream excelFileInputStream = new FileInputStream(excelFile);
+                Workbook workbook = new XSSFWorkbook(excelFileInputStream);
+                Sheet datatypeSheet = workbook.getSheetAt(0);
+                Iterator<Row> iterator = datatypeSheet.iterator();
+
+                int rowCount = 0;
+
+                // Process each row...
+                while (iterator.hasNext()) {
+
+                    Row currentRow = iterator.next();
+
+                    rowCount++;
+
+                    // Skip first rows
+                    if(rowCount <= skipLineCount) {
+                        continue;
+                    }
+
+                    if(currentRow != null) {
+
+                        //log.info("Row: {}", currentRow);
+
+                        String nativeTerm;
+                        String language;
+                        String aatConceptLabel;
+                        String aatUid;
+
+                        // Get Native Term - It is mandatory
+                        Cell nativeTermCell = currentRow.getCell(0);
+                        if(nativeTermCell == null) {
+                            log.info("NULL native term");
+                            continue;
+                        } else {
+                            nativeTermCell.setCellType(CellType.STRING);
+                            nativeTerm = nativeTermCell.getStringCellValue();
+                        }
+                        
+                        // Get language - it is mandatory
+                        Cell languageCell = currentRow.getCell(1);
+                        if(languageCell == null) {
+                            log.info("NULL language");
+                            continue;
+                        } else {
+                            // This guarantess that you will read the value as string
+                            languageCell.setCellType(CellType.STRING);
+                            language = languageCell.getStringCellValue();
+                        }
+                        
+
+                        // Get AAT Concept label
+                        Cell aatConceptLabelCell = currentRow.getCell(2);
+                        if(aatConceptLabelCell == null) {
+                            aatConceptLabel = "";
+                        } else {
+                            // This guarantess that you will read the value as string
+                            aatConceptLabelCell.setCellType(CellType.STRING);
+                            aatConceptLabel = aatConceptLabelCell.getStringCellValue();
+                        }
+                        
+                        // Get AAT uid
+                        Cell aatUidCell = currentRow.getCell(3);
+                        if(aatUidCell == null) {
+                            aatUid = "";
+                        } else {
+                            // This guarantess that you will read the value as string
+                            aatUidCell.setCellType(CellType.STRING);
+                            aatUid = aatUidCell.getStringCellValue();
+                        }
+
+                        // Create mapping term
+                        TemporalTerm temporalTerm = new TemporalTerm();
+                        // spatialTerm.setId((long) -1);
+                        temporalTerm.setMappingId(mappingId);
+                        temporalTerm.setNativeTerm(nativeTerm);
+                        temporalTerm.setLanguage(language);
+                        temporalTerm.setAatConceptLabel(aatConceptLabel);
+                        temporalTerm.setAatUid(aatUid);
+
+                        terms.add(temporalTerm);
                     }
 
                     // Stop processing

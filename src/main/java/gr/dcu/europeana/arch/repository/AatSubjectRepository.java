@@ -12,4 +12,6 @@ public interface AatSubjectRepository extends JpaRepository<AatSubject, Integer>
     
     List<AatSubject> findAllByLabelContainingIgnoreCase(String name);
     
+    List<AatSubject> findAllByLabelContainingIgnoreCaseAndType(String name, String type);
+    
 }
