@@ -72,7 +72,7 @@ public class TermController {
         existingTerm.setAatConceptLabel(term.getAatConceptLabel());
         existingTerm.setAatUid(term.getAatUid());
         
-        return subjectTermRepository.save(term);
+        return subjectTermRepository.save(existingTerm);
     }
     
     @PostMapping("/mappings/{id}/terms")
@@ -135,7 +135,7 @@ public class TermController {
         existingTerm.setGeonameName(term.getGeonameName());
         existingTerm.setGeonameId(term.getGeonameId());
         
-        return spatialTermRepository.save(term);
+        return spatialTermRepository.save(existingTerm);
     }
     
     @PostMapping("/mappings/{id}/spatial_terms")
@@ -190,7 +190,7 @@ public class TermController {
         existingTerm.setAatConceptLabel(term.getAatConceptLabel());
         existingTerm.setAatUid(term.getAatUid());
         
-        return temporalTermRepository.save(term);
+        return temporalTermRepository.save(existingTerm);
     }
     
     @PostMapping("/mappings/{id}/temporal_terms")

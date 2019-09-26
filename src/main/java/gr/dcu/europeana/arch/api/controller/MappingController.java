@@ -104,7 +104,7 @@ public class MappingController {
         existingMapping.setProviderName(mapping.getProviderName());
         existingMapping.setVocabularyName(mapping.getVocabularyName());
         
-        return mappingRepository.save(mapping);
+        return mappingRepository.save(existingMapping);
     }
     
     @DeleteMapping("/mappings/{id}")
