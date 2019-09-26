@@ -48,10 +48,10 @@ public class ExcelService {
      * @param limitCount
      * @return 
      */
-    public List<SubjectTerm> loadMappingTermsFromExcel(String filename, long mappingId, 
+    public List<SubjectTerm> loadSubjectTermsFromExcel(String filename, long mappingId, 
             int skipLineCount, int limitCount) {
 
-        List<SubjectTerm> mappings = new LinkedList<>();
+        List<SubjectTerm> terms = new LinkedList<>();
         
         try {
             
@@ -84,19 +84,34 @@ public class ExcelService {
                         //log.info("Row: {}", currentRow);
 
                         String nativeTerm;
+                        String language;
                         String aatConceptLabel;
                         String aatUid;
 
                         // Get Native Term - It is mandatory
                         Cell nativeTermCell = currentRow.getCell(0);
                         if(nativeTermCell == null) {
-                            log.info("NULL");
+                            log.info("NULL native term");
                             continue;
-                        } 
-                        nativeTerm = nativeTermCell.getStringCellValue();
+                        } else {
+                            nativeTermCell.setCellType(CellType.STRING);
+                            nativeTerm = nativeTermCell.getStringCellValue();
+                        }
+                        
+                        // Get language - it is mandatory
+                        Cell languageCell = currentRow.getCell(1);
+                        if(languageCell == null) {
+                            log.info("NULL language");
+                            continue;
+                        } else {
+                            // This guarantess that you will read the value as string
+                            languageCell.setCellType(CellType.STRING);
+                            language = languageCell.getStringCellValue();
+                        }
+                        
 
                         // Get AAT Concept label
-                        Cell aatConceptLabelCell = currentRow.getCell(1);
+                        Cell aatConceptLabelCell = currentRow.getCell(2);
                         if(aatConceptLabelCell == null) {
                             aatConceptLabel = "";
                         } else {
@@ -106,7 +121,7 @@ public class ExcelService {
                         }
                         
                         // Get AAT uid
-                        Cell aatUidCell = currentRow.getCell(2);
+                        Cell aatUidCell = currentRow.getCell(3);
                         if(aatUidCell == null) {
                             aatUid = "";
                         } else {
@@ -115,24 +130,25 @@ public class ExcelService {
                             aatUid = aatUidCell.getStringCellValue();
                              
                             /*
-                            if (aatUidCell.getCellTypeEnum() == CellType.STRING) {
-                                aatUid = aatUidCell.getStringCellValue();
-                            } else if(aatUidCell.getCellTypeEnum() == CellType.NUMERIC) {
-                                aatUid = String.valueOf(aatUidCell.getNumericCellValue());
+                            if (geonameIdCell.getCellTypeEnum() == CellType.STRING) {
+                                geonameId = geonameIdCell.getStringCellValue();
+                            } else if(geonameIdCell.getCellTypeEnum() == CellType.NUMERIC) {
+                                geonameId = String.valueOf(geonameIdCell.getNumericCellValue());
                             } else {
-                                aatUid = "Unknown Cell Type";
+                                geonameId = "Unknown Cell Type";
                             }*/
                         }
 
                         // Create mapping term
-                        SubjectTerm mappingTerm = new SubjectTerm();
-                        // mappingTerm.setId((long) -1);
-                        mappingTerm.setMappingId(mappingId);
-                        mappingTerm.setNativeTerm(nativeTerm);
-                        mappingTerm.setAatConceptLabel(aatConceptLabel);
-                        mappingTerm.setAatUid(aatUid);
+                        SubjectTerm subjectTerm = new SubjectTerm();
+                        // spatialTerm.setId((long) -1);
+                        subjectTerm.setMappingId(mappingId);
+                        subjectTerm.setNativeTerm(nativeTerm);
+                        subjectTerm.setLanguage(language);
+                        subjectTerm.setAatConceptLabel(aatConceptLabel);
+                        subjectTerm.setAatUid(aatUid);
 
-                        mappings.add(mappingTerm);
+                        terms.add(subjectTerm);
                     }
 
                     // Stop processing
@@ -150,7 +166,128 @@ public class ExcelService {
                 throw new MyFileNotFoundException("File not found " + filename);
         }
         
-        return mappings;
+        return terms;
+        
+    }
+    
+    /**
+     * 
+     * @param filename
+     * @param mappingId
+     * @param skipLineCount
+     * @param limitCount
+     * @return 
+     */
+    public List<SpatialTerm> loadSpatialTermsFromExcel(String filename, long mappingId, 
+            int skipLineCount, int limitCount) {
+
+        List<SpatialTerm> terms = new LinkedList<>();
+        
+        try {
+            
+            File excelFile = new File(filename);
+            if(excelFile.exists() && excelFile.isFile()) {
+                log.info("URI: {}", excelFile.getAbsolutePath());
+                
+                // Open and process excel 
+                FileInputStream excelFileInputStream = new FileInputStream(excelFile);
+                Workbook workbook = new XSSFWorkbook(excelFileInputStream);
+                Sheet datatypeSheet = workbook.getSheetAt(0);
+                Iterator<Row> iterator = datatypeSheet.iterator();
+
+                int rowCount = 0;
+
+                // Process each row...
+                while (iterator.hasNext()) {
+
+                    Row currentRow = iterator.next();
+
+                    rowCount++;
+
+                    // Skip first rows
+                    if(rowCount <= skipLineCount) {
+                        continue;
+                    }
+
+                    if(currentRow != null) {
+
+                        //log.info("Row: {}", currentRow);
+
+                        String nativeTerm;
+                        String language;
+                        String geonameName;
+                        String geonameId;
+
+                        // Get Native Term - It is mandatory
+                        Cell nativeTermCell = currentRow.getCell(0);
+                        if(nativeTermCell == null) {
+                            log.info("NULL native term");
+                            continue;
+                        } else {
+                            nativeTermCell.setCellType(CellType.STRING);
+                            nativeTerm = nativeTermCell.getStringCellValue();
+                        }
+                        
+                        // Get language - it is mandatory
+                        Cell languageCell = currentRow.getCell(1);
+                        if(languageCell == null) {
+                            log.info("NULL language");
+                            continue;
+                        } else {
+                            // This guarantess that you will read the value as string
+                            languageCell.setCellType(CellType.STRING);
+                            language = languageCell.getStringCellValue();
+                        }
+                        
+
+                        // Get AAT Concept label
+                        Cell geonameNameCell = currentRow.getCell(2);
+                        if(geonameNameCell == null) {
+                            geonameName = "";
+                        } else {
+                            // This guarantess that you will read the value as string
+                            geonameNameCell.setCellType(CellType.STRING);
+                            geonameName = geonameNameCell.getStringCellValue();
+                        }
+                        
+                        // Get AAT uid
+                        Cell geonameIdCell = currentRow.getCell(3);
+                        if(geonameIdCell == null) {
+                            geonameId = "";
+                        } else {
+                            // This guarantess that you will read the value as string
+                            geonameIdCell.setCellType(CellType.STRING);
+                            geonameId = geonameIdCell.getStringCellValue();
+                        }
+
+                        // Create mapping term
+                        SpatialTerm spatialTerm = new SpatialTerm();
+                        // spatialTerm.setId((long) -1);
+                        spatialTerm.setMappingId(mappingId);
+                        spatialTerm.setNativeTerm(nativeTerm);
+                        spatialTerm.setLanguage(language);
+                        spatialTerm.setGeonameName(geonameName);
+                        spatialTerm.setGeonameId(geonameId);
+
+                        terms.add(spatialTerm);
+                    }
+
+                    // Stop processing
+                    if(rowCount == skipLineCount + limitCount) {
+                        break;
+                    }
+                }
+            } else {
+                log.error("File not found " + filename);
+                throw new MyFileNotFoundException("File not found " + filename);
+            }
+           
+        } catch(IOException ex) {
+            log.error("File not found " + filename);
+                throw new MyFileNotFoundException("File not found " + filename);
+        }
+        
+        return terms;
         
     }
     

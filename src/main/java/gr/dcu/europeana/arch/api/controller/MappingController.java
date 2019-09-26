@@ -6,7 +6,6 @@ import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
 import gr.dcu.europeana.arch.model.SpatialTerm;
 import gr.dcu.europeana.arch.model.Mapping;
 import gr.dcu.europeana.arch.repository.SpatialTermRepository;
-import gr.dcu.europeana.arch.repository.SubjectMappingRepository;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.MappingService;
 import java.io.File;
@@ -32,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import gr.dcu.europeana.arch.repository.SubjectTermRepository;
 import gr.dcu.europeana.arch.repository.TemporalTermRepository;
+import gr.dcu.europeana.arch.repository.MappingRepository;
 
 /**
  *
@@ -49,7 +49,7 @@ public class MappingController {
     MappingService mappingService;
     
     @Autowired
-    SubjectMappingRepository subjectMappingRepository;
+    MappingRepository subjectMappingRepository;
     
     @Autowired
     SubjectTermRepository subjectTermRepository;
@@ -154,7 +154,16 @@ public class MappingController {
         
         int userId = authService.authorize(requestContext);
         
-        return mappingService.uploadTerms(id, file, userId);
+        return mappingService.uploadSubjectTerms(id, file, userId);
+    }
+    
+    @PostMapping("/mappings/{id}/upload_spatial")
+    public List<SpatialTerm> uploadSpatialTerms(HttpServletRequest requestContext, @PathVariable Long id, 
+            @RequestParam("file") MultipartFile file) throws IOException {
+        
+        int userId = authService.authorize(requestContext);
+        
+        return mappingService.uploadSpatialTerms(id, file, userId);
     }
     
     /**

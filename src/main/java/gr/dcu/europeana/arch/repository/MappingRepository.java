@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
  * @author Vangelis Nomikos
  */
 @Repository
-public interface SubjectMappingRepository extends JpaRepository<Mapping, Long>{
+public interface MappingRepository extends JpaRepository<Mapping, Long>{
  
     public List<Mapping> findAllByCreatedBy(int createdBy);
     
