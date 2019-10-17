@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
@@ -21,6 +22,7 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import lombok.extern.slf4j.Slf4j;
@@ -337,6 +339,38 @@ public class XMLUtils {
 	}
         
         /**
+         * e.g. "//dc:subject"
+         * e.g. "//dc:subject/@rdf:resource"
+         * @param document
+         * @param xpathExpression
+         * @return
+         * @throws XPathExpressionException 
+         */
+        public static List<String> getAttributeValues(Document document, String xpathExpression) throws XPathExpressionException {
+            
+            XPath xpath = XPathFactory.newInstance().newXPath();
+            xpath.setNamespaceContext(new MoReNamespaceContext());
+
+            List<String> values = new ArrayList<>();
+            try {
+                // Create XPathExpression object
+                XPathExpression expr = xpath.compile(xpathExpression);
+
+                // Evaluate expression result on XML document
+                NodeList nodes = (NodeList) expr.evaluate(document, XPathConstants.NODESET);
+
+                for (int i = 0; i < nodes.getLength(); i++) {
+                    values.add(nodes.item(i).getNodeValue());
+                }
+
+            } catch (XPathExpressionException ex) {
+                log.error("",ex);
+                throw ex;
+            }
+            return values;
+        }
+        
+        /**
          * 
          * @param xPathQuery
          * @param node
@@ -574,9 +608,5 @@ public class XMLUtils {
             return target;
         }
         
-        
-        
-        
-
 }
 

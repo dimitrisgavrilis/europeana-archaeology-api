@@ -39,7 +39,6 @@ public class FileStorageService {
         this.fileStorageProperties = fileStorageProperties;
     }
 
-    
     public Resource loadFileAsResource(Path filePath) {
         
         try {
@@ -60,7 +59,6 @@ public class FileStorageService {
         }
     }
    
-    
     public Path upload(Path destinationFilePath, MultipartFile file) throws IOException {
        
         try {

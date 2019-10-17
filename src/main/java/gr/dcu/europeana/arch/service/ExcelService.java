@@ -5,6 +5,8 @@ import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
 import gr.dcu.europeana.arch.model.SpatialTerm;
 import gr.dcu.europeana.arch.model.TemporalTerm;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
+import gr.dcu.europeana.arch.service.edm.EdmFileTermExtractionResult;
+import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -140,7 +142,7 @@ public class ExcelService {
                             }*/
                         }
 
-                        // Create mapping term
+                        // Create mapping value
                         SubjectTerm subjectTerm = new SubjectTerm();
                         // spatialTerm.setId((long) -1);
                         subjectTerm.setMappingId(mappingId);
@@ -261,7 +263,7 @@ public class ExcelService {
                             geonameId = geonameIdCell.getStringCellValue();
                         }
 
-                        // Create mapping term
+                        // Create mapping value
                         SpatialTerm spatialTerm = new SpatialTerm();
                         // spatialTerm.setId((long) -1);
                         spatialTerm.setMappingId(mappingId);
@@ -374,7 +376,7 @@ public class ExcelService {
                             aatUid = aatUidCell.getStringCellValue();
                         }
 
-                        // Create mapping term
+                        // Create mapping value
                         TemporalTerm temporalTerm = new TemporalTerm();
                         // spatialTerm.setId((long) -1);
                         temporalTerm.setMappingId(mappingId);
@@ -556,6 +558,90 @@ public class ExcelService {
             workbook.close();
             
             // log.info("Export saved at {}", filePath);
+            
+        } catch (IOException ex) {
+            throw ex;
+        }
+        
+        return filePath.toString();
+    }
+    
+    /**
+     * 
+     * @param filePath
+     * @param extractionResult
+     * @return
+     * @throws IOException 
+     */
+    public static String exportTerms(Path filePath, List<EdmFileTermExtractionResult> extractionResult) throws IOException {
+        
+        try {
+           
+            log.info("Export terms to excel file started. #Files processed: {}", extractionResult.size());
+            
+            // Create a Workbook
+            Workbook workbook = new XSSFWorkbook();
+
+            // Create a Sheet
+            Sheet sheet = workbook.createSheet("Extracted Terms");
+
+            // Create a Font for styling header cells
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            // headerFont.setFontHeightInPoints((short) 14);
+            // headerFont.setColor(IndexedColors.RED.getIndex());
+
+            // Create a CellStyle with the font
+            CellStyle headerCellStyle = workbook.createCellStyle();
+            headerCellStyle.setFont(headerFont);
+
+            // Create a Row
+            Row headerRow = sheet.createRow(0);
+
+            // 4 columns 
+            String[] columns = {"filename", "element", "value", "xml_lang",  "rdf_resource"};
+            
+            // Create cells
+            for(int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerCellStyle);
+            }
+
+            int rowNum = 1;
+            for(EdmFileTermExtractionResult edmFileExtractionResult : extractionResult) {
+
+                for(ElementExtractionData elementExtractionData : edmFileExtractionResult.getExtractionData()) {
+                    Row row = sheet.createRow(rowNum++);
+
+                    row.createCell(0)
+                        .setCellValue(edmFileExtractionResult.getFilename());
+                    row.createCell(1)
+                        .setCellValue(elementExtractionData.getElementName());
+                    row.createCell(2)
+                        .setCellValue(elementExtractionData.getElementValue());
+                    row.createCell(3)
+                        .setCellValue(elementExtractionData.getXmlLangAttrValue());
+                    row.createCell(4)
+                        .setCellValue(elementExtractionData.getRdfResourceAttrValue());
+                }
+                
+            }
+            
+            // Resize all columns to fit the content size
+            for(int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Write the output to an excelFile
+            FileOutputStream fileOut = new FileOutputStream(filePath.toString());
+            workbook.write(fileOut);
+            fileOut.close();
+
+            // Closing the workbook
+            workbook.close();
+            
+            log.info("Export saved at {}. #Rows: {}", filePath, rowNum);
             
         } catch (IOException ex) {
             throw ex;
