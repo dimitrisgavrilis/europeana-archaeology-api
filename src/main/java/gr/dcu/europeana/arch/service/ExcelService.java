@@ -12,9 +12,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
@@ -413,11 +416,11 @@ public class ExcelService {
      * @param terms
      * @throws IOException 
      */
-    public String exportSubjectTermsToExcel(Path filePath, List<SubjectTerm> terms) throws IOException {
+    public static String exportSubjectTermsToExcel(Path filePath, List<SubjectTerm> terms) throws IOException {
         
         try {
            
-            log.info("Export to excel file...");
+            log.info("Export thematic terms to excel file...");
             
             // Create a Workbook
             Workbook workbook = new XSSFWorkbook();
@@ -448,7 +451,7 @@ public class ExcelService {
                 cell.setCellStyle(headerCellStyle);
             }
 
-            // Create Other rows and cells with employees data
+            // Create Other rows and cells with employees extractionData
             int rowNum = 1;
             for(SubjectTerm term: terms) {
                 Row row = sheet.createRow(rowNum++);
@@ -493,11 +496,11 @@ public class ExcelService {
         return filePath.toString();
     }
     
-    public String exportSpatialTermsToExcel(Path filePath, List<SpatialTerm> terms) throws IOException {
+    public static String exportSpatialTermsToExcel(Path filePath, List<SpatialTerm> terms) throws IOException {
         
         try {
            
-            log.info("Export to excel file...");
+            log.info("Export spatial terms to excel file...");
             
             // Create a Workbook
             Workbook workbook = new XSSFWorkbook();
@@ -528,7 +531,7 @@ public class ExcelService {
                 cell.setCellStyle(headerCellStyle);
             }
 
-            // Create Other rows and cells with employees data
+            // Create Other rows and cells with employees extractionData
             int rowNum = 1;
             for(SpatialTerm term: terms) {
                 Row row = sheet.createRow(rowNum++);
@@ -566,6 +569,86 @@ public class ExcelService {
         return filePath.toString();
     }
     
+    public static String exportTemporalTermsToExcel(Path filePath, List<TemporalTerm> terms) throws IOException {
+        
+        try {
+           
+            log.info("Export temporal terms to excel file...");
+            
+            // Create a Workbook
+            Workbook workbook = new XSSFWorkbook();
+
+            // Create a Sheet
+            Sheet sheet = workbook.createSheet("Mappings");
+
+            // Create a Font for styling header cells
+            Font headerFont = workbook.createFont();
+            headerFont.setBold(true);
+            // headerFont.setFontHeightInPoints((short) 14);
+            // headerFont.setColor(IndexedColors.RED.getIndex());
+
+            // Create a CellStyle with the font
+            CellStyle headerCellStyle = workbook.createCellStyle();
+            headerCellStyle.setFont(headerFont);
+
+            // Create a Row
+            Row headerRow = sheet.createRow(0);
+
+            // 4 columns 
+            String[] columns = {"Native Term", "Language", "Aat concept label", "Aat uid"};
+            
+            // Create cells
+            for(int i = 0; i < columns.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(columns[i]);
+                cell.setCellStyle(headerCellStyle);
+            }
+
+            // Create Other rows and cells with employees extractionData
+            int rowNum = 1;
+            for(TemporalTerm term: terms) {
+                Row row = sheet.createRow(rowNum++);
+
+                row.createCell(0)
+                        .setCellValue(term.getNativeTerm());
+                row.createCell(1)
+                        .setCellValue(term.getLanguage());
+                row.createCell(2)
+                        .setCellValue(term.getAatConceptLabel());
+                
+                row.createCell(3)
+                        .setCellValue(term.getAatUid());
+
+//                Cell dateOfBirthCell = row.createCell(2);
+//                dateOfBirthCell.setCellValue(employee.getDateOfBirth());
+//                dateOfBirthCell.setCellStyle(dateCellStyle);
+//
+//                row.createCell(3)
+//                        .setCellValue(employee.getSalary());
+            }
+
+            // Resize all columns to fit the content size
+            for(int i = 0; i < columns.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // Write the output to an excelFile
+            FileOutputStream fileOut = new FileOutputStream(filePath.toString());
+            workbook.write(fileOut);
+            fileOut.close();
+
+            // Closing the workbook
+            workbook.close();
+            
+            // log.info("Export saved at {}", filePath);
+            
+        } catch (IOException ex) {
+            throw ex;
+        }
+        
+        return filePath.toString();
+    }
+    
     /**
      * 
      * @param filePath
@@ -573,11 +656,11 @@ public class ExcelService {
      * @return
      * @throws IOException 
      */
-    public static String exportTerms(Path filePath, List<EdmFileTermExtractionResult> extractionResult) throws IOException {
+    public static String exportExtractedAllTerms(Path filePath, List<EdmFileTermExtractionResult> extractionResult) throws IOException {
         
         try {
            
-            log.info("Export terms to excel file started. #Files processed: {}", extractionResult.size());
+            log.info("Export all terms to excel file started. #Files processed: {}", extractionResult.size());
             
             // Create a Workbook
             Workbook workbook = new XSSFWorkbook();
@@ -649,6 +732,68 @@ public class ExcelService {
         
         return filePath.toString();
     }
+    
+    public static String exportExtractedThematicTerms(Path filePath, Set<ElementExtractionData> extractionResult) throws IOException {
+        
+        List<SubjectTerm> terms = new LinkedList<>();
+        for(ElementExtractionData extractionData : extractionResult) {
+            SubjectTerm term = new SubjectTerm();
+            term.setNativeTerm(extractionData.getElementValue());
+            term.setLanguage(extractionData.getXmlLangAttrValue());
+            term.setAatConceptLabel("");
+            term.setAatUid("");
+            terms.add(term);
+        }
+        
+        // Sort terms
+        terms.sort(Comparator.comparing(SubjectTerm::getNativeTerm));
+
+        exportSubjectTermsToExcel(filePath, terms);
+        
+        return filePath.toString();
+    }
+    
+    public static String exportExtractedSpatialTerms(Path filePath, Set<ElementExtractionData> extractionResult) throws IOException {
+        
+        List<SpatialTerm> terms = new LinkedList<>();
+        for(ElementExtractionData extractionData : extractionResult) {
+            SpatialTerm term = new SpatialTerm();
+            term.setNativeTerm(extractionData.getElementValue());
+            term.setLanguage(extractionData.getXmlLangAttrValue());
+            term.setGeonameName("");
+            term.setGeonameId("");
+            terms.add(term);
+        }
+        
+        // Sort terms
+        terms.sort(Comparator.comparing(SpatialTerm::getNativeTerm));
+
+        exportSpatialTermsToExcel(filePath, terms);
+        
+        return filePath.toString();
+    }
+    
+    public static String exportExtractedTemporalTerms(Path filePath, Set<ElementExtractionData> extractionResult) throws IOException {
+        
+        List<TemporalTerm> terms = new LinkedList<>();
+        for(ElementExtractionData extractionData : extractionResult) {
+            TemporalTerm term = new TemporalTerm();
+            term.setNativeTerm(extractionData.getElementValue());
+            term.setLanguage(extractionData.getXmlLangAttrValue());
+            term.setAatConceptLabel("");
+            term.setAatUid("");
+            terms.add(term);
+        }
+        
+        // Sort terms
+        terms.sort(Comparator.comparing(TemporalTerm::getNativeTerm));
+
+        exportTemporalTermsToExcel(filePath, terms);
+        
+        return filePath.toString();
+    }
+    
+    
     
 }
 

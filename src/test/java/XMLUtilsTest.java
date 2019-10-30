@@ -42,7 +42,7 @@ public class XMLUtilsTest {
                 NodeList nodeList = XMLUtils.getNodeList(doc, "//dc:subject");
                 log.info("File: {} #Subjects: {}", f.getName(), nodeList.getLength());
                 
-                List<ElementExtractionData> extractDataList = EdmExtractUtils.extractNodeData(nodeList);
+                List<ElementExtractionData> extractDataList = EdmExtractUtils.extractNodeData(nodeList, true);
                 for(ElementExtractionData extractData : extractDataList) {
                     log.info("{}",extractData);
                 }

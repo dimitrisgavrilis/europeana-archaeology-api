@@ -1,10 +1,13 @@
 package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.api.resource.EnrichDetails;
+import gr.dcu.europeana.arch.model.MappingUploadRequest;
 import gr.dcu.europeana.arch.service.AuthService;
+import gr.dcu.europeana.arch.service.EDMService;
 import gr.dcu.europeana.arch.service.MappingService;
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
@@ -30,7 +33,47 @@ public class EnrichEdmController {
     AuthService authService;
     
     @Autowired
+    EDMService edmService;
+    
+    @Autowired
     MappingService mappingService;
+    
+    @GetMapping("/edm_packages")
+    public List<MappingUploadRequest> getEdmPackages(HttpServletRequest requestContext) {
+        
+        int userId = authService.authorize(requestContext);
+         
+        return edmService.getEdmPackages(userId);
+    }
+    
+    @PostMapping("/edm_packages/{id}/enrich")
+    public EnrichDetails enrichEdmPackage(HttpServletRequest requestContext, @PathVariable Long id, 
+            @RequestParam("file") MultipartFile file) throws IOException {
+        
+        int userId = authService.authorize(requestContext);
+        
+        return mappingService.enrich(id, file, userId);
+
+    }
+    
+    @GetMapping("/edm_packages/{id}/enrich/{requestId}/download")
+    public ResponseEntity<?> downloadEnrichedEdmUpload(HttpServletRequest requestContext, @PathVariable Long id, 
+            @PathVariable Long requestId) throws IOException {
+        
+        File file = mappingService.loadEnrichedArchive(requestId);
+        
+        String filename = file.getName();
+        // String filepath = file.getAbsolutePath();
+        
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "application/force-download")
+                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\"" + filename + "\"")
+                .body(new FileSystemResource(file));
+    }
+    
+    
+    
+    
     
     /**
      * Upload an EDM package and enrich the EDM files based on subject mapping.
@@ -48,6 +91,7 @@ public class EnrichEdmController {
         return mappingService.enrich(id, file, userId);
 
     }
+    
     
     /**
      * Download enriched archive

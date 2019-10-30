@@ -12,3 +12,8 @@ sudo mvn package
 
 export SHARE3D_DB_USER=root
 export SHARE3D_DB_PASSWORD=rf4phantom
+
+
+Download EDM archives from MoRe
+sudo tar -czf 5163_eEDM.tar.gz eEDM
+scp vnomikos@more.locloud.eu:/data/more_temp/carare_a/5162/5162_eEDM.tar.gz .

@@ -180,10 +180,10 @@ public class MappingService {
             
             log.info("Export saved at {}", filePath);
 
-            // Load exportTerms file
+            // Load exportExtractedAllTerms file
             resource = fileStorageService.loadFileAsResource(filePath);
 
-            // Create exportTerms enrichRequest
+            // Create exportExtractedAllTerms enrichRequest
             MappingExportRequest exportRequest = new MappingExportRequest();
             exportRequest.setMappingId(mappingId);
             exportRequest.setFilepath(filePath.toString());

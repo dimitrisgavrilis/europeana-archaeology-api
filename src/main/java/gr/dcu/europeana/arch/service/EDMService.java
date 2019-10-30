@@ -1,7 +1,9 @@
 package gr.dcu.europeana.arch.service;
 
 import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
+import gr.dcu.europeana.arch.model.MappingUploadRequest;
 import gr.dcu.europeana.arch.model.SubjectTerm;
+import gr.dcu.europeana.arch.repository.UploadRequestRepository;
 import gr.dcu.europeana.arch.service.edm.EdmFileTermExtractionResult;
 import gr.dcu.europeana.arch.service.edm.EdmExtractUtils;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
@@ -24,6 +26,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -36,6 +39,13 @@ import org.xml.sax.SAXException;
 @Slf4j
 @Service
 public class EDMService {
+    
+    @Autowired
+    UploadRequestRepository uploadRequestRepository;
+    
+    public List<MappingUploadRequest> getEdmPackages(Integer userId) {
+        return uploadRequestRepository.findAllByCreatedBy(userId);
+    }
 
 //    public EDMService() {
 //    }
@@ -88,10 +98,11 @@ public class EDMService {
      * @param thematic
      * @param temporal
      * @param spatial
+     * @param skipEmptyValues
      * @return 
      */
     public static List<EdmFileTermExtractionResult> extractTerms(
-            Path edmExtractDirPath, boolean thematic, boolean temporal, boolean spatial) throws IOException {
+            Path edmExtractDirPath, boolean thematic, boolean temporal, boolean spatial, boolean skipEmptyValues) throws IOException {
         
         List<EdmFileTermExtractionResult> extractionResult = new LinkedList<>();
         
@@ -125,29 +136,29 @@ public class EDMService {
                     
                     // Extract thematic terms
                     if(thematic) {
-                        NodeList dcSubjectNodes = XMLUtils.getNodeList(doc, "//dc:subject");
-                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcSubjectNodes));
+                        NodeList dcSubjectNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_SUBJECT);
+                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcSubjectNodes, skipEmptyValues));
 
-                        NodeList dcTypeNodes = XMLUtils.getNodeList(doc, "//dc:type");
-                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcTypeNodes));
+                        NodeList dcTypeNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_TYPE);
+                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcTypeNodes, skipEmptyValues));
                     }
                     
                     // Extract temporal terms
                     if(temporal) {
-                        NodeList dcDateNodes = XMLUtils.getNodeList(doc, "//dc:date");
-                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcDateNodes));
+                        NodeList dcDateNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_DATE);
+                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcDateNodes, skipEmptyValues));
 
-                        NodeList dcTermsTemporalNodes = XMLUtils.getNodeList(doc, "//dcterms:temporal");
-                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcTermsTemporalNodes));
+                        NodeList dcTermsTemporalNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_TERMS_TEMPORAL);
+                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcTermsTemporalNodes, skipEmptyValues));
 
-                        NodeList dcTermsCreatedNodes = XMLUtils.getNodeList(doc, "//dcterms:created");
-                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcTermsCreatedNodes));
+                        NodeList dcTermsCreatedNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_TERMS_CREATED);
+                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcTermsCreatedNodes, skipEmptyValues));
                     }
                     
                     // Extract spatial terms
                     if(spatial) {
-                        NodeList dcTermsSpatialNodes = XMLUtils.getNodeList(doc, "//dcterms:spatial");
-                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcTermsSpatialNodes));
+                        NodeList dcTermsSpatialNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_TERMS_SPATIAL);
+                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcTermsSpatialNodes, skipEmptyValues));
                     }
                      
                     extractionResult.add(new EdmFileTermExtractionResult(filename, extractedData));
