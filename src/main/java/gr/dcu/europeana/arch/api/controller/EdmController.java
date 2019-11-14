@@ -2,6 +2,8 @@ package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.api.resource.ExtractTermResult;
 import gr.dcu.europeana.arch.model.EdmArchive;
+import gr.dcu.europeana.arch.model.EdmArchiveTerms;
+import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.model.mappers.SpatialTermMapper;
 import gr.dcu.europeana.arch.model.mappers.SubjectTermMapper;
 import gr.dcu.europeana.arch.model.mappers.TemporalTermMapper;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -140,14 +143,23 @@ public class EdmController {
     }
     
     
+    @PostMapping("/edm_archives/{id}/terms")
+    public EdmArchiveTerms saveTerms(HttpServletRequest requestContext, 
+            @PathVariable Long id, @RequestBody ExtractTermResult extractTermResult) {
+        
+        int userId = authService.authorize(requestContext);
+        
+        return edmService.saveTerms(id, extractTermResult, userId);
+        
+    }
+    
     @PostMapping("/edm_archives/{id}/enrich")
     public void enrichEdmArchive(
             HttpServletRequest requestContext, @PathVariable Long id) {
         
         int userId = authService.authorize(requestContext);
         
-        
-        
+        log.info("Unimplemented ");
     }
     
     

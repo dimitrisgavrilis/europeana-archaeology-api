@@ -1,9 +1,13 @@
 package gr.dcu.europeana.arch.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.dcu.europeana.arch.api.resource.ExtractTermResult;
 import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
 import gr.dcu.europeana.arch.exception.NotFoundException;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
 import gr.dcu.europeana.arch.model.EdmArchive;
+import gr.dcu.europeana.arch.model.EdmArchiveTerms;
 import gr.dcu.europeana.arch.model.Mapping;
 import gr.dcu.europeana.arch.model.MappingUploadRequest;
 import gr.dcu.europeana.arch.model.SubjectTerm;
@@ -38,6 +42,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import gr.dcu.europeana.arch.repository.EdmArchiveRepository;
+import gr.dcu.europeana.arch.repository.EdmArchiveTermsRepository;
 
 /**
  *
@@ -52,6 +57,9 @@ public class EDMService {
     
     @Autowired
     EdmArchiveRepository edmArchiveRepository;
+    
+    @Autowired
+    EdmArchiveTermsRepository edmArchiveTermsRepository;
     
     @Autowired
     FileStorageService fileStorageService;
@@ -223,10 +231,10 @@ public class EDMService {
         
     }
     
-    public File loadEdmArchive(long edmArchiveId) throws IOException {
+    public File loadEdmArchive(long archiveId) throws IOException {
         
-        EdmArchive edmArchive = edmArchiveRepository.findById(edmArchiveId)
-                .orElseThrow(() -> new ResourceNotFoundException(edmArchiveId));
+        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+                .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
         String filename = edmArchive.getFilename();
         String filepath = edmArchive.getFilepath();
@@ -252,6 +260,34 @@ public class EDMService {
         }
         
         return extractionResult;
+    }
+    
+    public EdmArchiveTerms saveTerms(Long archiveId, ExtractTermResult extractTermResult, Integer userId) {
+        
+        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+                .orElseThrow(() -> new ResourceNotFoundException(archiveId));
+        
+        String subjectTermsInJson = null;
+        String spatialTermsInJson = null;
+        String temporalTermsInJson = null;
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            subjectTermsInJson = mapper.writeValueAsString(extractTermResult.getSubjectTerms());
+            spatialTermsInJson = mapper.writeValueAsString(extractTermResult.getSpatialTerms());
+            temporalTermsInJson = mapper.writeValueAsString(extractTermResult.getTemporalTerms());
+        } catch (JsonProcessingException ex) {
+            log.error("");
+        }
+                
+        EdmArchiveTerms edmArchiveTerms = new EdmArchiveTerms();
+        edmArchiveTerms.setArchiveId(archiveId);
+        edmArchiveTerms.setSubjectTerms(subjectTermsInJson);
+        edmArchiveTerms.setSpatialTerms(spatialTermsInJson);
+        edmArchiveTerms.setTemporalTerms(temporalTermsInJson);
+        edmArchiveTerms.setCreatedBy(userId);
+        edmArchiveTerms = edmArchiveTermsRepository.save(edmArchiveTerms);
+        
+        return edmArchiveTerms;
     }
     
     
