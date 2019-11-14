@@ -223,6 +223,19 @@ public class EDMService {
         
     }
     
+    public File loadEdmArchive(long edmArchiveId) throws IOException {
+        
+        EdmArchive edmArchive = edmArchiveRepository.findById(edmArchiveId)
+                .orElseThrow(() -> new ResourceNotFoundException(edmArchiveId));
+        
+        String filename = edmArchive.getFilename();
+        String filepath = edmArchive.getFilepath();
+        
+        File file = fileStorageService.loadFile(filepath);
+        
+        return file;
+    }
+    
     public List<EdmFileTermExtractionResult> extractTermsFromEdmArcive(Long edmArchiveId) {
         
         EdmArchive edmArchive = edmArchiveRepository.findById(edmArchiveId).orElseThrow(() 

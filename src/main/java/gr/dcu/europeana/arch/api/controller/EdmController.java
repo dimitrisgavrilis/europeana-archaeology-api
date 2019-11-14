@@ -11,12 +11,15 @@ import gr.dcu.europeana.arch.service.edm.EdmExtractUtils;
 import gr.dcu.europeana.arch.service.edm.EdmFileTermExtractionResult;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionDataCategories;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -79,6 +82,21 @@ public class EdmController {
         
     }
     
+    @GetMapping("/edm_archives/{id}/download")
+    public ResponseEntity<?> downloadEdmArchive(HttpServletRequest requestContext, 
+            @PathVariable Long id) throws IOException {
+        
+        File file = edmService.loadEdmArchive(id);
+        
+        String filename = file.getName();
+        // String filepath = file.getAbsolutePath();
+        
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_TYPE, "application/force-download")
+                .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\"" + filename + "\"")
+                .body(new FileSystemResource(file));
+    }
+    
     @PostMapping("/edm_archives/{id}/extract_terms")
     public ExtractTermResult extractTermsFromEdmArchive(
             HttpServletRequest requestContext, @PathVariable Long id) {
@@ -120,5 +138,17 @@ public class EdmController {
         
         // return new ResponseEntity<>("", HttpStatus.OK);
     }
+    
+    
+    @PostMapping("/edm_archives/{id}/enrich")
+    public void enrichEdmArchive(
+            HttpServletRequest requestContext, @PathVariable Long id) {
+        
+        int userId = authService.authorize(requestContext);
+        
+        
+        
+    }
+    
     
 }
