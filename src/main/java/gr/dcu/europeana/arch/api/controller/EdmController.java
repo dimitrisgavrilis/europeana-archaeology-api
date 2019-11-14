@@ -70,13 +70,13 @@ public class EdmController {
     
     
     @PostMapping("/edm_archives/upload")
-    public ResponseEntity<?> uploadEdmArchive(HttpServletRequest requestContext,
+    public EdmArchive uploadEdmArchive(HttpServletRequest requestContext,
             @RequestParam("file") MultipartFile file) throws IOException {
         
         int userId = authService.authorize(requestContext);
         
-        edmService.uploadEdmArchive(file, userId);
-        return new ResponseEntity<>("", HttpStatus.OK);
+        return edmService.uploadEdmArchive(file, userId);
+        
     }
     
     @PostMapping("/edm_archives/{id}/extract_terms")

@@ -70,7 +70,7 @@ public class EDMService {
         return edmUpload;
     }
     
-    public void uploadEdmArchive(MultipartFile file, int userId) throws IOException {
+    public EdmArchive uploadEdmArchive(MultipartFile file, int userId) throws IOException {
         
         // File system hierarchy
         // storage_tmp
@@ -94,13 +94,13 @@ public class EDMService {
         */
         
         // Create an upload request
-        EdmArchive edmUpload = new EdmArchive();
-        edmUpload.setName("test");
-        edmUpload.setItemCount(0);
-        edmUpload.setFilename("");
-        edmUpload.setFilepath("");
-        edmUpload.setCreatedBy(userId);
-        long edmUploadId = edmArchiveRepository.save(edmUpload).getId();
+        EdmArchive edmArchive = new EdmArchive();
+        edmArchive.setName("test");
+        edmArchive.setItemCount(0);
+        edmArchive.setFilename(file.getOriginalFilename());
+        edmArchive.setFilepath("");
+        edmArchive.setCreatedBy(userId);
+        long edmUploadId = edmArchiveRepository.save(edmArchive).getId();
         
         // Upload EDM archive
         log.info("Upload EDM archive. RequestId: {}", edmUploadId);
@@ -109,8 +109,9 @@ public class EDMService {
         log.info("EDM archive uploaded. Path: {}", edmArchiveFilePath);
         
         // Update enrich enrichRequest
-        edmUpload.setFilepath(edmArchiveFilePath.toString());
-        edmUpload = edmArchiveRepository.save(edmUpload);
+        edmArchive.setId(edmUploadId);
+        edmArchive.setFilepath(edmArchiveFilePath.toString());
+        edmArchive = edmArchiveRepository.save(edmArchive);
         
         // Extract EDM archive
         log.info("Extract EDM archive. RequestId: {}", edmUploadId);
@@ -118,6 +119,8 @@ public class EDMService {
         fileStorageService.extractArchive(edmArchiveFilePath, edmExtractDirPath);
         File[] edmFiles = edmExtractDirPath.toFile().listFiles(); 
         log.info("EDM archive extracted. Path: {} #Files: {}", edmExtractDirPath, edmFiles.length);
+        
+        return edmArchive;
         
         /*
         // Enrich archive

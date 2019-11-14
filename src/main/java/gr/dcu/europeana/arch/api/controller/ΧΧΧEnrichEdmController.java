@@ -28,7 +28,7 @@ import org.springframework.web.multipart.MultipartFile;
  */
 @CrossOrigin
 @RestController
-public class EnrichEdmController {
+public class ΧΧΧEnrichEdmController {
     
     @Autowired
     AuthService authService;
