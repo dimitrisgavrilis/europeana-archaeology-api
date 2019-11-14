@@ -95,7 +95,7 @@ public class EDMService {
         
         // Create an upload request
         EdmArchive edmArchive = new EdmArchive();
-        edmArchive.setName("test");
+        edmArchive.setName(file.getOriginalFilename());
         edmArchive.setItemCount(0);
         edmArchive.setFilename(file.getOriginalFilename());
         edmArchive.setFilepath("");
@@ -108,17 +108,18 @@ public class EDMService {
         fileStorageService.upload(edmArchiveFilePath, file);
         log.info("EDM archive uploaded. Path: {}", edmArchiveFilePath);
         
-        // Update enrich enrichRequest
-        edmArchive.setId(edmUploadId);
-        edmArchive.setFilepath(edmArchiveFilePath.toString());
-        edmArchive = edmArchiveRepository.save(edmArchive);
-        
         // Extract EDM archive
         log.info("Extract EDM archive. RequestId: {}", edmUploadId);
         Path edmExtractDirPath = Paths.get(edmArchiveFilePath.getParent().toString(), "EDM");
         fileStorageService.extractArchive(edmArchiveFilePath, edmExtractDirPath);
         File[] edmFiles = edmExtractDirPath.toFile().listFiles(); 
         log.info("EDM archive extracted. Path: {} #Files: {}", edmExtractDirPath, edmFiles.length);
+        
+        // Update upload request
+        edmArchive.setId(edmUploadId);
+        edmArchive.setFilepath(edmArchiveFilePath.toString());
+        edmArchive.setItemCount(edmFiles.length);
+        edmArchive = edmArchiveRepository.save(edmArchive);
         
         return edmArchive;
         
