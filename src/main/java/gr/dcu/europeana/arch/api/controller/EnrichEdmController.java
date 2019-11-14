@@ -1,6 +1,7 @@
 package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.api.resource.EnrichDetails;
+import gr.dcu.europeana.arch.model.EdmArchive;
 import gr.dcu.europeana.arch.model.MappingUploadRequest;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.EDMService;

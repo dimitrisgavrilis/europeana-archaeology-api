@@ -238,6 +238,45 @@ public class FileStorageService {
         return filePath;
      }
     
+    public Path buildUploadEdmArchiveFilePathNew (long packageId, String fileName) throws IOException {
+        
+       Path filePath;
+        
+        try {
+            // Create export directory if does not exist (i.e. <storage_home>/<mapping_id>/uploads)
+            Path storageHomeDir = Paths.get(getFileStorageProperties().getStorageHome()).toAbsolutePath().normalize();
+            Path exportDir = Paths.get(storageHomeDir.toString(), String.valueOf("package_" + packageId));
+            Files.createDirectories(exportDir);
+            
+            // Build filepath
+            filePath = Paths.get(exportDir.toString(), fileName);
+            // log.info("Export file path: {}", archiveFilePath.toString());
+        } catch(IOException ex) {
+            throw ex;
+        }
+        
+        return filePath;
+     }
+    
+    public Path buildEdmArchiveExtractionPath (long packageId) throws IOException {
+        
+       Path edmDirPath;
+        
+        //try {
+            // Create export directory if does not exist (i.e. <storage_home>/<mapping_id>/uploads)
+            Path storageHomeDir = Paths.get(getFileStorageProperties().getStorageHome()).toAbsolutePath().normalize();
+            Path packageHomePath = Paths.get(storageHomeDir.toString(), String.valueOf("package_" + packageId));
+            
+            // Build filepath
+            edmDirPath = Paths.get(packageHomePath.toString(), "EDM");
+            // log.info("Export file path: {}", archiveFilePath.toString());
+//        } catch(IOException ex) {
+//            throw ex;
+//        }
+        
+        return edmDirPath;
+     }
+    
     public File loadFile (String filepath) throws IOException {
         
         File file = new File(filepath);
