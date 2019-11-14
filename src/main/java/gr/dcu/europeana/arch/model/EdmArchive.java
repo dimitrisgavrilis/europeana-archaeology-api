@@ -18,7 +18,7 @@ import org.hibernate.annotations.CreationTimestamp;
  * @author Vangelis Nomikos
  */
 @Entity 
-@Table(name = "edm_upload")
+@Table(name = "edm_archive")
 @Getter
 @Setter
 @ToString
