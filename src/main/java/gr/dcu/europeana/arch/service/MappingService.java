@@ -581,10 +581,12 @@ public class MappingService {
         long existingTermCount = 0;
         long appendTermCount = 0;
         
-        
         Mapping mapping = mappingRepository.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         String mappingType = mapping.getType();
+        
+        log.info("Append archive terms to mapping. Archive: {} Mapping: {} Type: {}", 
+                archiveId, mappingId, mappingType);
         
         EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
@@ -608,18 +610,27 @@ public class MappingService {
                                 new TypeReference<List<SubjectTerm>>(){});
                         
                         mappingSubjectTerms = subjectTermRepository.findByMappingId(mappingId);
+                        
+                        log.info("ArchiveSubjectTerms: {}, MappingSubjectTerms: {}", 
+                                archiveSubjectTerms.size(), mappingSubjectTerms.size());
                         break;
                     case MappingType.MAPPING_TYPE_SPATIAL:
                         archiveSpatialTerms = mapper.readValue(edmArchiveTerms.getSpatialTerms(), 
                                 new TypeReference<List<SpatialTerm>>(){});
                         
                         mappingSpatialTerms = spatialTermRepository.findByMappingId(mappingId);
+                        
+                        log.info("ArchiveSpatialTerms: {}, MappingSpatialTerms: {}", 
+                                archiveSpatialTerms.size(), mappingSpatialTerms.size());
                         break;
                     case MappingType.MAPPING_TYPE_TEMPORAL:
                         archiveTemporalTerms = mapper.readValue(edmArchiveTerms.getTemporalTerms(), 
                                 new TypeReference<List<TemporalTerm>>(){});
                         
                         mappingTemporalTerms = temporalTermRepository.findByMappingId(mappingId);
+                        
+                        log.info("ArchiveTemporalTerms: {}, MappingTemporalTerms: {}", 
+                                archiveTemporalTerms.size(), mappingTemporalTerms.size());
                         break;
                 }
             } catch (IOException ex){

@@ -191,7 +191,7 @@ public class EdmController {
     }
     
     @PostMapping("/edm_archives/{id}/mappings/{mappingId}")
-    public AppendTermsResult createMapping(HttpServletRequest requestContext, 
+    public AppendTermsResult appendToMapping(HttpServletRequest requestContext, 
             @PathVariable Long id, @PathVariable Long mappingId) {
         
         int userId = authService.authorize(requestContext);    
