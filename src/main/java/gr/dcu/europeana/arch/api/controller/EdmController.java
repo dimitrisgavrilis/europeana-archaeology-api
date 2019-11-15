@@ -153,7 +153,7 @@ public class EdmController {
         // return new ResponseEntity<>("", HttpStatus.OK);
     }
     
-    @PostMapping("/edm_archives/{id}/terms")
+    @GetMapping("/edm_archives/{id}/terms")
     public ExtractTermResult loadTermsFromEdmArchive(
             HttpServletRequest requestContext, @PathVariable Long id) {
         
