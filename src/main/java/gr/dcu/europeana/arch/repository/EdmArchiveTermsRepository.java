@@ -14,4 +14,6 @@ public interface EdmArchiveTermsRepository extends JpaRepository<EdmArchiveTerms
     
     EdmArchiveTerms findByArchiveId(Long archiveId);
     
+    Long deleteByArchiveId(Long archiveId);
+    
 }

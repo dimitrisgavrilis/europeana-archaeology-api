@@ -30,6 +30,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -93,7 +94,7 @@ public class EdmController {
         
     }
     
-    @GetMapping("/edm_archives/{id}/download")
+    @PostMapping("/edm_archives/{id}/download")
     public ResponseEntity<?> downloadEdmArchive(HttpServletRequest requestContext, 
             @PathVariable Long id) throws IOException {
         
@@ -144,12 +145,24 @@ public class EdmController {
             log.warn("No temporal terms to extract.");
         }
         
+        edmService.saveTerms(id, extractTermResult, userId);
+        
         return extractTermResult;
         // return edmService.extractTermsFromEdmArcive(id);
         
         // return new ResponseEntity<>("", HttpStatus.OK);
     }
    
+    @DeleteMapping("/edm_archives/{id}")
+    public void deleteArchive(HttpServletRequest requestContext, @PathVariable Long id) {
+        
+        int userId = authService.authorize(requestContext);
+        
+        edmService.deleteEdmArchive(id);
+        
+    }
+    
+    /*
     @PostMapping("/edm_archives/{id}/terms")
     public EdmArchiveTerms saveTerms(HttpServletRequest requestContext, 
             @PathVariable Long id, @RequestBody ExtractTermResult extractTermResult) {
@@ -158,7 +171,7 @@ public class EdmController {
         
         return edmService.saveTerms(id, extractTermResult, userId);
         
-    }
+    }*/
    
     @PostMapping("/edm_archives/{id}/mappings")
     public Mapping createMapping(HttpServletRequest requestContext, 
@@ -195,6 +208,5 @@ public class EdmController {
         
         log.info("Unimplemented ");
     }
-    
     
 }

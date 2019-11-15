@@ -389,6 +389,13 @@ public class EDMService {
         return mapping;
     }
     
+    @Transactional
+    public void deleteEdmArchive(Long archiveId) {
+        edmArchiveTermsRepository.deleteByArchiveId(archiveId);
+        edmArchiveRepository.deleteById(archiveId);
+    }
+        
+    
     
     /*
     public List<SubjectTerm> uploadSubjectTerms(long mappingId, MultipartFile file, int userId) throws IOException {
