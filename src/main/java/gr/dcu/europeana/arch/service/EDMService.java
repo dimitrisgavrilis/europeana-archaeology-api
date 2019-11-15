@@ -305,6 +305,39 @@ public class EDMService {
         return edmArchiveTerms;
     }
     
+    public ExtractTermResult loadTerms(Long archiveId, Integer userId) {
+        
+        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+                .orElseThrow(() -> new ResourceNotFoundException(archiveId));
+        
+        EdmArchiveTerms edmArchiveTerms = edmArchiveTermsRepository.findByArchiveId(archiveId);
+        
+        List<SubjectTerm> subjectTerms = new LinkedList<>();
+        List<SpatialTerm> spatialTerms = new LinkedList<>();
+        List<TemporalTerm> temporalTerms = new LinkedList<>();
+        if(edmArchiveTerms != null) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                subjectTerms = mapper.readValue(edmArchiveTerms.getSubjectTerms(), 
+                                    new TypeReference<List<SubjectTerm>>(){});
+                spatialTerms = mapper.readValue(edmArchiveTerms.getSpatialTerms(), 
+                                    new TypeReference<List<SpatialTerm>>(){});
+                temporalTerms = mapper.readValue(edmArchiveTerms.getTemporalTerms(), 
+                                    new TypeReference<List<TemporalTerm>>(){});
+
+            } catch (IOException ex) {
+                log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTerms.getId());
+            }
+        } log.warn("Cannot get Edm Archive Terms. ArchiveID: {}", archiveId);
+        
+        ExtractTermResult extractTermResult = new ExtractTermResult();
+        extractTermResult.setSubjectTerms(subjectTerms);
+        extractTermResult.setSpatialTerms(spatialTerms);
+        extractTermResult.setTemporalTerms(temporalTerms);
+
+        return extractTermResult;
+    }
+    
     /**
      * Create a mapping based on extracted terms from EDM archive.
      * @param archiveId

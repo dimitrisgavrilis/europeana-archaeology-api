@@ -152,6 +152,16 @@ public class EdmController {
         
         // return new ResponseEntity<>("", HttpStatus.OK);
     }
+    
+    @PostMapping("/edm_archives/{id}/terms")
+    public ExtractTermResult loadTermsFromEdmArchive(
+            HttpServletRequest requestContext, @PathVariable Long id) {
+        
+        int userId = authService.authorize(requestContext);
+        
+        return edmService.loadTerms(id, userId);
+    }
+    
    
     @DeleteMapping("/edm_archives/{id}")
     public void deleteArchive(HttpServletRequest requestContext, @PathVariable Long id) {
