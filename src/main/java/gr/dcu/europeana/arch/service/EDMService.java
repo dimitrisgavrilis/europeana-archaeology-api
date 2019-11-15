@@ -1,40 +1,34 @@
 package gr.dcu.europeana.arch.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.dcu.europeana.arch.api.resource.ExtractTermResult;
-import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
 import gr.dcu.europeana.arch.exception.NotFoundException;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
 import gr.dcu.europeana.arch.model.EdmArchive;
 import gr.dcu.europeana.arch.model.EdmArchiveTerms;
 import gr.dcu.europeana.arch.model.Mapping;
+import gr.dcu.europeana.arch.model.MappingType;
 import gr.dcu.europeana.arch.model.MappingUploadRequest;
+import gr.dcu.europeana.arch.model.SpatialTerm;
 import gr.dcu.europeana.arch.model.SubjectTerm;
+import gr.dcu.europeana.arch.model.TemporalTerm;
 import gr.dcu.europeana.arch.repository.UploadRequestRepository;
 import gr.dcu.europeana.arch.service.edm.EdmFileTermExtractionResult;
 import gr.dcu.europeana.arch.service.edm.EdmExtractUtils;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
 import gr.dcu.utils.XMLUtils;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -43,6 +37,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import gr.dcu.europeana.arch.repository.EdmArchiveRepository;
 import gr.dcu.europeana.arch.repository.EdmArchiveTermsRepository;
+import gr.dcu.europeana.arch.repository.MappingRepository;
+import gr.dcu.europeana.arch.repository.SpatialTermRepository;
+import gr.dcu.europeana.arch.repository.SubjectTermRepository;
+import gr.dcu.europeana.arch.repository.TemporalTermRepository;
+import net.bytebuddy.dynamic.scaffold.MethodGraph;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  *
@@ -60,6 +60,18 @@ public class EDMService {
     
     @Autowired
     EdmArchiveTermsRepository edmArchiveTermsRepository;
+    
+    @Autowired
+    MappingRepository mappingRepository;
+    
+    @Autowired
+    SubjectTermRepository subjectTermRepository;
+    
+    @Autowired
+    SpatialTermRepository spatialTermRepository;
+    
+    @Autowired
+    TemporalTermRepository temporalTermRepository;
     
     @Autowired
     FileStorageService fileStorageService;
@@ -107,6 +119,9 @@ public class EDMService {
         edmArchive.setItemCount(0);
         edmArchive.setFilename(file.getOriginalFilename());
         edmArchive.setFilepath("");
+        edmArchive.setThematicMapping(0L);
+        edmArchive.setSpatialMapping(0L);
+        edmArchive.setTemporalMapping(0L);
         edmArchive.setCreatedBy(userId);
         long edmUploadId = edmArchiveRepository.save(edmArchive).getId();
         
@@ -288,6 +303,90 @@ public class EDMService {
         edmArchiveTerms = edmArchiveTermsRepository.save(edmArchiveTerms);
         
         return edmArchiveTerms;
+    }
+    
+    /**
+     * Create a mapping based on extracted terms from EDM archive.
+     * @param archiveId
+     * @param type
+     * @param userId
+     * @return 
+     */
+    @Transactional
+    public Mapping createMapping(Long archiveId, String type, Integer userId) {
+        
+        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+                .orElseThrow(() -> new ResourceNotFoundException(archiveId));
+        
+        EdmArchiveTerms edmArchiveTerms = edmArchiveTermsRepository.findByArchiveId(archiveId);
+        
+        List<SubjectTerm> subjectTerms = new LinkedList<>();
+        List<SpatialTerm> spatialTerms = new LinkedList<>();
+        List<TemporalTerm> temporalTerms = new LinkedList<>();
+        if(edmArchiveTerms != null) {
+        
+            try { 
+                ObjectMapper mapper = new ObjectMapper();
+                switch(type) {
+                    case MappingType.MAPPING_TYPE_SUBJECT:
+                        subjectTerms = mapper.readValue(edmArchiveTerms.getSubjectTerms(), 
+                                new TypeReference<List<SubjectTerm>>(){});
+                        break;
+                    case MappingType.MAPPING_TYPE_SPATIAL:
+                        spatialTerms = mapper.readValue(edmArchiveTerms.getSpatialTerms(), 
+                                new TypeReference<List<SpatialTerm>>(){});
+                        break;
+                    case MappingType.MAPPING_TYPE_TEMPORAL:
+                        temporalTerms = mapper.readValue(edmArchiveTerms.getTemporalTerms(), 
+                                new TypeReference<List<TemporalTerm>>(){});
+                        break;
+                }
+            } catch (IOException ex){
+                log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTerms.getId());
+            }
+        } else {
+            log.warn("Cannot get Edm Archive Terms. ArchiveID: {}", archiveId);
+        }
+        
+        // Create mapping
+        Mapping mapping = new Mapping();
+        mapping.setLabel(edmArchive.getFilename());
+        mapping.setDescription(edmArchive.getFilename());
+        mapping.setType(type);
+        mapping.setLanguage("");
+        mapping.setProviderName(edmArchive.getFilename());
+        mapping.setVocabularyName(edmArchive.getFilename());
+        mapping.setCreatedBy(userId);
+        long mappingId = mappingRepository.save(mapping).getId();
+         
+        
+        // Add terms to mapping
+        if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) && !subjectTerms.isEmpty()) {
+            
+            for(SubjectTerm term : subjectTerms) {
+                term.setMappingId(mappingId);
+            }
+            subjectTermRepository.saveAll(subjectTerms);
+            edmArchive.setThematicMapping(mappingId);
+        } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !spatialTerms.isEmpty()) {
+            
+            for(SpatialTerm term : spatialTerms) {
+                term.setMappingId(mappingId);
+            }
+            spatialTermRepository.saveAll(spatialTerms);
+            edmArchive.setSpatialMapping(mappingId);
+        } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !temporalTerms.isEmpty()) {
+            
+            for(TemporalTerm term : temporalTerms) {
+                term.setMappingId(mappingId);
+            }
+            temporalTermRepository.saveAll(temporalTerms);
+            edmArchive.setTemporalMapping(mappingId);
+        }
+        
+        edmArchiveRepository.save(edmArchive);
+        
+        return mapping;
     }
     
     

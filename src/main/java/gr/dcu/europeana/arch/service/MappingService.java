@@ -1,8 +1,12 @@
 package gr.dcu.europeana.arch.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.dcu.europeana.arch.api.resource.AppendTermsResult;
 import gr.dcu.europeana.arch.api.resource.EnrichDetails;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
+import gr.dcu.europeana.arch.model.EdmArchive;
+import gr.dcu.europeana.arch.model.EdmArchiveTerms;
 import gr.dcu.europeana.arch.model.EnrichRequest;
 import gr.dcu.europeana.arch.model.MappingExportRequest;
 import gr.dcu.europeana.arch.model.MappingType;
@@ -11,6 +15,8 @@ import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.model.Mapping;
 import gr.dcu.europeana.arch.model.MappingUploadRequest;
 import gr.dcu.europeana.arch.model.TemporalTerm;
+import gr.dcu.europeana.arch.repository.EdmArchiveRepository;
+import gr.dcu.europeana.arch.repository.EdmArchiveTermsRepository;
 import gr.dcu.europeana.arch.repository.EnrichRequestRepository;
 import gr.dcu.europeana.arch.repository.ExportRequestRepository;
 import gr.dcu.europeana.arch.repository.SpatialTermRepository;
@@ -75,6 +81,12 @@ public class MappingService {
     
     @Autowired
     EnrichRequestRepository enrichRequestRepository;
+    
+    @Autowired
+    EdmArchiveRepository edmArchiveRepository;
+    
+    @Autowired
+    EdmArchiveTermsRepository edmArchiveTermsRepository;
     
     /**
      * 
@@ -476,5 +488,187 @@ public class MappingService {
         File file = fileStorageService.loadFile(filepath);
         
         return file;
+    }
+    
+     /**
+     * Create a mapping based on extracted terms from EDM archive.
+     * @param archiveId
+     * @param type
+     * @param userId
+     * @return 
+     */
+    @Transactional
+    public Mapping createMappingByArchiveId(Long archiveId, String type, Integer userId) {
+        
+        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+                .orElseThrow(() -> new ResourceNotFoundException(archiveId));
+        
+        EdmArchiveTerms edmArchiveTerms = edmArchiveTermsRepository.findByArchiveId(archiveId);
+        
+        List<SubjectTerm> subjectTerms = new LinkedList<>();
+        List<SpatialTerm> spatialTerms = new LinkedList<>();
+        List<TemporalTerm> temporalTerms = new LinkedList<>();
+        if(edmArchiveTerms != null) {
+        
+            try { 
+                ObjectMapper mapper = new ObjectMapper();
+                switch(type) {
+                    case MappingType.MAPPING_TYPE_SUBJECT:
+                        subjectTerms = mapper.readValue(edmArchiveTerms.getSubjectTerms(), 
+                                new TypeReference<List<SubjectTerm>>(){});
+                        break;
+                    case MappingType.MAPPING_TYPE_SPATIAL:
+                        spatialTerms = mapper.readValue(edmArchiveTerms.getSpatialTerms(), 
+                                new TypeReference<List<SpatialTerm>>(){});
+                        break;
+                    case MappingType.MAPPING_TYPE_TEMPORAL:
+                        temporalTerms = mapper.readValue(edmArchiveTerms.getTemporalTerms(), 
+                                new TypeReference<List<TemporalTerm>>(){});
+                        break;
+                }
+            } catch (IOException ex){
+                log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTerms.getId());
+            }
+        } else {
+            log.warn("Cannot get Edm Archive Terms. ArchiveID: {}", archiveId);
+        }
+        
+        // Create mapping
+        Mapping mapping = new Mapping();
+        mapping.setLabel(edmArchive.getFilename());
+        mapping.setDescription(edmArchive.getFilename());
+        mapping.setType(type);
+        mapping.setLanguage("");
+        mapping.setProviderName(edmArchive.getFilename());
+        mapping.setVocabularyName(edmArchive.getFilename());
+        mapping.setCreatedBy(userId);
+        long mappingId = mappingRepository.save(mapping).getId();
+         
+        
+        // Add terms to mapping
+        if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) && !subjectTerms.isEmpty()) {
+            
+            for(SubjectTerm term : subjectTerms) {
+                term.setMappingId(mappingId);
+            }
+            subjectTermRepository.saveAll(subjectTerms);
+            edmArchive.setThematicMapping(mappingId);
+        } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !spatialTerms.isEmpty()) {
+            
+            for(SpatialTerm term : spatialTerms) {
+                term.setMappingId(mappingId);
+            }
+            spatialTermRepository.saveAll(spatialTerms);
+            edmArchive.setSpatialMapping(mappingId);
+        } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !temporalTerms.isEmpty()) {
+            
+            for(TemporalTerm term : temporalTerms) {
+                term.setMappingId(mappingId);
+            }
+            temporalTermRepository.saveAll(temporalTerms);
+            edmArchive.setTemporalMapping(mappingId);
+        }
+        
+        edmArchiveRepository.save(edmArchive);
+        
+        return mapping;
+    }
+    
+    @Transactional
+    public AppendTermsResult appendTermsToMappingByArchiveId(Long mappingId, Long archiveId, Integer userId) {
+        
+        AppendTermsResult appendTermResult = new AppendTermsResult();
+        long existingTermCount = 0;
+        long appendTermCount = 0;
+        
+        
+        Mapping mapping = mappingRepository.findById(mappingId)
+                .orElseThrow(() -> new ResourceNotFoundException(mappingId));
+        String mappingType = mapping.getType();
+        
+        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+                .orElseThrow(() -> new ResourceNotFoundException(archiveId));
+        
+        EdmArchiveTerms edmArchiveTerms = edmArchiveTermsRepository.findByArchiveId(archiveId);
+        
+        List<SubjectTerm> mappingSubjectTerms = new LinkedList<>();
+        List<SpatialTerm> mappingSpatialTerms = new LinkedList<>();
+        List<TemporalTerm> mappingTemporalTerms = new LinkedList<>();
+        
+        List<SubjectTerm> archiveSubjectTerms = new LinkedList<>();
+        List<SpatialTerm> archiveSpatialTerms = new LinkedList<>();
+        List<TemporalTerm> archiveTemporalTerms = new LinkedList<>();
+        if(edmArchiveTerms != null) {
+        
+            try { 
+                ObjectMapper mapper = new ObjectMapper();
+                switch(mappingType) {
+                    case MappingType.MAPPING_TYPE_SUBJECT:
+                        archiveSubjectTerms = mapper.readValue(edmArchiveTerms.getSubjectTerms(), 
+                                new TypeReference<List<SubjectTerm>>(){});
+                        
+                        mappingSubjectTerms = subjectTermRepository.findByMappingId(mappingId);
+                        break;
+                    case MappingType.MAPPING_TYPE_SPATIAL:
+                        archiveSpatialTerms = mapper.readValue(edmArchiveTerms.getSpatialTerms(), 
+                                new TypeReference<List<SpatialTerm>>(){});
+                        
+                        mappingSpatialTerms = spatialTermRepository.findByMappingId(mappingId);
+                        break;
+                    case MappingType.MAPPING_TYPE_TEMPORAL:
+                        archiveTemporalTerms = mapper.readValue(edmArchiveTerms.getTemporalTerms(), 
+                                new TypeReference<List<TemporalTerm>>(){});
+                        
+                        mappingTemporalTerms = temporalTermRepository.findByMappingId(mappingId);
+                        break;
+                }
+            } catch (IOException ex){
+                log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTerms.getId());
+            }
+        } else {
+            log.warn("Cannot get Edm Archive Terms. ArchiveID: {}", archiveId);
+        }
+        
+        // Add terms to mapping
+        if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) && !archiveSubjectTerms.isEmpty()) {
+            
+            existingTermCount = mappingSubjectTerms.size();
+            appendTermCount = archiveSubjectTerms.size();
+            
+            for(SubjectTerm term : archiveSubjectTerms) {
+                term.setMappingId(mappingId);
+            }
+            
+            mappingSubjectTerms.addAll(archiveSubjectTerms);
+            subjectTermRepository.saveAll(mappingSubjectTerms);
+            
+            
+        } else if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !archiveSpatialTerms.isEmpty()) {
+            
+            existingTermCount = mappingSpatialTerms.size();
+            appendTermCount = archiveSpatialTerms.size();
+            
+            for(SpatialTerm term : archiveSpatialTerms) {
+                term.setMappingId(mappingId);
+            }
+            
+            mappingSpatialTerms.addAll(archiveSpatialTerms);
+            spatialTermRepository.saveAll(mappingSpatialTerms);
+        } else if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !archiveTemporalTerms.isEmpty()) {
+            
+            existingTermCount = mappingTemporalTerms.size();
+            appendTermCount = archiveTemporalTerms.size();
+            
+            for(TemporalTerm term : archiveTemporalTerms) {
+                term.setMappingId(mappingId);
+            }
+            mappingTemporalTerms.addAll(archiveTemporalTerms);
+            temporalTermRepository.saveAll(mappingTemporalTerms);
+        }
+        
+        appendTermResult.setExistingTermCount(existingTermCount);
+        appendTermResult.setAppendTermCount(appendTermCount);
+        
+        return appendTermResult;
     }
 }

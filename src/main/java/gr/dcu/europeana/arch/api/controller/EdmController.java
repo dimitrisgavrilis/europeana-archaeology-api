@@ -1,14 +1,19 @@
 package gr.dcu.europeana.arch.api.controller;
 
+import gr.dcu.europeana.arch.api.resource.AppendTermsResult;
 import gr.dcu.europeana.arch.api.resource.ExtractTermResult;
+import gr.dcu.europeana.arch.exception.BadRequestException;
 import gr.dcu.europeana.arch.model.EdmArchive;
 import gr.dcu.europeana.arch.model.EdmArchiveTerms;
+import gr.dcu.europeana.arch.model.Mapping;
+import gr.dcu.europeana.arch.model.MappingType;
 import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.model.mappers.SpatialTermMapper;
 import gr.dcu.europeana.arch.model.mappers.SubjectTermMapper;
 import gr.dcu.europeana.arch.model.mappers.TemporalTermMapper;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.EDMService;
+import gr.dcu.europeana.arch.service.MappingService;
 import gr.dcu.europeana.arch.service.edm.EdmExtractUtils;
 import gr.dcu.europeana.arch.service.edm.EdmFileTermExtractionResult;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
@@ -47,6 +52,9 @@ public class EdmController {
     
     @Autowired
     EDMService edmService;
+    
+    @Autowired
+    MappingService mappingService;
     
     @Autowired
     SubjectTermMapper subjectTermMapper;
@@ -141,8 +149,7 @@ public class EdmController {
         
         // return new ResponseEntity<>("", HttpStatus.OK);
     }
-    
-    
+   
     @PostMapping("/edm_archives/{id}/terms")
     public EdmArchiveTerms saveTerms(HttpServletRequest requestContext, 
             @PathVariable Long id, @RequestBody ExtractTermResult extractTermResult) {
@@ -152,6 +159,33 @@ public class EdmController {
         return edmService.saveTerms(id, extractTermResult, userId);
         
     }
+   
+    @PostMapping("/edm_archives/{id}/mappings")
+    public Mapping createMapping(HttpServletRequest requestContext, 
+            @PathVariable Long id, @RequestParam (required = true) String type) {
+        
+        int userId = authService.authorize(requestContext);    
+        
+        // Validate mapping type
+        if(!type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) 
+                && !type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) 
+                && !type.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL)) {
+            throw new BadRequestException("Invalid mapping type.");
+        }
+        
+        return mappingService.createMappingByArchiveId(id, type, userId);
+        
+    }
+    
+    @PostMapping("/edm_archives/{id}/mappings/{mappingId}")
+    public AppendTermsResult createMapping(HttpServletRequest requestContext, 
+            @PathVariable Long id, @PathVariable Long mappingId) {
+        
+        int userId = authService.authorize(requestContext);    
+        
+        return mappingService.appendTermsToMappingByArchiveId(mappingId, id, userId);
+    }
+    
     
     @PostMapping("/edm_archives/{id}/enrich")
     public void enrichEdmArchive(

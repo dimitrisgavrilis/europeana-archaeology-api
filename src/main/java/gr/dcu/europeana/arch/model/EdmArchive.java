@@ -41,6 +41,15 @@ public class EdmArchive {
     @Column (name="filepath")
     private String filepath;
     
+    @Column (name="thematic_mapping")
+    private Long thematicMapping;
+    
+    @Column (name="spatial_mapping")
+    private Long spatialMapping;
+    
+    @Column (name="temporal_mapping")
+    private Long temporalMapping;
+    
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
