@@ -1,13 +1,12 @@
 package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.api.resource.AppendTermsResult;
+import gr.dcu.europeana.arch.api.resource.EnrichDetails;
 import gr.dcu.europeana.arch.api.resource.ExtractTermResult;
 import gr.dcu.europeana.arch.exception.BadRequestException;
 import gr.dcu.europeana.arch.model.EdmArchive;
-import gr.dcu.europeana.arch.model.EdmArchiveTerms;
 import gr.dcu.europeana.arch.model.Mapping;
 import gr.dcu.europeana.arch.model.MappingType;
-import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.model.mappers.SpatialTermMapper;
 import gr.dcu.europeana.arch.model.mappers.SubjectTermMapper;
 import gr.dcu.europeana.arch.model.mappers.TemporalTermMapper;
@@ -27,14 +26,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -96,9 +93,9 @@ public class EdmController {
     
     @PostMapping("/edm_archives/{id}/download")
     public ResponseEntity<?> downloadEdmArchive(HttpServletRequest requestContext, 
-            @PathVariable Long id) throws IOException {
+            @PathVariable Long id, @RequestParam (required = false) String type) throws IOException {
         
-        File file = edmService.loadEdmArchive(id);
+        File file = edmService.loadEdmArchive(id, type);
         
         String filename = file.getName();
         // String filepath = file.getAbsolutePath();
@@ -209,14 +206,13 @@ public class EdmController {
         return mappingService.appendTermsToMappingByArchiveId(mappingId, id, userId);
     }
     
-    
     @PostMapping("/edm_archives/{id}/enrich")
-    public void enrichEdmArchive(
+    public EnrichDetails enrichEdmArchive(
             HttpServletRequest requestContext, @PathVariable Long id) {
         
         int userId = authService.authorize(requestContext);
         
-        log.info("Unimplemented ");
+        return edmService.enrich2(id, userId);
+        
     }
-    
 }

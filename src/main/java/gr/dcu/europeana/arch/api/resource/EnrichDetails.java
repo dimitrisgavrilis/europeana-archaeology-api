@@ -21,6 +21,6 @@ public class EnrichDetails {
     
     private String enrichedArchiveName;
     private int enrichedFileCount;
-    private String enrichedArchiveUrl;
+    // private String enrichedArchiveUrl;
     
 }

@@ -457,7 +457,7 @@ public class MappingService {
         enrichDetails.setEdmArchiveName(file.getOriginalFilename());
         enrichDetails.setEnrichedFileCount(enrichedFileCount);
         enrichDetails.setEnrichedArchiveName(enrichedArchiveName);
-        enrichDetails.setEnrichedArchiveUrl("/enrich/requests/" + requestId + "/download");
+       // enrichDetails.setEnrichedArchiveUrl("/enrich/requests/" + requestId + "/download");
         
         ObjectMapper objectMaper = new ObjectMapper();
         String details = objectMaper.writeValueAsString(enrichDetails);
@@ -470,6 +470,8 @@ public class MappingService {
         
         return enrichDetails;
     }
+    
+    
     
     /**
      * 
@@ -505,6 +507,7 @@ public class MappingService {
         
         EdmArchiveTerms edmArchiveTerms = edmArchiveTermsRepository.findByArchiveId(archiveId);
         
+        log.info("Create mapping for archive. Archive: {} Type: {}", archiveId, type);
         List<SubjectTerm> subjectTerms = new LinkedList<>();
         List<SpatialTerm> spatialTerms = new LinkedList<>();
         List<TemporalTerm> temporalTerms = new LinkedList<>();
@@ -543,10 +546,12 @@ public class MappingService {
         mapping.setVocabularyName(edmArchive.getFilename());
         mapping.setCreatedBy(userId);
         long mappingId = mappingRepository.save(mapping).getId();
-         
+        log.info("Mapping created. MappingId:{}", mappingId);
         
         // Add terms to mapping
         if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) && !subjectTerms.isEmpty()) {
+            
+            log.info("Add terms to mappings. Size: {}", subjectTerms.size());
             
             for(SubjectTerm term : subjectTerms) {
                 term.setMappingId(mappingId);
@@ -555,12 +560,16 @@ public class MappingService {
             edmArchive.setThematicMapping(mappingId);
         } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !spatialTerms.isEmpty()) {
             
+            log.info("Add terms to mappings. Size: {}", spatialTerms.size());
+            
             for(SpatialTerm term : spatialTerms) {
                 term.setMappingId(mappingId);
             }
             spatialTermRepository.saveAll(spatialTerms);
             edmArchive.setSpatialMapping(mappingId);
         } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !temporalTerms.isEmpty()) {
+            
+            log.info("Add terms to mappings. Size: {}", temporalTerms.size());
             
             for(TemporalTerm term : temporalTerms) {
                 term.setMappingId(mappingId);

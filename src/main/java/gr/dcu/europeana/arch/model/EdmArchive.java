@@ -41,6 +41,9 @@ public class EdmArchive {
     @Column (name="filepath")
     private String filepath;
     
+    @Column (name="enriched_filepath")
+    private String enrichedFilepath;
+    
     @Column (name="thematic_mapping")
     private Long thematicMapping;
     

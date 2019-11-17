@@ -3,11 +3,13 @@ package gr.dcu.europeana.arch.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.dcu.europeana.arch.api.resource.EnrichDetails;
 import gr.dcu.europeana.arch.api.resource.ExtractTermResult;
 import gr.dcu.europeana.arch.exception.NotFoundException;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
 import gr.dcu.europeana.arch.model.EdmArchive;
 import gr.dcu.europeana.arch.model.EdmArchiveTerms;
+import gr.dcu.europeana.arch.model.EnrichRequest;
 import gr.dcu.europeana.arch.model.Mapping;
 import gr.dcu.europeana.arch.model.MappingType;
 import gr.dcu.europeana.arch.model.MappingUploadRequest;
@@ -41,7 +43,12 @@ import gr.dcu.europeana.arch.repository.MappingRepository;
 import gr.dcu.europeana.arch.repository.SpatialTermRepository;
 import gr.dcu.europeana.arch.repository.SubjectTermRepository;
 import gr.dcu.europeana.arch.repository.TemporalTermRepository;
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
+import javax.xml.transform.TransformerException;
 import net.bytebuddy.dynamic.scaffold.MethodGraph;
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -141,6 +148,7 @@ public class EDMService {
         // Update upload request
         edmArchive.setId(edmUploadId);
         edmArchive.setFilepath(edmArchiveFilePath.toString());
+        edmArchive.setEnrichedFilepath(null);
         edmArchive.setItemCount(edmFiles.length);
         edmArchive = edmArchiveRepository.save(edmArchive);
         
@@ -163,17 +171,17 @@ public class EDMService {
                     List<String> subjectValues = XMLUtils.getElementValues(doc, "//dc:subject");
                     
                     // Find subject mapppings (if any)
-                    int termMatchCount = 0;
+                    int subjectTermMatchCount = 0;
                     List<String> subjectMappings = new LinkedList<>();
                     for(String value : subjectValues) {
-                        if(termsMap.containsKey(value)) {
-                            termMatchCount++;
+                        if(subjectTermsMap.containsKey(value)) {
+                            subjectTermMatchCount++;
                             subjectMappings.add(value);
                         }
                     }
                     
                     // edmFile.getAbsolutePath()
-                    log.info("File: {} #Subjects: {} #Matches: {}", edmFile.getName(), subjectValues.size(), termMatchCount);
+                    log.info("File: {} #Subjects: {} #Matches: {}", edmFile.getName(), subjectValues.size(), subjectTermMatchCount);
                     
                     if(!subjectMappings.isEmpty()) {
                         
@@ -193,7 +201,7 @@ public class EDMService {
                         enrichedFileCount++;
                         
                         log.info("File enriched. {} subjects added.Stored at: {}", 
-                                termMatchCount, enrichedFilePath);
+                                subjectTermMatchCount, enrichedFilePath);
                     }
                 } catch(ParserConfigurationException | SAXException | 
                         TransformerException | XPathExpressionException ex) {
@@ -246,15 +254,33 @@ public class EDMService {
         
     }
     
-    public File loadEdmArchive(long archiveId) throws IOException {
+    /**
+     * Load original EDM or eEDM (if exists)
+     * @param archiveId
+     * @param type
+     * @return
+     * @throws IOException 
+     */
+    public File loadEdmArchive(long archiveId, String type) throws IOException {
         
         EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
-        String filename = edmArchive.getFilename();
-        String filepath = edmArchive.getFilepath();
+        String filepath;
+        String filename =  edmArchive.getFilename();
+        if(type != null && type.equalsIgnoreCase("eEDM")) {
+            filepath = edmArchive.getEnrichedFilepath();
+        } else {
+            filepath = edmArchive.getFilepath();
+        }
         
-        File file = fileStorageService.loadFile(filepath);
+        File file = null;
+        if(filepath != null && !filepath.isEmpty()) {
+            file = fileStorageService.loadFile(filepath);
+        } else {
+            log.error("File not found.");
+            throw new NotFoundException("File");
+        }
         
         return file;
     }
@@ -339,7 +365,7 @@ public class EDMService {
     }
     
     /**
-     * Create a mapping based on extracted terms from EDM archive.
+     * Create a mapping based on extracted subjectTerms from EDM archive.
      * @param archiveId
      * @param type
      * @param userId
@@ -393,7 +419,7 @@ public class EDMService {
         long mappingId = mappingRepository.save(mapping).getId();
          
         
-        // Add terms to mapping
+        // Add subjectTerms to mapping
         if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) && !subjectTerms.isEmpty()) {
             
             for(SubjectTerm term : subjectTerms) {
@@ -427,6 +453,205 @@ public class EDMService {
         edmArchiveTermsRepository.deleteByArchiveId(archiveId);
         edmArchiveRepository.deleteById(archiveId);
     }
+    
+    /**
+     * 
+     * @param archiveId
+     * @param userId
+     * @return 
+     */
+    public EnrichDetails enrich2(Long archiveId, int userId) {
+        
+        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+                .orElseThrow(() -> new ResourceNotFoundException(archiveId));
+        
+        long thematicMappingId = edmArchive.getThematicMapping();
+        long spatialMappingId = edmArchive.getSpatialMapping();
+        long temporalMappingId = edmArchive.getTemporalMapping();
+        
+        // Check existemce of mapping
+        Mapping mapping = mappingRepository.findById(thematicMappingId)
+                .orElseThrow(() -> new ResourceNotFoundException(thematicMappingId));
+        
+        boolean thematicEnrichment = thematicMappingId > 0 ? true : false;
+        boolean spatialEnrichment  = spatialMappingId > 0 ? true : false;
+        boolean temporalEnrichment = temporalMappingId > 0 ? true : false;
+        
+        // Load thematic mapping terms
+        List<SubjectTerm> subjectTerms = new LinkedList<>();
+        Map<String,SubjectTerm> subjectTermsMap = new HashMap<>();
+        if(thematicEnrichment) {
+            // Get mapping subjectTerms. Convert them to map
+            subjectTerms = subjectTermRepository.findByMappingId(thematicMappingId);
+            for(SubjectTerm mp : subjectTerms) {
+                subjectTermsMap.put(mp.getNativeTerm(), mp);
+            }
+            log.info("Thematic mapping loaded. MappingId: {} #Terms: {}", thematicMappingId, subjectTerms.size());
+        }
+        
+        // Load spatial mapping terms
+        List<SpatialTerm> spatialTerms = new LinkedList<>();
+        Map<String,SpatialTerm> spatialTermsMap = new HashMap<>();
+        if(spatialEnrichment) {
+            spatialTerms = spatialTermRepository.findByMappingId(spatialMappingId);
+            for(SpatialTerm mp : spatialTerms) {
+                spatialTermsMap.put(mp.getNativeTerm(), mp);
+            }
+            log.info("Spatial mapping loaded. MappingId: {} #Terms: {}", spatialMappingId, spatialTerms.size());
+        }
+        
+        // Load temporal mapping terms
+        List<TemporalTerm> temporalTerms = new LinkedList<>();
+        Map<String,TemporalTerm> temporalTermsMap = new HashMap<>();
+        if(temporalEnrichment) {
+            temporalTerms = temporalTermRepository.findByMappingId(temporalMappingId);
+            for(TemporalTerm mp : temporalTerms) {
+                temporalTermsMap.put(mp.getNativeTerm(), mp);
+            }
+            log.info("Temporal mapping loaded. MappingId: {} #Terms: {}", temporalMappingId, temporalTerms.size());
+        }
+            
+        
+        
+        // File system hierarchy
+        // storage_tmp
+        // -- <mapping_id>
+        //    -- enrich
+        //        -- <request_id> (at this level store the archives - edm.zip , eEDM.tar.gz)
+        //            -- EDM
+        //            -- eEDM
+        //    -- uploads
+        //    -- exports
+        
+        /*
+        // Create enrich enrichRequest
+        EnrichRequest enrichRequest = new EnrichRequest();
+        enrichRequest.setMappingId(thematicMappingId);
+        enrichRequest.setFilename(file.getOriginalFilename());
+        enrichRequest.setCreatedBy(userId);
+        enrichRequest = enrichRequestRepository.save(enrichRequest);
+        long requestId = enrichRequest.getId();
+        */
+        
+        int enrichedFileCount = 0;
+        String enrichedArchiveFilePath = "";
+        String enrichedArchiveName = "";
+        int edmFileCount = 0;
+        try {
+            // Get EDM files
+            Path edmArchiveFilePath =  Paths.get(edmArchive.getFilepath());
+            Path edmExtractDirPath = Paths.get(edmArchiveFilePath.getParent().toString(), "EDM");
+            File[] edmFiles = edmExtractDirPath.toFile().listFiles(); 
+            edmFileCount = edmFiles.length;
+            log.info("List EDM files. Path: {} #Files: {}", edmExtractDirPath, edmFiles.length);
+
+            // Update enrich enrichRequest
+            // enrichRequest.setFilepath(edmArchiveFilePath.toString());
+            // enrichRequest = enrichRequestRepository.save(enrichRequest);
+
+            // Enrich archive
+            // Create enriched directory (if not)
+            Path enrichedDirPath = null;
+            if(edmFiles.length > 0) {
+                enrichedDirPath = Paths.get(edmExtractDirPath.getParent().toString(), "eEDM");
+                Files.createDirectories(enrichedDirPath);
+                log.info("Create eEDM directory. Path: {} ", enrichedDirPath);
+            }
+
+            
+            for(File edmFile : edmFiles) {
+                if(edmFile.exists() && edmFile.isFile()) {
+
+                    try {
+                        // Retrieve xml content. ATTENTION: Namespace aware is true.
+                        Document doc = XMLUtils.parse(edmFile, true);
+                        // String itemContent = XMLUtils.transform(doc);
+
+                        // Get subjects
+                        List<String> subjectValues = XMLUtils.getElementValues(doc, "//dc:subject");
+
+                        // Find subject mapppings (if any)
+                        int subjectTermMatchCount = 0;
+                        List<String> subjectMappings = new LinkedList<>();
+                        for(String value : subjectValues) {
+                            if(subjectTermsMap.containsKey(value)) {
+                                subjectTermMatchCount++;
+                                subjectMappings.add(value);
+                            }
+                        }
+
+                        // edmFile.getAbsolutePath()
+                        log.info("File: {} #Subjects: {} #Matches: {}", edmFile.getName(), subjectValues.size(), subjectTermMatchCount);
+
+                        if(!subjectMappings.isEmpty()) {
+
+                            // Add subject mappings
+                            doc = XMLUtils.appendElements(doc, "//edm:ProvidedCHO", "dc:subject", subjectMappings);
+
+                            // Save enriched file
+                            Path enrichedFilePath = Paths.get(enrichedDirPath.toString(), edmFile.getName());
+                            XMLUtils.transform(doc, enrichedFilePath.toFile());
+
+                            enrichedFileCount++;
+
+                            log.info("File enriched. {} subjects added.Stored at: {}", 
+                                    subjectTermMatchCount, enrichedFilePath);
+                        }
+                    } catch(ParserConfigurationException | SAXException | 
+                            TransformerException | XPathExpressionException ex) {
+                        log.error("Cannot parse file. File: {}", edmFile.getAbsolutePath());
+                    }
+
+                }
+            }
+
+            // Create archive with enriched files
+            if(enrichedFileCount > 0) {
+                // Example eEDM_m2_r4 => mapping 2, enrichRequest 4
+                //String filenamePrefix = "eEDM_m" + mappingId + "_r" + requestId; 
+                // String filenamePrefix = "eEDM_m" + 1 + "_r" + 1; 
+                // FilenameUtils.removeExtension(edmArchive.getFilename())
+                String filenamePrefix =  archiveId + "_eEDM"; 
+                Path archiveFilePath = fileStorageService.createArchiveFromDirectory(enrichedDirPath, filenamePrefix);
+
+                enrichedArchiveName = archiveFilePath.getFileName().toString();
+                enrichedArchiveFilePath = archiveFilePath.toString();
+
+                // Save enrichement filepath
+                edmArchive.setEnrichedFilepath(enrichedArchiveFilePath);
+                edmArchiveRepository.save(edmArchive);
+                
+                log.info("Enrichement Result. #Files: {} #Enriched: {} Enriched Archive: {}", 
+                        edmFiles.length, enrichedFileCount, archiveFilePath.toString());
+            } 
+        }catch (IOException ex) {
+            log.error("Enrihment failed.");
+            log.error("", ex);
+        }
+        
+        String message = enrichedFileCount + " files enriched successfully.";
+        
+        // Set enrich details
+        EnrichDetails enrichDetails = new EnrichDetails();
+        enrichDetails.setSuccess(true);
+        enrichDetails.setMessage(message);
+        enrichDetails.setEdmFileCount(edmFileCount);
+        enrichDetails.setEdmArchiveName(edmArchive.getFilename());
+        enrichDetails.setEnrichedFileCount(enrichedFileCount);
+        enrichDetails.setEnrichedArchiveName(enrichedArchiveName);
+        // enrichDetails.setEnrichedArchiveUrl("/enrich/requests/" + requestId + "/download");
+        
+        // ObjectMapper objectMaper = new ObjectMapper();
+        // String details = objectMaper.writeValueAsString(enrichDetails);
+        
+        // Update enrich enrichRequest
+        //enrichRequest.setEnrichedFilename(enrichedArchiveName);
+        //enrichRequest.setEnrichedFilepath(enrichedArchiveFilePath);
+        //enrichRequest.setDetails(details);
+        //enrichRequestRepository.save(enrichRequest);
+        
+        return enrichDetails;
+    }
         
     
     
@@ -441,12 +666,12 @@ public class EDMService {
         Path filePath = fileStorageService.buildUploadFilePath(mappingId, file.getOriginalFilename());
         fileStorageService.upload(filePath, file);
         
-        // Load terms
+        // Load subjectTerms
         List<SubjectTerm> termList = 
                 excelService.loadSubjectTermsFromExcel(filePath.toString(), mappingId, 1, -1);
         
-        // Save terms
-        log.info("Saving terms. #Terms:{}", termList.size());
+        // Save subjectTerms
+        log.info("Saving subjectTerms. #Terms:{}", termList.size());
         
         // TODO: Do not save automatically. Preview first.
         subjectTermRepository.saveAll(termList);
@@ -561,7 +786,7 @@ public class EDMService {
                     // Extract data
                     List<ElementExtractionData> extractedData = new LinkedList<>();
                     
-                    // Extract thematic terms
+                    // Extract thematic subjectTerms
                     if(thematic) {
                         NodeList dcSubjectNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_SUBJECT);
                         extractedData.addAll(EdmExtractUtils.extractNodeData(dcSubjectNodes, skipEmptyValues));
@@ -570,7 +795,7 @@ public class EDMService {
                         extractedData.addAll(EdmExtractUtils.extractNodeData(dcTypeNodes, skipEmptyValues));
                     }
                     
-                    // Extract temporal terms
+                    // Extract temporal subjectTerms
                     if(temporal) {
                         NodeList dcDateNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_DATE);
                         extractedData.addAll(EdmExtractUtils.extractNodeData(dcDateNodes, skipEmptyValues));
@@ -582,7 +807,7 @@ public class EDMService {
                         extractedData.addAll(EdmExtractUtils.extractNodeData(dcTermsCreatedNodes, skipEmptyValues));
                     }
                     
-                    // Extract spatial terms
+                    // Extract spatial subjectTerms
                     if(spatial) {
                         NodeList dcTermsSpatialNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_TERMS_SPATIAL);
                         extractedData.addAll(EdmExtractUtils.extractNodeData(dcTermsSpatialNodes, skipEmptyValues));
@@ -592,16 +817,16 @@ public class EDMService {
                     
                     /*
                     List<EdmExtractResult> result = new LinkedList<>();
-                    // Get thematic terms
+                    // Get thematic subjectTerms
                     List<String> dcSubjectValues = XMLUtils.getElementValues(doc, "//dc:subject");
                     List<String> dcTypeValues = XMLUtils.getElementValues(doc, "//dc:type");
                     
-                    // Get temporal terms
+                    // Get temporal subjectTerms
                     List<String> dcDateValues = XMLUtils.getElementValues(doc, "//dc:date");
                     List<String> dcTermsTemporalValues = XMLUtils.getElementValues(doc, "//dcterms:temporal");
                     List<String> dcTermsCreatedValues = XMLUtils.getElementValues(doc, "//dcterms:created");
                     
-                    // Get spatial terms
+                    // Get spatial subjectTerms
                     List<String> dcTermSpatialValues = XMLUtils.getElementValues(doc, "//dcterms:spatial");
                     
                     // Extract result
