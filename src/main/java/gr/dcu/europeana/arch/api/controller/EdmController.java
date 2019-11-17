@@ -19,6 +19,7 @@ import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionDataCategories;
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -125,6 +126,7 @@ public class EdmController {
         if(!thematicElementValues.isEmpty()) {
             extractTermResult.setSubjectTerms(subjectTermMapper.toSubjectTermList(thematicElementValues));
         } else {
+            extractTermResult.setSubjectTerms(new LinkedList<>());
             log.warn("No thematic terms to extract.");
         }
         
@@ -132,6 +134,7 @@ public class EdmController {
         if(!spatialElementValues.isEmpty()) {
             extractTermResult.setSpatialTerms(spatialTermMapper.toSpatialTermList(spatialElementValues));
         } else {
+            extractTermResult.setSpatialTerms(new LinkedList<>());
             log.warn("No spatial terms to extract.");
         }
 
@@ -139,6 +142,7 @@ public class EdmController {
         if(!temporalElementValues.isEmpty()) {
             extractTermResult.setTemporalTerms(temporalTermMapper.toTemporalTermList(temporalElementValues));
         } else {
+            extractTermResult.setTemporalTerms(new LinkedList<>());
             log.warn("No temporal terms to extract.");
         }
         

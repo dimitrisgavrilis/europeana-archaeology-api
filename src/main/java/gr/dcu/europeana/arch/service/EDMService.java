@@ -97,6 +97,7 @@ public class EDMService {
         return edmUpload;
     }
     
+    @Transactional
     public EdmArchive uploadEdmArchive(MultipartFile file, int userId) throws IOException {
         
         // File system hierarchy

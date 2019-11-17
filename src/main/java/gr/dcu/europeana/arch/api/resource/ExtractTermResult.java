@@ -1,6 +1,5 @@
 package gr.dcu.europeana.arch.api.resource;
 
-import ch.qos.logback.core.joran.spi.NoAutoStart;
 import gr.dcu.europeana.arch.model.SpatialTerm;
 import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.model.TemporalTerm;

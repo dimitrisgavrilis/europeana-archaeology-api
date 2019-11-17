@@ -65,8 +65,8 @@ public class FileStorageService {
             byte[] bytes = file.getBytes();
             Files.write(destinationFilePath, bytes);
 
-            log.info("File stored successfully. File: {} | Path: {}", 
-                    file.getOriginalFilename(), destinationFilePath);
+            //log.info("File stored successfully. File: {} | Path: {}", 
+            //        file.getOriginalFilename(), destinationFilePath);
         } catch (IOException ex) {
             throw ex;
         }
