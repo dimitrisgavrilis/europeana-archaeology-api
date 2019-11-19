@@ -471,8 +471,8 @@ public class EDMService {
         long temporalMappingId = edmArchive.getTemporalMapping();
         
         // Check existemce of mapping
-        Mapping mapping = mappingRepository.findById(thematicMappingId)
-                .orElseThrow(() -> new ResourceNotFoundException(thematicMappingId));
+        // Mapping mapping = mappingRepository.findById(thematicMappingId)
+        //        .orElseThrow(() -> new ResourceNotFoundException(thematicMappingId));
         
         boolean thematicEnrichment = thematicMappingId > 0 ? true : false;
         boolean spatialEnrichment  = spatialMappingId > 0 ? true : false;
