@@ -1,6 +1,7 @@
 package gr.dcu.europeana.arch.service.edm;
 
 import gr.dcu.europeana.arch.model.AatSubject;
+import gr.dcu.europeana.arch.model.SpatialTerm;
 import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.utils.MoReNamespaceContext;
 import java.util.List;
@@ -33,22 +34,60 @@ public class EdmXmlUtils {
                     Element element = (Element) nodeList.item(i);
 
                     int termsWithoutMappings = 0;
-                    for(SubjectTerm value : subjectTerms) {
+                    for(SubjectTerm subjectTerm : subjectTerms) {
                         
-                        if(value.getAatUid() != null && !value.getAatUid().isEmpty()) {
+                        if(subjectTerm.getAatUid() != null && !subjectTerm.getAatUid().isEmpty()) {
                             
-                            AatSubject aatSubject = aatSubjectMap.get(value.getAatUid());
+                            AatSubject aatSubject = aatSubjectMap.get(subjectTerm.getAatUid());
                             
                             Element childElement = doc.createElement(label);
                             childElement.setAttribute("rdf:resource", aatSubject.getUri());
-                            // childElement.appendChild(doc.createTextNode(value));
+                            // childElement.appendChild(doc.createTextNode(spatialTerm));
                             element.appendChild(childElement);
                         } else {
                             termsWithoutMappings ++;
                         }
                     }
                     
-                    log.info("Tematic Terms wo mappings. #Size: {}", termsWithoutMappings);
+                    log.info("Thematic Terms wo mappings. #Size: {}", termsWithoutMappings);
+                }
+
+            } catch (XPathExpressionException ex) {
+                log.error("",ex);
+                throw ex;
+            } 
+
+            return doc;
+	}
+    
+    public static Document appendSpatialElements(Document doc, String xPathExpr, String label, 
+            List<SpatialTerm> spatialTerms) throws XPathExpressionException {
+		
+            try {
+                XPath xPath = XPathFactory.newInstance().newXPath();
+                xPath.setNamespaceContext(new MoReNamespaceContext());
+                NodeList nodeList = (NodeList)xPath.compile(xPathExpr).evaluate(doc, XPathConstants.NODESET);
+
+                for(int i=0; i<nodeList.getLength(); i++) {
+                    Element element = (Element) nodeList.item(i);
+
+                    int termsWithoutMappings = 0;
+                    for(SpatialTerm spatialTerm : spatialTerms) {
+                        
+                        if(spatialTerm.getGeonameId() != null && !spatialTerm.getGeonameId().isEmpty()) {
+                            
+                            // AatSubject aatSubject = aatSubjectMap.get(spatialTerm.getAatUid());
+                            
+                            Element childElement = doc.createElement(label);
+                            childElement.setAttribute("rdf:resource", "https://www.geonames.org/" + spatialTerm.getGeonameId());
+                            // childElement.appendChild(doc.createTextNode(spatialTerm));
+                            element.appendChild(childElement);
+                        } else {
+                            termsWithoutMappings ++;
+                        }
+                    }
+                    
+                    log.info("Spatial Terms wo mappings. #Size: {}", termsWithoutMappings);
                 }
 
             } catch (XPathExpressionException ex) {

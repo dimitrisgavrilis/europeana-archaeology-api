@@ -6,8 +6,10 @@ Upload EDM archive. Create mapping. Go to mapping. Download does not work. If i 
 Display also created_at when listing mappings
 Add to existing => Filter based on type.
 Create mapping. Display the Create Mapping dialog.
-
+Display number of terms on each extracted list
+Update spatial terms fails
 
 TBD:
 ~~~
 When I delete a mappping, what happens to EDM archive associations? 
+Sort extracted lists by name

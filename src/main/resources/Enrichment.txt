@@ -1,0 +1,35 @@
+<dcterms:spatial rdf:resource="http://www.geonames.org/3031582.0/"/>
+
+<edm:Place rdf:about="http://www.geonames.org/3031582.0/">
+	<wgs84_pos:lat>44.84044</wgs84_pos:lat>
+	<wgs84_pos:long>-0.5805</wgs84_pos:long>
+	<skos:prefLabel>Bordeaux (Gironde, France)</skos:prefLabel>
+</edm:Place>
+
+<dc:subject rdf:resource="http://vocab.getty.edu/page/aat/300178758"/>
+
+
+
+Share3D Dashboard
+~~~~~~~~~~~~~~~~~
+<dcterms:spatial rdf:resource="#edmPlace_share3d:6/SP.1"/>
+
+
+<edm:ProvidedCHO rdf:about="share3d:6">
+    <dc:identifier>share3d:6</dc:identifier>
+    <dc:title xml:lang="it">48-forklift</dc:title>
+    <dc:description xml:lang="it">Free model. Only for testing purposes.</dc:description>
+    <dc:creator>nvangelis</dc:creator>
+    <dc:subject rdf:resource="http://vocab.getty.edu/page/aat/300178758"/>
+    <dcterms:spatial rdf:resource="#edmPlace_share3d:6/SP.1"/>
+    <dc:format>3D</dc:format>
+    <dc:type>3D</dc:type>
+    <edm:type>3D</edm:type>
+  </edm:ProvidedCHO>
+  
+  <edm:Place rdf:about="#edmPlace_share3d:6/SP.1">
+    <wgs84_pos:lat>-83.3767</wgs84_pos:lat>
+    <wgs84_pos:long>33.9596</wgs84_pos:long>
+    <skos:prefLabel>Athens </skos:prefLabel>
+  </edm:Place>
+
