@@ -2,6 +2,11 @@ UI
 ~~
 When I delete a mapping, does not disappear from list until I refresh it.
 Remove upload EDM from mappings
+Upload EDM archive. Create mapping. Go to mapping. Download does not work. If i refresh the page it works. 
+Display also created_at when listing mappings
+Add to existing => Filter based on type.
+Create mapping. Display the Create Mapping dialog.
+
 
 TBD:
 ~~~

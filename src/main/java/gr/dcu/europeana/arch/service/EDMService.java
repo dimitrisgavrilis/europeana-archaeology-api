@@ -7,6 +7,7 @@ import gr.dcu.europeana.arch.api.resource.EnrichDetails;
 import gr.dcu.europeana.arch.api.resource.ExtractTermResult;
 import gr.dcu.europeana.arch.exception.NotFoundException;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
+import gr.dcu.europeana.arch.model.AatSubject;
 import gr.dcu.europeana.arch.model.EdmArchive;
 import gr.dcu.europeana.arch.model.EdmArchiveTerms;
 import gr.dcu.europeana.arch.model.EnrichRequest;
@@ -16,6 +17,7 @@ import gr.dcu.europeana.arch.model.MappingUploadRequest;
 import gr.dcu.europeana.arch.model.SpatialTerm;
 import gr.dcu.europeana.arch.model.SubjectTerm;
 import gr.dcu.europeana.arch.model.TemporalTerm;
+import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import gr.dcu.europeana.arch.repository.UploadRequestRepository;
 import gr.dcu.europeana.arch.service.edm.EdmFileTermExtractionResult;
 import gr.dcu.europeana.arch.service.edm.EdmExtractUtils;
@@ -43,6 +45,7 @@ import gr.dcu.europeana.arch.repository.MappingRepository;
 import gr.dcu.europeana.arch.repository.SpatialTermRepository;
 import gr.dcu.europeana.arch.repository.SubjectTermRepository;
 import gr.dcu.europeana.arch.repository.TemporalTermRepository;
+import gr.dcu.europeana.arch.service.edm.EdmXmlUtils;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,6 +82,9 @@ public class EDMService {
     
     @Autowired
     TemporalTermRepository temporalTermRepository;
+    
+    @Autowired
+    AatSubjectRepository aatSubjectRepository;
     
     @Autowired
     FileStorageService fileStorageService;
@@ -169,25 +175,25 @@ public class EDMService {
                     // String itemContent = XMLUtils.transform(doc);
 
                     // Get subjects
-                    List<String> subjectValues = XMLUtils.getElementValues(doc, "//dc:subject");
+                    List<String> dcSubjectValues = XMLUtils.getElementValues(doc, "//dc:subject");
                     
                     // Find subject mapppings (if any)
                     int subjectTermMatchCount = 0;
                     List<String> subjectMappings = new LinkedList<>();
-                    for(String value : subjectValues) {
-                        if(subjectTermsMap.containsKey(value)) {
+                    for(String dcSubjectValue : dcSubjectValues) {
+                        if(subjectTermsMap.containsKey(dcSubjectValue)) {
                             subjectTermMatchCount++;
-                            subjectMappings.add(value);
+                            subjectMappings.add(dcSubjectValue);
                         }
                     }
                     
                     // edmFile.getAbsolutePath()
-                    log.info("File: {} #Subjects: {} #Matches: {}", edmFile.getName(), subjectValues.size(), subjectTermMatchCount);
+                    log.info("File: {} #Subjects: {} #Matches: {}", edmFile.getName(), dcSubjectValues.size(), subjectTermMatchCount);
                     
                     if(!subjectMappings.isEmpty()) {
                         
                         // Add subject mappings
-                        doc = XMLUtils.appendElements(doc, "//edm:ProvidedCHO", "dc:subject", subjectMappings);
+                        doc = XMLUtils.appendThematicElements(doc, "//edm:ProvidedCHO", "dc:subject", subjectMappings);
                         
                         // Create enriched directory (if not)
                         if(!enrichedDirCreated) {
@@ -506,7 +512,11 @@ public class EDMService {
         boolean spatialEnrichment  = spatialMappingId > 0 ? true : false;
         boolean temporalEnrichment = temporalMappingId > 0 ? true : false;
         
+        log.info("Enirch archive. ArchiveId:{} ThematicMappingId: {} SpatialMappingId: {} TemporalMappingId: {}", 
+                archiveId, thematicMappingId, spatialMappingId, temporalMappingId);
+        
         // Load thematic mapping terms
+        Map<String, AatSubject> aatSubjectMap = new HashMap<>();
         List<SubjectTerm> subjectTerms = new LinkedList<>();
         Map<String,SubjectTerm> subjectTermsMap = new HashMap<>();
         if(thematicEnrichment) {
@@ -516,6 +526,12 @@ public class EDMService {
                 subjectTermsMap.put(mp.getNativeTerm(), mp);
             }
             log.info("Thematic mapping loaded. MappingId: {} #Terms: {}", thematicMappingId, subjectTerms.size());
+        
+            // Create aat subject map
+            List<AatSubject> aatSubjects = aatSubjectRepository.findAll();
+            for(AatSubject tmpAatSubject : aatSubjects) {
+                aatSubjectMap.put(tmpAatSubject.getAatUid(), tmpAatSubject);
+            }
         }
         
         // Load spatial mapping terms
@@ -597,26 +613,30 @@ public class EDMService {
                         // String itemContent = XMLUtils.transform(doc);
 
                         // Get subjects
-                        List<String> subjectValues = XMLUtils.getElementValues(doc, "//dc:subject");
+                        List<String> dcSubjectValues = XMLUtils.getElementValues(doc, "//dc:subject");
 
                         // Find subject mapppings (if any)
                         int subjectTermMatchCount = 0;
                         List<String> subjectMappings = new LinkedList<>();
-                        for(String value : subjectValues) {
-                            if(subjectTermsMap.containsKey(value)) {
+                        List<SubjectTerm> subjectMappingsTerms = new LinkedList<> ();
+                        
+                        for(String dcSubjectValue : dcSubjectValues) {
+                            if(subjectTermsMap.containsKey(dcSubjectValue)) {
                                 subjectTermMatchCount++;
-                                subjectMappings.add(value);
+                                subjectMappings.add(dcSubjectValue);
+                                subjectMappingsTerms.add(subjectTermsMap.get(dcSubjectValue));
                             }
                         }
 
                         // edmFile.getAbsolutePath()
-                        log.info("File: {} #Subjects: {} #Matches: {}", edmFile.getName(), subjectValues.size(), subjectTermMatchCount);
+                        log.info("File: {} #Subjects: {} #Matches: {}", edmFile.getName(), dcSubjectValues.size(), subjectTermMatchCount);
 
                         if(!subjectMappings.isEmpty()) {
 
                             // Add subject mappings
-                            doc = XMLUtils.appendElements(doc, "//edm:ProvidedCHO", "dc:subject", subjectMappings);
-
+                            // doc = XMLUtils.appendThematicElements(doc, "//edm:ProvidedCHO", "dc:subject", subjectMappings);
+                            doc = EdmXmlUtils.appendThematicElements(doc, "//edm:ProvidedCHO", "dc:subject", subjectMappingsTerms, aatSubjectMap);
+                            
                             // Save enriched file
                             Path enrichedFilePath = Paths.get(enrichedDirPath.toString(), edmFile.getName());
                             XMLUtils.transform(doc, enrichedFilePath.toFile());
