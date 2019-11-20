@@ -1,0 +1,8 @@
+UI
+~~
+When I delete a mapping, does not disappear from list until I refresh it.
+Remove upload EDM from mappings
+
+TBD:
+~~~
+When I delete a mappping, what happens to EDM archive associations? 

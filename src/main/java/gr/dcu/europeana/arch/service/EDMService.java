@@ -337,6 +337,10 @@ public class EDMService {
         EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
+        boolean hasThematicMapping = edmArchive.getThematicMapping() > 0 ? true : false;
+        boolean hasSpatialMapping  = edmArchive.getSpatialMapping() > 0 ? true : false;
+        boolean hasTemporalMapping = edmArchive.getTemporalMapping() > 0 ? true : false;
+        
         EdmArchiveTerms edmArchiveTerms = edmArchiveTermsRepository.findByArchiveId(archiveId);
         
         List<SubjectTerm> subjectTerms = new LinkedList<>();
@@ -344,14 +348,38 @@ public class EDMService {
         List<TemporalTerm> temporalTerms = new LinkedList<>();
         if(edmArchiveTerms != null) {
             try {
+                
                 ObjectMapper mapper = new ObjectMapper();
+                if(hasThematicMapping) {
+                    subjectTerms = subjectTermRepository.findByMappingId(edmArchive.getThematicMapping());
+                } else {
+                    subjectTerms = mapper.readValue(edmArchiveTerms.getSubjectTerms(), 
+                                    new TypeReference<List<SubjectTerm>>(){});
+                }
+                
+                if(hasSpatialMapping) {
+                    spatialTerms = spatialTermRepository.findByMappingId(edmArchive.getSpatialMapping());
+                } else {
+                    spatialTerms = mapper.readValue(edmArchiveTerms.getSpatialTerms(), 
+                                    new TypeReference<List<SpatialTerm>>(){});
+                }
+                
+                if(hasTemporalMapping) {
+                    temporalTerms = temporalTermRepository.findByMappingId(edmArchive.getTemporalMapping());
+                } else {
+                    temporalTerms = mapper.readValue(edmArchiveTerms.getTemporalTerms(), 
+                                    new TypeReference<List<TemporalTerm>>(){});
+                }
+                
+                /*
                 subjectTerms = mapper.readValue(edmArchiveTerms.getSubjectTerms(), 
                                     new TypeReference<List<SubjectTerm>>(){});
+                
                 spatialTerms = mapper.readValue(edmArchiveTerms.getSpatialTerms(), 
                                     new TypeReference<List<SpatialTerm>>(){});
                 temporalTerms = mapper.readValue(edmArchiveTerms.getTemporalTerms(), 
                                     new TypeReference<List<TemporalTerm>>(){});
-
+                */
             } catch (IOException ex) {
                 log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTerms.getId());
             }

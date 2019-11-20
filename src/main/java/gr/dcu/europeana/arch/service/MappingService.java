@@ -132,7 +132,8 @@ public class MappingService {
         Mapping mapping = mappingRepository.findById(mappingId)
                     .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
-         switch(mapping.getType()) {
+        // Delete terms
+        switch(mapping.getType()) {
             case MappingType.MAPPING_TYPE_SUBJECT:
                 subjectTermRepository.deleteByMappingId(mappingId);
                 break;
@@ -146,6 +147,7 @@ public class MappingService {
                 log.warn("Unknown mapping type.");
          }
         
+        // Delete mapping
         mappingRepository.deleteById(mappingId);
     }
     
