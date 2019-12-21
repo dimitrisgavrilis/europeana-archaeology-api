@@ -168,7 +168,7 @@ public class MappingService {
                     .orElseThrow(() -> new ResourceNotFoundException(mappingId));
 
             // Export to tmp file
-            Path filePath = fileStorageService.buildExportFilePath(mappingId);
+            Path filePath = fileStorageService.buildMappingExportFilePath(mappingId);
             
             switch(mapping.getType()) {
                 case MappingType.MAPPING_TYPE_SUBJECT:
@@ -227,7 +227,7 @@ public class MappingService {
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Upload mapping file
-        Path filePath = fileStorageService.buildUploadFilePath(mappingId, file.getOriginalFilename());
+        Path filePath = fileStorageService.buildMappingUploadFilePath(mappingId, file.getOriginalFilename());
         fileStorageService.upload(filePath, file);
         
         // Load terms
@@ -266,7 +266,7 @@ public class MappingService {
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Upload mapping file
-        Path filePath = fileStorageService.buildUploadFilePath(mappingId, file.getOriginalFilename());
+        Path filePath = fileStorageService.buildMappingUploadFilePath(mappingId, file.getOriginalFilename());
         fileStorageService.upload(filePath, file);
         
         // Load terms
@@ -297,7 +297,7 @@ public class MappingService {
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Upload mapping file
-        Path filePath = fileStorageService.buildUploadFilePath(mappingId, file.getOriginalFilename());
+        Path filePath = fileStorageService.buildMappingUploadFilePath(mappingId, file.getOriginalFilename());
         fileStorageService.upload(filePath, file);
         
         // Load terms

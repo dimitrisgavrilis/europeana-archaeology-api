@@ -107,25 +107,16 @@ public class EDMService {
     public EdmArchive uploadEdmArchive(MultipartFile file, int userId) throws IOException {
         
         // File system hierarchy
-        // storage_tmp
-        // -- <mapping_id>
-        //    -- enrich
+        // storage_tmp/europeana_Arch
+        // -- packages
+        //    -- p_i
+        
+        
+        // -- DEPRECATED -- // 
+        //    -- enrich 
         //        -- <request_id> (at this level store the archives - edm.zip , eEDM.tar.gz)
         //            -- EDM
         //            -- eEDM
-        //    -- uploads
-        //    -- exports
-        
-        
-        /*
-        // Create enrich enrichRequest
-        EnrichRequest enrichRequest = new EnrichRequest();
-        enrichRequest.setMappingId(mappingId);
-        enrichRequest.setFilename(file.getOriginalFilename());
-        enrichRequest.setCreatedBy(userId);
-        enrichRequest = enrichRequestRepository.save(enrichRequest);
-        long requestId = enrichRequest.getId();
-        */
         
         // Create an upload request
         EdmArchive edmArchive = new EdmArchive();
@@ -141,7 +132,7 @@ public class EDMService {
         
         // Upload EDM archive
         log.info("Upload EDM archive. RequestId: {}", edmUploadId);
-        Path edmArchiveFilePath = fileStorageService.buildUploadEdmArchiveFilePathNew(edmUploadId, file.getOriginalFilename());
+        Path edmArchiveFilePath = fileStorageService.buildEdmArchiveUploadFilePathNew(edmUploadId, file.getOriginalFilename());
         fileStorageService.upload(edmArchiveFilePath, file);
         log.info("EDM archive uploaded. Path: {}", edmArchiveFilePath);
         
@@ -160,105 +151,6 @@ public class EDMService {
         edmArchive = edmArchiveRepository.save(edmArchive);
         
         return edmArchive;
-        
-        /*
-        // Enrich archive
-        boolean enrichedDirCreated = false;
-        Path enrichedDirPath = null;
-        int enrichedFileCount = 0;
-        for(File edmFile : edmFiles) {
-            if(edmFile.exists() && edmFile.isFile()) {
-                
-                try {
-                    // Retrieve xml content. ATTENTION: Namespace aware is true.
-                    Document doc = XMLUtils.parse(edmFile, true);
-                    // String itemContent = XMLUtils.transform(doc);
-
-                    // Get subjects
-                    List<String> dcSubjectValues = XMLUtils.getElementValues(doc, "//dc:subject");
-                    
-                    // Find subject mapppings (if any)
-                    int subjectTermMatchCount = 0;
-                    List<String> subjectMappings = new LinkedList<>();
-                    for(String dcSubjectValue : dcSubjectValues) {
-                        if(subjectTermsMap.containsKey(dcSubjectValue)) {
-                            subjectTermMatchCount++;
-                            subjectMappings.add(dcSubjectValue);
-                        }
-                    }
-                    
-                    // edmFile.getAbsolutePath()
-                    log.info("File: {} #Subjects: {} #Matches: {}", edmFile.getName(), dcSubjectValues.size(), subjectTermMatchCount);
-                    
-                    if(!subjectMappings.isEmpty()) {
-                        
-                        // Add subject mappings
-                        doc = XMLUtils.appendThematicElements(doc, "//edm:ProvidedCHO", "dc:subject", subjectMappings);
-                        
-                        // Create enriched directory (if not)
-                        if(!enrichedDirCreated) {
-                            enrichedDirPath = Paths.get(edmExtractDirPath.getParent().toString(), "eEDM");
-                            Files.createDirectories(enrichedDirPath);
-                        }
-                        
-                        // Save enriched file
-                        Path enrichedFilePath = Paths.get(enrichedDirPath.toString(), edmFile.getName());
-                        XMLUtils.transform(doc, enrichedFilePath.toFile());
-                        
-                        enrichedFileCount++;
-                        
-                        log.info("File enriched. {} subjects added.Stored at: {}", 
-                                subjectTermMatchCount, enrichedFilePath);
-                    }
-                } catch(ParserConfigurationException | SAXException | 
-                        TransformerException | XPathExpressionException ex) {
-                    log.error("Cannot parse file. File: {}", edmFile.getAbsolutePath());
-                }
-                
-            }
-        } */
-        
-        /*
-        // Create archive with enriched files
-        String enrichedArchiveFilePath = "";
-        String enrichedArchiveName = "";
-        if(enrichedFileCount > 0) {
-            log.info("#Files: {} #Enriched: {}", edmFiles.length, enrichedFileCount);
-            
-            // Example eEDM_m2_r4 => mapping 2, enrichRequest 4
-            String filenamePrefix = "eEDM_m" + mappingId + "_r" + requestId; 
-            Path archiveFilePath = fileStorageService.createArchiveFromDirectory(enrichedDirPath, filenamePrefix);
-            
-            enrichedArchiveName = archiveFilePath.getFileName().toString();
-            enrichedArchiveFilePath = archiveFilePath.toString();
-            log.info("Enriched archive created at {}", archiveFilePath.toString());
-            
-        } 
-        
-        String message = enrichedFileCount + " files enriched successfully.";
-                
-        // Set enrich details
-        EnrichDetails enrichDetails = new EnrichDetails();
-        enrichDetails.setSuccess(true);
-        enrichDetails.setMessage(message);
-        enrichDetails.setEdmFileCount(edmFiles.length);
-        enrichDetails.setEdmArchiveName(file.getOriginalFilename());
-        enrichDetails.setEnrichedFileCount(enrichedFileCount);
-        enrichDetails.setEnrichedArchiveName(enrichedArchiveName);
-        enrichDetails.setEnrichedArchiveUrl("/enrich/requests/" + requestId + "/download");
-        
-        ObjectMapper objectMaper = new ObjectMapper();
-        String details = objectMaper.writeValueAsString(enrichDetails);
-        
-        // Update enrich enrichRequest
-        enrichRequest.setEnrichedFilename(enrichedArchiveName);
-        enrichRequest.setEnrichedFilepath(enrichedArchiveFilePath);
-        enrichRequest.setDetails(details);
-        enrichRequestRepository.save(enrichRequest);
-        
-        return enrichDetails;
-        */
-        
     }
     
     /**
@@ -557,7 +449,7 @@ public class EDMService {
         }
             
         
-        
+        // DEPRECATED
         // File system hierarchy
         // storage_tmp
         // -- <mapping_id>
@@ -735,96 +627,10 @@ public class EDMService {
         
         return enrichDetails;
     }
-        
-    
-    
-    /*
-    public List<SubjectTerm> uploadSubjectTerms(long mappingId, MultipartFile file, int userId) throws IOException {
-        
-        // Check existemce of mapping
-        Mapping mapping = mappingRepository.findById(mappingId)
-                .orElseThrow(() -> new ResourceNotFoundException(mappingId));
-        
-        // Upload mapping file
-        Path filePath = fileStorageService.buildUploadFilePath(mappingId, file.getOriginalFilename());
-        fileStorageService.upload(filePath, file);
-        
-        // Load subjectTerms
-        List<SubjectTerm> termList = 
-                excelService.loadSubjectTermsFromExcel(filePath.toString(), mappingId, 1, -1);
-        
-        // Save subjectTerms
-        log.info("Saving subjectTerms. #Terms:{}", termList.size());
-        
-        // TODO: Do not save automatically. Preview first.
-        subjectTermRepository.saveAll(termList);
-        
-        // Create upload enrichRequest
-        MappingUploadRequest uploadRequest = new MappingUploadRequest();
-        uploadRequest.setMappingId(mappingId);
-        uploadRequest.setFilename(file.getOriginalFilename());
-        uploadRequest.setFilepath(filePath.toString());
-        uploadRequest.setCreatedBy(userId);
-        uploadRequestRepository.save(uploadRequest);
-        
-        return termList;
-    } */
-    
-    
-    
-    
-    
-    
-    
     
     
     public List<MappingUploadRequest> getEdmPackages(Integer userId) {
         return uploadRequestRepository.findAllByCreatedBy(userId);
-    }
-
-//    public EDMService() {
-//    }
-    
-    
-    
-    /**
-     * 
-     * @param filename
-     * @param mappingId
-     * @param skipLineCount
-     * @param limitCount
-     * @return 
-     */
-    public List<SubjectTerm> loadMappingTermsFromExcel(String filename, long mappingId, 
-            int skipLineCount, int limitCount) {
-
-        List<SubjectTerm> mappings = new LinkedList<>();
-        
-        /*
-        try {
-            
-            // Resource resource = resourceLoader.getResource("classpath:" + filename);
-            // File file = resource.getFile();
-            
-            File file = new File(filename);
-            if(file.exists() && file.isFile()) {
-                log.info("URI: {}", file.getAbsolutePath());
-                
-                // Process archive
-                
-                
-            } else {
-                log.error("File not found " + filename);
-                throw new MyFileNotFoundException("File not found " + filename);
-            }
-           
-        } catch(IOException ex) {
-            log.error("File not found " + filename);
-                throw new MyFileNotFoundException("File not found " + filename);
-        } */
-        
-        return mappings;
-        
     }
     
     /**

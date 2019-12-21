@@ -58,6 +58,20 @@ public class FileStorageService {
            throw new MyFileNotFoundException("File not found " + filePath, ex);
         }
     }
+    
+    public File loadFile (String filepath) throws IOException {
+        
+        File file = new File(filepath);
+
+        if(file.exists() && file.isFile()) {
+            return file;
+        } else {
+            log.warn("File does not exist. File: " + file.getAbsolutePath());
+        }
+        
+        return file;
+        
+     }
    
     public Path upload(Path destinationFilePath, MultipartFile file) throws IOException {
        
@@ -74,7 +88,6 @@ public class FileStorageService {
         return destinationFilePath;
     }
    
-    // Extract archive to destination
     
     public void extractArchive(Path archiveFilePath, Path destinationDirPath) throws IOException {
                
@@ -133,9 +146,7 @@ public class FileStorageService {
        
        return archiveFilePath;
     }
-   
-    // *** Utility functions ***//
-   
+    
     /**
      * 
      * @param fileNamePrefix
@@ -152,6 +163,38 @@ public class FileStorageService {
         // return formattedInstant + "_" + fileNameSuffix;
                 
     }
+   
+    // *** Utility functions ***//
+    
+    /**
+     * 
+     * @return 
+     */
+    public Path buildEuropeanaArchHomePath() {
+        
+        return Paths.get(getFileStorageProperties().getStorageHome(), 
+                FileStorageProperties.EUROPEANA_ARCH_HOME_DIR).toAbsolutePath().normalize();
+    }
+    
+    /**
+     * 
+     * @return 
+     */
+    public Path buildMappingsHomePath() {
+        
+        return Paths.get(getFileStorageProperties().getStorageHome(), 
+                FileStorageProperties.MAPPINGS_HOME_DIR).toAbsolutePath().normalize();
+    }
+    
+    /**
+     * 
+     * @return 
+     */
+    public Path buildPackagesHomePath() {
+        
+        return Paths.get(getFileStorageProperties().getStorageHome(), 
+                FileStorageProperties.PACKAGES_HOME_DIR).toAbsolutePath().normalize();
+    }
 
     /**
      * 
@@ -159,7 +202,7 @@ public class FileStorageService {
      * @return
      * @throws IOException 
      */
-    public Path buildExportFilePath (long mappingId) throws IOException {
+    public Path buildMappingExportFilePath (long mappingId) throws IOException {
         
        Path filePath;
         
@@ -168,9 +211,10 @@ public class FileStorageService {
             String fileNamePrefix = "mapping_" + mappingId;
             String fileName = buildFileNameWithTimestamp(fileNamePrefix, ".xlsx");
 
-            // Create export directory if does not exist (i.e. <storage_home>/<mapping_id>/exports)
-            Path storageHomeDir = Paths.get(getFileStorageProperties().getStorageHome()).toAbsolutePath().normalize();
-            Path exportDir = Paths.get(storageHomeDir.toString(), String.valueOf(mappingId), "exports");
+            // Create export directory if does not exist (i.e. <europeana_arch_home>/mappings/<mapping_id>/exports)
+            Path exportDir = Paths.get(buildMappingsHomePath().toString(),
+                    "m_" + String.valueOf(mappingId), 
+                    "exports");
             Files.createDirectories(exportDir);
             
             // Build filepath
@@ -190,14 +234,15 @@ public class FileStorageService {
      * @return
      * @throws IOException 
      */
-    public Path buildUploadFilePath (long mappingId, String fileName) throws IOException {
+    public Path buildMappingUploadFilePath (long mappingId, String fileName) throws IOException {
         
        Path filePath;
         
         try {
             // Create export directory if does not exist (i.e. <storage_home>/<mapping_id>/uploads)
-            Path storageHomeDir = Paths.get(getFileStorageProperties().getStorageHome()).toAbsolutePath().normalize();
-            Path exportDir = Paths.get(storageHomeDir.toString(), String.valueOf(mappingId), "uploads");
+            Path exportDir = Paths.get(buildMappingsHomePath().toString(),
+                    "m_" + String.valueOf(mappingId),
+                    "uploads");
             Files.createDirectories(exportDir);
             
             // Build filepath
@@ -218,6 +263,7 @@ public class FileStorageService {
      * @return
      * @throws IOException 
      */
+    @Deprecated
     public Path buildUploadEdmArchiveFilePath (long mappingId, String fileName, long requestId) throws IOException {
         
        Path filePath;
@@ -238,14 +284,21 @@ public class FileStorageService {
         return filePath;
      }
     
-    public Path buildUploadEdmArchiveFilePathNew (long packageId, String fileName) throws IOException {
+    /**
+     * 
+     * @param packageId
+     * @param fileName
+     * @return
+     * @throws IOException 
+     */
+    public Path buildEdmArchiveUploadFilePathNew (long packageId, String fileName) throws IOException {
         
        Path filePath;
         
         try {
             // Create export directory if does not exist (i.e. <storage_home>/<mapping_id>/uploads)
-            Path storageHomeDir = Paths.get(getFileStorageProperties().getStorageHome()).toAbsolutePath().normalize();
-            Path exportDir = Paths.get(storageHomeDir.toString(), String.valueOf("package_" + packageId));
+            Path exportDir = Paths.get(buildPackagesHomePath().toString(),
+                    String.valueOf("p_" + packageId));
             Files.createDirectories(exportDir);
             
             // Build filepath
@@ -258,14 +311,20 @@ public class FileStorageService {
         return filePath;
      }
     
+    /**
+     * 
+     * @param packageId
+     * @return
+     * @throws IOException 
+     */
     public Path buildEdmArchiveExtractionPath (long packageId) throws IOException {
         
        Path edmDirPath;
         
         //try {
             // Create export directory if does not exist (i.e. <storage_home>/<mapping_id>/uploads)
-            Path storageHomeDir = Paths.get(getFileStorageProperties().getStorageHome()).toAbsolutePath().normalize();
-            Path packageHomePath = Paths.get(storageHomeDir.toString(), String.valueOf("package_" + packageId));
+            Path packageHomePath = Paths.get(buildPackagesHomePath().toString(), 
+                    String.valueOf("p_" + packageId));
             
             // Build filepath
             edmDirPath = Paths.get(packageHomePath.toString(), "EDM");
@@ -277,33 +336,4 @@ public class FileStorageService {
         return edmDirPath;
      }
     
-    public File loadFile (String filepath) throws IOException {
-        
-        File file = new File(filepath);
-
-        if(file.exists() && file.isFile()) {
-            return file;
-        } else {
-            log.warn("File does not exist. File: " + file.getAbsolutePath());
-        }
-        
-        return file;
-        
-     }
-    
-    public Path buildEdmArchiveExtractDirPath (long requestId, Path filePath) throws IOException {
-        Path extractDirPath;
-        
-        try {
-            extractDirPath = Paths.get(filePath.getParent().toString(), String.valueOf(requestId));
-            Files.createDirectories(extractDirPath);
-
-        } catch(IOException ex) {
-            throw ex;
-        }
-        
-        return extractDirPath;
-        
-     }
-   
 }

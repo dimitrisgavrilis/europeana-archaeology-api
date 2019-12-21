@@ -14,10 +14,10 @@ import org.springframework.web.client.RestTemplate;
  */
 @Slf4j
 @SpringBootApplication
-public class MappingApplication extends SpringBootServletInitializer {
+public class EuropeanaArchaelogyApplication extends SpringBootServletInitializer {
     
     public static void main(String[] args) {
-        SpringApplication.run(MappingApplication.class);
+        SpringApplication.run(EuropeanaArchaelogyApplication.class);
     }
     
     @Bean
