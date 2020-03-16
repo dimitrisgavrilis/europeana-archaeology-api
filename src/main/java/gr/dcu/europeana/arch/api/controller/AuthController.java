@@ -1,18 +1,14 @@
 package gr.dcu.europeana.arch.api.controller;
 
-import gr.dcu.europeana.arch.api.resource.auth.LoginResponse;
-import gr.dcu.europeana.arch.api.resource.auth.LogoutResponse;
-import gr.dcu.europeana.arch.api.resource.auth.SignupRequest;
-import gr.dcu.europeana.arch.api.resource.auth.ValidateTokenResponse;
+import gr.dcu.europeana.arch.api.resource.auth.*;
 import gr.dcu.europeana.arch.model.User;
 import gr.dcu.europeana.arch.service.AuthService;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
 import java.security.NoSuchAlgorithmException;
 import javax.servlet.http.HttpServletRequest;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -23,51 +19,43 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin
 public class AuthController {
     
-    @Autowired
-    private AuthService authService;
-    
-    /**
-     * 
-     * @param request
-     * @return
-     * @throws java.security.NoSuchAlgorithmException
-     */
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
+    @Operation(summary = "Signup")
     @PostMapping("/auth/signup")
-    public User signup(@RequestBody SignupRequest request) throws NoSuchAlgorithmException { 
-       
-       log.info("Signup request...");
-       
+    public User signup(@RequestBody SignupRequest request) throws NoSuchAlgorithmException {
        return authService.signup(request);
     }
     
-    /**
-     * 
-     * @param requestContext
-     * @return 
-     */
-    @ApiOperation("Login")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = LoginResponse.class)})
+    @Operation(summary = "Login")
     @PostMapping("/auth/login")
-    LoginResponse login(HttpServletRequest requestContext) {
+    public LoginResponse login(HttpServletRequest requestContext) {
         return authService.login(requestContext);
     }
     
-    /**
-     * 
-     * @param requestContext
-     * @return 
-     */
-    @ApiOperation("Logout")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = Boolean.class)})
+    @Operation(summary = "Logout")
     @PostMapping("/auth/logout")
-    LogoutResponse logout(HttpServletRequest requestContext) {
+    public LogoutResponse logout(HttpServletRequest requestContext) {
         return authService.logout(requestContext);
     }
     
-    @ApiOperation("Validate auth status")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = Boolean.class)})
+    @Operation(summary = "Validate auth status")
     @PostMapping("/auth/status")
-    ValidateTokenResponse validateToken(HttpServletRequest requestContext) {
+    public ValidateTokenResponse validateToken(HttpServletRequest requestContext) {
         return authService.status(requestContext);
+    }
+
+    @Operation(summary = "Reset password")
+    @PostMapping("/auth/reset_password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest resetPasswordRequest,
+                                           HttpServletRequest requestContext) {
+
+        authService.resetPassword(resetPasswordRequest, requestContext);
+
+        return new ResponseEntity<>("Password reset successfully.", HttpStatus.OK);
     }
 }

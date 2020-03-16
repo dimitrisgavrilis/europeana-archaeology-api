@@ -2,11 +2,10 @@ package gr.dcu.europeana.arch.service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import gr.dcu.europeana.arch.api.resource.auth.LoginResponse;
-import gr.dcu.europeana.arch.api.resource.auth.LogoutResponse;
-import gr.dcu.europeana.arch.api.resource.auth.SignupRequest;
+import gr.dcu.europeana.arch.api.resource.auth.*;
 import gr.dcu.europeana.arch.api.resource.UserResource;
-import gr.dcu.europeana.arch.api.resource.auth.ValidateTokenResponse;
+import gr.dcu.europeana.arch.config.AppConfig;
+import gr.dcu.europeana.arch.model.Setting;
 import gr.dcu.europeana.arch.model.User;
 import gr.dcu.europeana.arch.model.UserSession;
 import gr.dcu.europeana.arch.exception.AuthorizationException;
@@ -16,11 +15,16 @@ import gr.dcu.europeana.arch.repository.UserRepository;
 import gr.dcu.europeana.arch.repository.UserSessionRepository;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.StringTokenizer;
+import java.util.*;
 import javax.servlet.http.HttpServletRequest;
+
+import gr.dcu.europeana.arch.service.email.EmailBuilderService;
+import gr.dcu.europeana.arch.service.email.MailgunService;
+import gr.dcu.utils.MySQLUtils;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -31,20 +35,29 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 public class AuthService {
+
+    @Autowired
+    private AppConfig appConfig;
     
     @Autowired
-    UserRepository userRepository;
+    private UserRepository userRepository;
     
     @Autowired
-    UserSessionRepository userSessionRepository;
+    private UserSessionRepository userSessionRepository;
+
+    @Autowired
+    private SettingService settingService;
+
+    @Autowired
+    private EmailBuilderService emailBuilderService;
+
+    @Autowired
+    private MailgunService mailgunService;
     
     public static final String HEADER_AUTHORIZATION = "Authorization";
     
     /**
      * Signup a new user
-     * @param request
-     * @return
-     * @throws java.security.NoSuchAlgorithmException 
      */
     public User signup(SignupRequest request) throws NoSuchAlgorithmException, BadRequestException {
         
@@ -57,7 +70,7 @@ public class AuthService {
         }
         
         // Check if the email already exists
-        List<User> users = userRepository.findByEmail(request.getEmail());
+        List<User> users = userRepository.findAllByEmail(request.getEmail());
         if(users.size() > 0) {
             throw new BadRequestException("Email already exists.");
         }
@@ -74,15 +87,43 @@ public class AuthService {
         
         user.setOrganization(request.getOrganization());
         user.setActive((short) 1);
-        
-        return userRepository.save(user);
+
+        user = userRepository.save(user);
+
+        // Notify user & admins by email
+        try {
+
+            // Add user email
+            List<String> recipients = new LinkedList<>();
+            recipients.add(email);
+
+            List<String> adminRecipients = settingService.getRecipientList(Setting.MAILGUN_RECIPIENTS_SIGN_UP);
+            recipients.addAll(adminRecipients);
+            log.info("Notify users. User: {} Admins: {}", email, adminRecipients);
+
+            String from = appConfig.getMailgunSender();
+            String subject = AppConfig.PROJECT_NAME + " - " + AppConfig.SERVICE_NAME + ": New account";
+
+            Map<String, String> variables = new HashMap<>();
+            variables.put(EmailBuilderService.VAR_USER_NAME, user.getName());
+            variables.put(EmailBuilderService.VAR_PROJECT_NAME, AppConfig.PROJECT_NAME);
+            variables.put(EmailBuilderService.VAR_SERVICE_NAME, AppConfig.SERVICE_NAME);
+
+            String body = emailBuilderService.buildSignupEmail("A new account created.", variables);
+            //log.info(body);
+
+            mailgunService.configure(appConfig.getMailgunDomainName(), appConfig.getMailgunApiKey());
+            mailgunService.sendMessage(from, recipients, subject, body, false);
+
+        } catch(Exception ex) {
+            log.error("Create account. Send email failed. Email: {}", email);
+        }
+
+
+
+        return user;
     }
-    
-    /**
-     * 
-     * @param requestContext
-     * @return 
-     */
+
     public LoginResponse login(HttpServletRequest requestContext) {
         
         LoginResponse response = new LoginResponse();
@@ -144,12 +185,7 @@ public class AuthService {
         
     }
     
-    
-    /**
-     * 
-     * @param requestContext
-     * @return 
-     */
+
     public LogoutResponse logout(HttpServletRequest requestContext) {
         
         LogoutResponse response = new LogoutResponse();
@@ -178,11 +214,6 @@ public class AuthService {
         }
     }
     
-    /**
-     * 
-     * @param requestContext
-     * @return 
-     */
     public ValidateTokenResponse status(HttpServletRequest requestContext) {
         
         ValidateTokenResponse authStatus = new ValidateTokenResponse();
@@ -256,5 +287,82 @@ public class AuthService {
         }
             
         return userId;  
+    }
+
+    public boolean resetPassword(ResetPasswordRequest resetPasswordRequest,
+                                 HttpServletRequest requestContext) {
+
+        String authHeader = requestContext.getHeader(HEADER_AUTHORIZATION);
+        String ipAddress = requestContext.getRemoteAddr();
+        String requestUrl = requestContext.getRequestURL().toString();
+
+        String email = resetPasswordRequest.getUsername();
+
+        log.info("Reset password. IP:{} - Username: {}", ipAddress, email);
+
+        if(email == null || email.isEmpty()) {
+            throw new BadRequestException("Username is missing or empty.");
+        }
+
+        List<User> users = userRepository.findAllByEmail(email);
+
+        if(users.size() != 1) {
+            throw new AuthorizationException("Cannot reset password. Cannot identify user.");
+        } else {
+            try {
+                User user = users.get(0);
+
+                LocalDate today = LocalDate.now();
+                String todayInString = today.toString().replace("-", "");
+
+                // String password = 1 + todayInString + "!";
+                String password = generateRandomString(10, true, true);
+                String passwordHash = MySQLUtils.toMd5(password);
+                user.setPassword(passwordHash);
+                userRepository.save(user);
+
+                log.info("Password reset successfully. Password: {}", password);
+
+                // Notify user & admins by email
+                try {
+
+                    // Add user email
+                    List<String> recipients = new LinkedList<>();
+                    recipients.add(email);
+
+                    List<String> adminRecipients = settingService.getRecipientList(Setting.MAILGUN_RECIPIENTS_RESET_PASSWORD);
+                    recipients.addAll(adminRecipients);
+                    log.info("Notify users. User: {} Admins: {}", email, adminRecipients);
+
+                    String from = appConfig.getMailgunSender();
+                    String subject = AppConfig.PROJECT_NAME + " - " + AppConfig.SERVICE_NAME + " : Reset password";
+
+                    Map<String, String> variables = new HashMap<>();
+                    variables.put(EmailBuilderService.VAR_USER_NAME, user.getName());
+                    variables.put(EmailBuilderService.VAR_SERVICE_NAME, AppConfig.SERVICE_NAME);
+                    variables.put(EmailBuilderService.VAR_PASSWORD, password);
+
+                    String body = emailBuilderService.buildResetPasswordTemplate(
+                            "Reset password request.", variables);
+                    //log.info(body);
+
+                    mailgunService.configure(appConfig.getMailgunDomainName(), appConfig.getMailgunApiKey());
+                    mailgunService.sendMessage(from, recipients, subject, body, false);
+
+                } catch(Exception ex) {
+                    log.error("Reset password. Send email failed. Email: {}", email);
+                }
+
+                return true;
+            } catch(NoSuchAlgorithmException ex) {
+                log.error("",ex);
+                return false;
+            }
+        }
+    }
+
+    public String generateRandomString(int length, boolean useLetters, boolean useNumbers) {
+
+        return RandomStringUtils.random(length, useLetters, useNumbers);
     }
 }

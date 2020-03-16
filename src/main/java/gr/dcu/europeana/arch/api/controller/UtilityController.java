@@ -9,13 +9,9 @@ import gr.dcu.europeana.arch.model.AatSubject;
 import gr.dcu.europeana.arch.model.Language;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import gr.dcu.europeana.arch.repository.LanguageRepository;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import java.util.Collection;
 import java.util.List;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,20 +27,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class UtilityController {
     
-    @Autowired
-    AatSubjectRepository aatSubjectRepository;
-    
-    @Autowired
-    LanguageRepository languageRepository;
-    
-    @Autowired
-    GeonamesService geonamesService;
-    
-    @Autowired
-    GeonamesMapper geonamesMapper;
-    
-    @ApiOperation("Search Subjects by name")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = AatSubject.class)})
+    private final AatSubjectRepository aatSubjectRepository;
+    private final LanguageRepository languageRepository;
+    private final GeonamesService geonamesService;
+    private final GeonamesMapper geonamesMapper;
+
+    public UtilityController(AatSubjectRepository aatSubjectRepository, LanguageRepository languageRepository,
+                             GeonamesService geonamesService, GeonamesMapper geonamesMapper) {
+        this.aatSubjectRepository = aatSubjectRepository;
+        this.languageRepository = languageRepository;
+        this.geonamesService = geonamesService;
+        this.geonamesMapper = geonamesMapper;
+    }
+
+    @Operation(summary = "Search subjects by name")
     @PostMapping("/subjects/search")
     public List<AatSubject> searchSubjectsByName(@RequestParam String q, 
             @RequestParam(value = "type", required=false) String type) {
@@ -56,8 +52,7 @@ public class UtilityController {
         }
     }
     
-    @ApiOperation("Search geonames by name")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = Geonames.class)})
+    @Operation(summary = "Search geonames by name")
     @PostMapping("/geonames/search")
     public List<GeonamesDto> searchGeonamesByName(@RequestParam String q, 
             @RequestParam(required = false, defaultValue = "en") String lang) {
@@ -71,8 +66,7 @@ public class UtilityController {
         return geonamesMapper.toDtoList(geonames);
     }
     
-    @ApiOperation("Get all languages")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "OK", response = Collection.class)})
+    @Operation(summary = "Get all languages")
     @GetMapping("/languages")
     public List<Language> getAllLanguages() {
         return languageRepository.findAllByOrderByNameAsc();

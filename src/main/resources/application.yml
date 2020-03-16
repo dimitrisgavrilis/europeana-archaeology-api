@@ -1,5 +1,3 @@
-name: devel-YAML
-environment: development
 info:
   app:
     name: Europeana Archaelogy Mapping Tool
@@ -9,7 +7,10 @@ management:
   endpoints:
     web:
       exposure:
-        include: health, info, loggers, metrics
+        include: health, info, loggers, metrics, env
+  info:
+    git:
+      mode: full
 server:
   port: 8085
 
@@ -60,4 +61,10 @@ spring:
 #storage.file.dir: /data/services/share3d_storage
 #file.upload-dir: /data/services/tmp_storage
 file.storage-home: /data/services/storage_tmp
-          
+
+# Mailgun configuration
+mailgun:
+  domainName: "mailer.share3d.eu"
+  apiKey: "c078aecbaeec4cf8ea31cb8e95b2d46e-1df6ec32-e856d932"
+  sender: "europeana-archaeology@carare.eu"
+  # https://europeanaarchaeology.carare.eu/

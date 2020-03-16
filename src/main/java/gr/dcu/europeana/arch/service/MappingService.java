@@ -106,6 +106,10 @@ public class MappingService {
         
         return mappingRepository.findAllByCreatedBy(userId);
     }
+
+    public Mapping findById(Long id) {
+        return mappingRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(id));
+    }
     
     /**
      * 
@@ -118,6 +122,20 @@ public class MappingService {
         mapping.setCreatedBy(userId);
         
         return mappingRepository.save(mapping);
+    }
+
+    public Mapping updateMapping(Long id, Mapping mapping) {
+
+        Mapping existingMapping = mappingRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(id));
+
+        existingMapping.setLabel(mapping.getLabel());
+        existingMapping.setDescription(mapping.getDescription());
+        existingMapping.setLanguage(mapping.getLanguage());
+        existingMapping.setProviderName(mapping.getProviderName());
+        existingMapping.setVocabularyName(mapping.getVocabularyName());
+
+        return mappingRepository.save(existingMapping);
     }
     
     /**

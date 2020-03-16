@@ -25,9 +25,7 @@ public class EdmExtractUtils {
     public static final String DC_TERMS_SPATIAL  = "dcterms:spatial";
     
     /**
-     * 
-     * @param node
-     * @return
+     * Extract data from an XML node
      * @throws XPathExpressionException 
      */
     public static ElementExtractionData extractNodeData(Node node) throws XPathExpressionException {
@@ -58,10 +56,9 @@ public class EdmExtractUtils {
     }
     
     /**
-     * 
+     * Extract data from a list of XML nodes
      * @param nodeList
      * @param skipEmptyValues
-     * @return
      * @throws XPathExpressionException 
      */
     public static List<ElementExtractionData> extractNodeData(NodeList nodeList, boolean skipEmptyValues) throws XPathExpressionException {
@@ -80,34 +77,26 @@ public class EdmExtractUtils {
     }
     
     /**
-     * 
-     * @param extractionResult
+     * Split extraction data in 3 categories. a) thematic, b) temporal, c) spatial
+     * @param extractionResult list of extraction result from a set of files
      * @return
      */
     public static ElementExtractionDataCategories splitExtractionDataInCategories(
             List<EdmFileTermExtractionResult> extractionResult)  {
-        
-//         List<ElementExtractionData> extractionDataList = new 
                 
         Set<ElementExtractionData> thematicElementValues = new HashSet<>();
         Set<ElementExtractionData> spatialElementValues = new HashSet<>();
         Set<ElementExtractionData> temporalElementValues = new HashSet<>();
-        for(EdmFileTermExtractionResult edmFileExtractionresult : extractionResult) {
-            for(ElementExtractionData elementExtractionData : edmFileExtractionresult.getExtractionData()) {
+        for(EdmFileTermExtractionResult edmFileExtractionResult : extractionResult) {
+            for(ElementExtractionData elementExtractionData : edmFileExtractionResult.getExtractionData()) {
             
                 switch(elementExtractionData.getElementName()) {
                     case DC_SUBJECT:
-                        thematicElementValues.add(elementExtractionData);
-                        break;
                     case DC_TYPE:
                         thematicElementValues.add(elementExtractionData);
                         break;
                     case DC_DATE:
-                        temporalElementValues.add(elementExtractionData);
-                        break;
                     case DC_TERMS_TEMPORAL:
-                        temporalElementValues.add(elementExtractionData);
-                        break;
                     case DC_TERMS_CREATED:
                         temporalElementValues.add(elementExtractionData);
                         break;
@@ -121,7 +110,6 @@ public class EdmExtractUtils {
             }
         }
         
-        
         // Build categories
         ElementExtractionDataCategories categories = new ElementExtractionDataCategories();
         categories.setThematicElementValues(thematicElementValues);
@@ -129,9 +117,5 @@ public class EdmExtractUtils {
         categories.setSpatialElementValues(spatialElementValues);
         
         return  categories;
-        
     }
-    
-
-    
 }

@@ -10,7 +10,7 @@ import gr.dcu.europeana.arch.repository.TemporalTermRepository;
 import gr.dcu.europeana.arch.service.AuthService;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Autowired;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,38 +28,36 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class TermController {
     
-    @Autowired
-    AuthService authService;
-    
-    // @Autowired
-    // MappingService mappingService;
-    
-    //@Autowired
-    //SubjectMappingRepository subjectMappingRepository;
-    
-    @Autowired
-    SubjectTermRepository subjectTermRepository;
-    
-    @Autowired
-    SpatialTermRepository spatialTermRepository;
-    
-    @Autowired
-    TemporalTermRepository temporalTermRepository;
-    
-     // ~~~~~~~~~~~~~~~~~~~~~~~~~~ Subject Terms ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
-    
+    private final AuthService authService;
+    private final SubjectTermRepository subjectTermRepository;
+    private final SpatialTermRepository spatialTermRepository;
+    private final TemporalTermRepository temporalTermRepository;
+
+    public TermController(AuthService authService, SubjectTermRepository subjectTermRepository,
+                          SpatialTermRepository spatialTermRepository, TemporalTermRepository temporalTermRepository) {
+        this.authService = authService;
+        this.subjectTermRepository = subjectTermRepository;
+        this.spatialTermRepository = spatialTermRepository;
+        this.temporalTermRepository = temporalTermRepository;
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~ Subject Terms ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+
+    @Operation(summary = "Get all subject terms")
     @GetMapping("/mappings/{id}/terms")
     public List<SubjectTerm> getAllMappingTerms(HttpServletRequest requestContext, @PathVariable Long id) {
         return subjectTermRepository.findByMappingId(id);
     }
-    
+
+    @Operation(summary = "Get a specific subject term")
     @GetMapping("/mappings/{id}/terms/{termId}")
     public SubjectTerm getMappingTerm(HttpServletRequest requestContext, 
             @PathVariable Long id, @PathVariable Long termId) { 
         return subjectTermRepository.findById(termId)
                 .orElseThrow(() -> new ResourceNotFoundException(termId));
     }
-    
+
+    @Operation(summary = "Update a specific subject term")
     @PutMapping("/mappings/{id}/terms/{termId}")
     public SubjectTerm updateMappingTerm(HttpServletRequest requestContext, 
             @PathVariable Long id, @PathVariable Long termId, @RequestBody SubjectTerm term) { 
@@ -103,8 +101,6 @@ public class TermController {
     
     /**
      * Delete all subject terms of a mapping.
-     * @param requestContext
-     * @param id 
      */
     @Deprecated // define DELETE /mappings/{id}/terms
     @DeleteMapping("/mappings/{id}/terms")
@@ -117,6 +113,7 @@ public class TermController {
     
     
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~ Spatial Terms ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+    @Operation(summary = "Get all spatial terms")
     @GetMapping("/mappings/{id}/spatial_terms")
     public List<SpatialTerm> getAllSpatialTerms(HttpServletRequest requestContext, @PathVariable Long id) {
         return spatialTermRepository.findByMappingId(id);
@@ -159,8 +156,6 @@ public class TermController {
     
     /**
      * Delete all spatial terms of a mapping.
-     * @param requestContext
-     * @param id 
      */
     @Deprecated // define DELETE /mappings/{id}/terms
     @DeleteMapping("/mappings/{id}/spatial_terms")
@@ -172,6 +167,7 @@ public class TermController {
     }
    
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~ Temporal Terms ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
+    @Operation(summary = "Get all temporal terms")
     @GetMapping("/mappings/{id}/temporal_terms")
     public List<TemporalTerm> getAllTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id) {
         return temporalTermRepository.findByMappingId(id);
@@ -214,8 +210,6 @@ public class TermController {
     
     /**
      * Delete all temporal terms of a mapping.
-     * @param requestContext
-     * @param id 
      */
     @Deprecated // define DELETE /mappings/{id}/terms
     @DeleteMapping("/mappings/{id}/temporal_terms")
@@ -225,6 +219,4 @@ public class TermController {
         
         temporalTermRepository.deleteByMappingId(id);
     }
-    
-    
 }

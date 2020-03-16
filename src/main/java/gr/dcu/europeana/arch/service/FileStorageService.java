@@ -15,6 +15,7 @@ import java.time.Instant;
 import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
@@ -57,6 +58,10 @@ public class FileStorageService {
         } catch(MalformedURLException ex) {
            throw new MyFileNotFoundException("File not found " + filePath, ex);
         }
+    }
+
+    public Resource loadFileAsResource(String filepath) {
+        return new ClassPathResource(filepath);
     }
     
     public File loadFile (String filepath) throws IOException {

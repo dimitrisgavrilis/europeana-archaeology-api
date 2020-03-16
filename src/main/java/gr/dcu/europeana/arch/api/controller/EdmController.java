@@ -7,24 +7,17 @@ import gr.dcu.europeana.arch.exception.BadRequestException;
 import gr.dcu.europeana.arch.model.EdmArchive;
 import gr.dcu.europeana.arch.model.Mapping;
 import gr.dcu.europeana.arch.model.MappingType;
-import gr.dcu.europeana.arch.model.mappers.SpatialTermMapper;
-import gr.dcu.europeana.arch.model.mappers.SubjectTermMapper;
-import gr.dcu.europeana.arch.model.mappers.TemporalTermMapper;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.EDMService;
 import gr.dcu.europeana.arch.service.MappingService;
-import gr.dcu.europeana.arch.service.edm.EdmExtractUtils;
-import gr.dcu.europeana.arch.service.edm.EdmFileTermExtractionResult;
-import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
-import gr.dcu.europeana.arch.service.edm.ElementExtractionDataCategories;
+
 import java.io.File;
 import java.io.IOException;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
+
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
@@ -46,25 +39,17 @@ import org.springframework.web.multipart.MultipartFile;
 @RestController
 public class EdmController {
     
-    @Autowired
-    AuthService authService;
-    
-    @Autowired
-    EDMService edmService;
-    
-    @Autowired
-    MappingService mappingService;
-    
-    @Autowired
-    SubjectTermMapper subjectTermMapper;
-    
-    @Autowired
-    SpatialTermMapper spatialTermMapper;
-    
-    @Autowired
-    TemporalTermMapper temporalTermMapper;
-    
-    
+    private final AuthService authService;
+    private final EDMService edmService;
+    private final MappingService mappingService;
+
+    public EdmController(AuthService authService, EDMService edmService, MappingService mappingService) {
+        this.authService = authService;
+        this.edmService = edmService;
+        this.mappingService = mappingService;
+    }
+
+    @Operation(summary = "Get all edm archives")
     @GetMapping("/edm_archives")
     public List<EdmArchive> getEdmArchives(HttpServletRequest requestContext) {
         
@@ -72,7 +57,8 @@ public class EdmController {
          
         return edmService.getEdmArchives(userId);
     }
-    
+
+    @Operation(summary = "Get a specific edm archive")
     @GetMapping("/edm_archives/{id}")
     public EdmArchive getEdmArchive(HttpServletRequest requestContext,  @PathVariable Long id) {
         
@@ -80,18 +66,19 @@ public class EdmController {
          
         return edmService.getEdmArchive(id);
     }
-    
-    
+
+    @Operation(summary = "Upload an edm archive")
     @PostMapping("/edm_archives/upload")
     public EdmArchive uploadEdmArchive(HttpServletRequest requestContext,
             @RequestParam("file") MultipartFile file) throws IOException {
         
         int userId = authService.authorize(requestContext);
         
-        return edmService.uploadEdmArchive(file, userId);
+        return edmService.uploadEdmArchiveAndExtractFiles(file, userId);
         
     }
-    
+
+    @Operation(summary = "Download an EDM / eEDM archive (original or enriched")
     @PostMapping("/edm_archives/{id}/download")
     public ResponseEntity<?> downloadEdmArchive(HttpServletRequest requestContext, 
             @PathVariable Long id, @RequestParam (required = false) String type) throws IOException {
@@ -106,54 +93,17 @@ public class EdmController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\"" + filename + "\"")
                 .body(new FileSystemResource(file));
     }
-    
+
+    @Operation(summary = "Extract and save terms from an EDM archive")
     @PostMapping("/edm_archives/{id}/extract_terms")
     public ExtractTermResult extractTermsFromEdmArchive(
             HttpServletRequest requestContext, @PathVariable Long id) {
         
         int userId = authService.authorize(requestContext);
-        
-        ExtractTermResult extractTermResult = new ExtractTermResult();
-        
-        List<EdmFileTermExtractionResult> extractionResult = edmService.extractTermsFromEdmArcive(id);
-        
-        // Create seperate categories(thematic, spatial, temporal)
-        ElementExtractionDataCategories extractionCategories = 
-                EdmExtractUtils.splitExtractionDataInCategories(extractionResult);
-        
-        // Get thematic terms
-        Set<ElementExtractionData> thematicElementValues = extractionCategories.getThematicElementValues();
-        if(!thematicElementValues.isEmpty()) {
-            extractTermResult.setSubjectTerms(subjectTermMapper.toSubjectTermList(thematicElementValues));
-        } else {
-            extractTermResult.setSubjectTerms(new LinkedList<>());
-            log.warn("No thematic terms to extract.");
-        }
-        
-        Set<ElementExtractionData> spatialElementValues = extractionCategories.getSpatialElementValues();
-        if(!spatialElementValues.isEmpty()) {
-            extractTermResult.setSpatialTerms(spatialTermMapper.toSpatialTermList(spatialElementValues));
-        } else {
-            extractTermResult.setSpatialTerms(new LinkedList<>());
-            log.warn("No spatial terms to extract.");
-        }
-
-        Set<ElementExtractionData> temporalElementValues = extractionCategories.getTemporalElementValues();
-        if(!temporalElementValues.isEmpty()) {
-            extractTermResult.setTemporalTerms(temporalTermMapper.toTemporalTermList(temporalElementValues));
-        } else {
-            extractTermResult.setTemporalTerms(new LinkedList<>());
-            log.warn("No temporal terms to extract.");
-        }
-        
-        edmService.saveTerms(id, extractTermResult, userId);
-        
-        return extractTermResult;
-        // return edmService.extractTermsFromEdmArcive(id);
-        
-        // return new ResponseEntity<>("", HttpStatus.OK);
+        return edmService.extractAndSaveTermsFromEdmArchive(id, userId);
     }
-    
+
+    @Operation(summary = "Load terms from an EDM archive (saved or extracted)")
     @GetMapping("/edm_archives/{id}/terms")
     public ExtractTermResult loadTermsFromEdmArchive(
             HttpServletRequest requestContext, @PathVariable Long id) {
@@ -162,8 +112,8 @@ public class EdmController {
         
         return edmService.loadTerms(id, userId);
     }
-    
-   
+
+    @Operation(summary = "Delete an EDM archive and it's data")
     @DeleteMapping("/edm_archives/{id}")
     public void deleteArchive(HttpServletRequest requestContext, @PathVariable Long id) {
         
@@ -183,10 +133,11 @@ public class EdmController {
         return edmService.saveTerms(id, extractTermResult, userId);
         
     }*/
-   
+
+    @Operation(summary = "Create a mapping from extracted terms")
     @PostMapping("/edm_archives/{id}/mappings")
     public Mapping createMapping(HttpServletRequest requestContext, 
-            @PathVariable Long id, @RequestParam (required = true) String type) {
+            @PathVariable Long id, @RequestParam String type) {
         
         int userId = authService.authorize(requestContext);    
         
@@ -200,7 +151,8 @@ public class EdmController {
         return mappingService.createMappingByArchiveId(id, type, userId);
         
     }
-    
+
+    @Operation(summary = "Append terms to an existing mapping")
     @PostMapping("/edm_archives/{id}/mappings/{mappingId}")
     public AppendTermsResult appendToMapping(HttpServletRequest requestContext, 
             @PathVariable Long id, @PathVariable Long mappingId) {
@@ -209,14 +161,13 @@ public class EdmController {
         
         return mappingService.appendTermsToMappingByArchiveId(mappingId, id, userId);
     }
-    
+
+    @Operation(summary = "Enrich an EDM archive")
     @PostMapping("/edm_archives/{id}/enrich")
     public EnrichDetails enrichEdmArchive(
             HttpServletRequest requestContext, @PathVariable Long id) {
         
         int userId = authService.authorize(requestContext);
-        
-        return edmService.enrich2(id, userId);
-        
+        return edmService.enrich(id, userId);
     }
 }

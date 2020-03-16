@@ -10,7 +10,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface UserRepository extends CrudRepository<User, Integer>{
     
-    List<User> findByEmail(String email);
+    List<User> findAllByEmail(String email);
     
     List<User> findAllByEmailAndPassword(String username, String password);
     
