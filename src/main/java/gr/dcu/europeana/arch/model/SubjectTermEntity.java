@@ -41,6 +41,6 @@ public class SubjectTermEntity implements Serializable {
     @Column (name="aat_uid")
     private String aatUid;
 
-    // @Transient
-    // private Integer count;
+    @Transient
+    private Integer count;
 }

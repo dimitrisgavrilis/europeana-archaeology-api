@@ -186,7 +186,7 @@ public class EDMService {
             extractTermResult.setSubjectTermEntities(
                     subjectTermMapper.toSubjectTermList(thematicElementValues, extractionCategories.getThematicElementValuesCountMap())
                     .stream()
-                    // .sorted(Comparator.comparingInt(SubjectTermEntity::getCount).reversed())
+                    .sorted(Comparator.comparingInt(SubjectTermEntity::getCount).reversed())
                     .collect(Collectors.toList())
             );
         } else {
