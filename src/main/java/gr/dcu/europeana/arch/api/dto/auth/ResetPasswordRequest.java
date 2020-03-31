@@ -1,6 +1,5 @@
-package gr.dcu.europeana.arch.model;
+package gr.dcu.europeana.arch.api.dto.auth;
 
-import java.util.List;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -12,8 +11,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class MappingCollection {
-    
-    private List<SubjectTermEntity> mappings;
-    
+public class ResetPasswordRequest {
+    private String username;
 }

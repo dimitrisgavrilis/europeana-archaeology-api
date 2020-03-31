@@ -1,9 +1,9 @@
 package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
-import gr.dcu.europeana.arch.model.SpatialTerm;
-import gr.dcu.europeana.arch.model.SubjectTerm;
-import gr.dcu.europeana.arch.model.TemporalTerm;
+import gr.dcu.europeana.arch.model.SpatialTermEntity;
+import gr.dcu.europeana.arch.model.SubjectTermEntity;
+import gr.dcu.europeana.arch.model.TemporalTermEntity;
 import gr.dcu.europeana.arch.repository.SpatialTermRepository;
 import gr.dcu.europeana.arch.repository.SubjectTermRepository;
 import gr.dcu.europeana.arch.repository.TemporalTermRepository;
@@ -45,24 +45,24 @@ public class TermController {
 
     @Operation(summary = "Get all subject terms")
     @GetMapping("/mappings/{id}/terms")
-    public List<SubjectTerm> getAllMappingTerms(HttpServletRequest requestContext, @PathVariable Long id) {
+    public List<SubjectTermEntity> getAllMappingTerms(HttpServletRequest requestContext, @PathVariable Long id) {
         return subjectTermRepository.findByMappingId(id);
     }
 
     @Operation(summary = "Get a specific subject term")
     @GetMapping("/mappings/{id}/terms/{termId}")
-    public SubjectTerm getMappingTerm(HttpServletRequest requestContext, 
-            @PathVariable Long id, @PathVariable Long termId) { 
+    public SubjectTermEntity getMappingTerm(HttpServletRequest requestContext,
+                                            @PathVariable Long id, @PathVariable Long termId) {
         return subjectTermRepository.findById(termId)
                 .orElseThrow(() -> new ResourceNotFoundException(termId));
     }
 
     @Operation(summary = "Update a specific subject term")
     @PutMapping("/mappings/{id}/terms/{termId}")
-    public SubjectTerm updateMappingTerm(HttpServletRequest requestContext, 
-            @PathVariable Long id, @PathVariable Long termId, @RequestBody SubjectTerm term) { 
+    public SubjectTermEntity updateMappingTerm(HttpServletRequest requestContext,
+                                               @PathVariable Long id, @PathVariable Long termId, @RequestBody SubjectTermEntity term) {
         
-        SubjectTerm existingTerm = subjectTermRepository.findById(termId)
+        SubjectTermEntity existingTerm = subjectTermRepository.findById(termId)
                 .orElseThrow(() -> new ResourceNotFoundException(termId));
 
         existingTerm.setMappingId(id);
@@ -74,8 +74,8 @@ public class TermController {
     }
     
     @PostMapping("/mappings/{id}/terms")
-    public SubjectTerm saveMappingTerm(HttpServletRequest requestContext, 
-            @PathVariable Long id, @RequestBody SubjectTerm term) { 
+    public SubjectTermEntity saveMappingTerm(HttpServletRequest requestContext,
+                                             @PathVariable Long id, @RequestBody SubjectTermEntity term) {
         
         int userId = authService.authorize(requestContext);
         
@@ -115,16 +115,16 @@ public class TermController {
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~ Spatial Terms ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
     @Operation(summary = "Get all spatial terms")
     @GetMapping("/mappings/{id}/spatial_terms")
-    public List<SpatialTerm> getAllSpatialTerms(HttpServletRequest requestContext, @PathVariable Long id) {
+    public List<SpatialTermEntity> getAllSpatialTerms(HttpServletRequest requestContext, @PathVariable Long id) {
         return spatialTermRepository.findByMappingId(id);
     }
     
     @PutMapping("/mappings/{id}/spatial_terms/{termId}")
-    public SpatialTerm updateSpatialTerm(HttpServletRequest requestContext, 
-            @PathVariable Long id, @PathVariable Long termId, 
-            @RequestBody SpatialTerm term) { 
+    public SpatialTermEntity updateSpatialTerm(HttpServletRequest requestContext,
+                                               @PathVariable Long id, @PathVariable Long termId,
+                                               @RequestBody SpatialTermEntity term) {
         
-        SpatialTerm existingTerm = spatialTermRepository.findById(termId)
+        SpatialTermEntity existingTerm = spatialTermRepository.findById(termId)
                 .orElseThrow(() -> new ResourceNotFoundException(termId));
 
         existingTerm.setMappingId(id);
@@ -136,8 +136,8 @@ public class TermController {
     }
     
     @PostMapping("/mappings/{id}/spatial_terms")
-    public SpatialTerm saveSpatialTerm(HttpServletRequest requestContext, 
-            @PathVariable Long id, @RequestBody SpatialTerm term) { 
+    public SpatialTermEntity saveSpatialTerm(HttpServletRequest requestContext,
+                                             @PathVariable Long id, @RequestBody SpatialTermEntity term) {
         
         int userId = authService.authorize(requestContext);
         
@@ -169,16 +169,16 @@ public class TermController {
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~ Temporal Terms ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
     @Operation(summary = "Get all temporal terms")
     @GetMapping("/mappings/{id}/temporal_terms")
-    public List<TemporalTerm> getAllTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id) {
+    public List<TemporalTermEntity> getAllTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id) {
         return temporalTermRepository.findByMappingId(id);
     }
     
     @PutMapping("/mappings/{id}/temporal_terms/{termId}")
-    public TemporalTerm updateTemporalTerm(HttpServletRequest requestContext, 
-            @PathVariable Long id, @PathVariable Long termId, 
-            @RequestBody TemporalTerm term) { 
+    public TemporalTermEntity updateTemporalTerm(HttpServletRequest requestContext,
+                                                 @PathVariable Long id, @PathVariable Long termId,
+                                                 @RequestBody TemporalTermEntity term) {
         
-        TemporalTerm existingTerm = temporalTermRepository.findById(termId)
+        TemporalTermEntity existingTerm = temporalTermRepository.findById(termId)
                 .orElseThrow(() -> new ResourceNotFoundException(termId));
 
         existingTerm.setMappingId(id);
@@ -190,8 +190,8 @@ public class TermController {
     }
     
     @PostMapping("/mappings/{id}/temporal_terms")
-    public TemporalTerm saveTemporalTerm(HttpServletRequest requestContext, 
-            @PathVariable Long id, @RequestBody TemporalTerm term) { 
+    public TemporalTermEntity saveTemporalTerm(HttpServletRequest requestContext,
+                                               @PathVariable Long id, @RequestBody TemporalTermEntity term) {
         
         int userId = authService.authorize(requestContext);
         

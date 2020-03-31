@@ -1,6 +1,5 @@
 package gr.dcu.europeana.arch.model;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -19,40 +18,36 @@ import org.hibernate.annotations.CreationTimestamp;
  * @author Vangelis Nomikos
  */
 @Entity 
-@Table(name = "enrich_request")
+@Table(name = "edm_archive_terms")
 @Getter
 @Setter
 @ToString
 @NoArgsConstructor
-public class EnrichRequest implements Serializable {
+public class EdmArchiveTermsEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column (name="mapping_id")
-    private Long mappingId;
+    @Column (name="archive_id")
+    private Long archiveId;
     
-    @Column (name="filename")
-    private String filename;
+    @Column (name="subject_terms")
+    private String subjectTerms;
     
-    @Column (name="filepath")
-    private String filepath;
+    @Column (name="spatial_terms")
+    private String spatialTerms;
     
-    @Column (name="enriched_filename")
-    private String enrichedFilename;
-    
-    @Column (name="enriched_filepath")
-    private String enrichedFilepath;
-    
-    @Column (name="details")
-    private String details;
+    @Column (name="temporal_terms")
+    private String temporalTerms;
     
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
     @Column(name = "created_by")
-    private int createdBy;
+    private Integer createdBy;
+    
+    
     
 }

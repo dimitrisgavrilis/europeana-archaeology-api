@@ -1,11 +1,11 @@
 UI
 ~~
-When I delete a mapping, does not disappear from list until I refresh it.
+When I delete a mappingEntity, does not disappear from list until I refresh it.
 Remove upload EDM from mappings
-Upload EDM archive. Create mapping. Go to mapping. Download does not work. If i refresh the page it works. 
+Upload EDM archive. Create mappingEntity. Go to mappingEntity. Download does not work. If i refresh the page it works.
 Display also created_at when listing mappings
 Add to existing => Filter based on type.
-Create mapping. Display the Create Mapping dialog.
+Create mappingEntity. Display the Create Mapping dialog.
 Display number of terms on each extracted list
 Update spatial terms fails
 

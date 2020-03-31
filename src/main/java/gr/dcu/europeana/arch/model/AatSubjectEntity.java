@@ -18,7 +18,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @NoArgsConstructor
-public class AatSubject implements Serializable  {
+public class AatSubjectEntity implements Serializable  {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

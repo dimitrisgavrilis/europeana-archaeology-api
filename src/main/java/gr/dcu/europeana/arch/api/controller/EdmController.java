@@ -1,11 +1,11 @@
 package gr.dcu.europeana.arch.api.controller;
 
-import gr.dcu.europeana.arch.api.resource.AppendTermsResult;
-import gr.dcu.europeana.arch.api.resource.EnrichDetails;
-import gr.dcu.europeana.arch.api.resource.ExtractTermResult;
+import gr.dcu.europeana.arch.api.dto.AppendTermsResult;
+import gr.dcu.europeana.arch.api.dto.EnrichDetails;
+import gr.dcu.europeana.arch.api.dto.ExtractTermResult;
 import gr.dcu.europeana.arch.exception.BadRequestException;
-import gr.dcu.europeana.arch.model.EdmArchive;
-import gr.dcu.europeana.arch.model.Mapping;
+import gr.dcu.europeana.arch.model.EdmArchiveEntity;
+import gr.dcu.europeana.arch.model.MappingEntity;
 import gr.dcu.europeana.arch.model.MappingType;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.EDMService;
@@ -51,7 +51,7 @@ public class EdmController {
 
     @Operation(summary = "Get all edm archives")
     @GetMapping("/edm_archives")
-    public List<EdmArchive> getEdmArchives(HttpServletRequest requestContext) {
+    public List<EdmArchiveEntity> getEdmArchives(HttpServletRequest requestContext) {
         
         int userId = authService.authorize(requestContext);
          
@@ -60,7 +60,7 @@ public class EdmController {
 
     @Operation(summary = "Get a specific edm archive")
     @GetMapping("/edm_archives/{id}")
-    public EdmArchive getEdmArchive(HttpServletRequest requestContext,  @PathVariable Long id) {
+    public EdmArchiveEntity getEdmArchive(HttpServletRequest requestContext, @PathVariable Long id) {
         
         int userId = authService.authorize(requestContext);
          
@@ -69,8 +69,8 @@ public class EdmController {
 
     @Operation(summary = "Upload an edm archive")
     @PostMapping("/edm_archives/upload")
-    public EdmArchive uploadEdmArchive(HttpServletRequest requestContext,
-            @RequestParam("file") MultipartFile file) throws IOException {
+    public EdmArchiveEntity uploadEdmArchive(HttpServletRequest requestContext,
+                                             @RequestParam("file") MultipartFile file) throws IOException {
         
         int userId = authService.authorize(requestContext);
         
@@ -136,8 +136,8 @@ public class EdmController {
 
     @Operation(summary = "Create a mapping from extracted terms")
     @PostMapping("/edm_archives/{id}/mappings")
-    public Mapping createMapping(HttpServletRequest requestContext, 
-            @PathVariable Long id, @RequestParam String type) {
+    public MappingEntity createMapping(HttpServletRequest requestContext,
+                                       @PathVariable Long id, @RequestParam String type) {
         
         int userId = authService.authorize(requestContext);    
         

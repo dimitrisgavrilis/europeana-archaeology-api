@@ -1,11 +1,9 @@
 package gr.dcu.europeana.arch.service.edm;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import javax.xml.xpath.XPathExpressionException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.http.nio.client.HttpAsyncClient;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -83,7 +81,11 @@ public class EdmExtractUtils {
      */
     public static ElementExtractionDataCategories splitExtractionDataInCategories(
             List<EdmFileTermExtractionResult> extractionResult)  {
-                
+
+        Map<ElementExtractionData, Integer> thematicElementValuesCountMap = new HashMap<>();
+        Map<ElementExtractionData, Integer> spatialElementValuesCountMap = new HashMap<>();
+        Map<ElementExtractionData, Integer> temporalElementValuesCountMap = new HashMap<>();
+
         Set<ElementExtractionData> thematicElementValues = new HashSet<>();
         Set<ElementExtractionData> spatialElementValues = new HashSet<>();
         Set<ElementExtractionData> temporalElementValues = new HashSet<>();
@@ -93,14 +95,17 @@ public class EdmExtractUtils {
                 switch(elementExtractionData.getElementName()) {
                     case DC_SUBJECT:
                     case DC_TYPE:
+                        thematicElementValuesCountMap.merge(elementExtractionData, 1, Integer::sum);
                         thematicElementValues.add(elementExtractionData);
                         break;
                     case DC_DATE:
                     case DC_TERMS_TEMPORAL:
                     case DC_TERMS_CREATED:
+                        temporalElementValuesCountMap.merge(elementExtractionData, 1, Integer::sum);
                         temporalElementValues.add(elementExtractionData);
                         break;
                     case DC_TERMS_SPATIAL:
+                        spatialElementValuesCountMap.merge(elementExtractionData, 1, Integer::sum);
                         spatialElementValues.add(elementExtractionData);
                         break;
                     default:
@@ -115,6 +120,21 @@ public class EdmExtractUtils {
         categories.setThematicElementValues(thematicElementValues);
         categories.setTemporalElementValues(temporalElementValues);
         categories.setSpatialElementValues(spatialElementValues);
+
+        categories.setThematicElementValuesCountMap(thematicElementValuesCountMap);
+        categories.setTemporalElementValuesCountMap(temporalElementValuesCountMap);
+        categories.setSpatialElementValuesCountMap(spatialElementValuesCountMap);
+
+        // Debug count
+        log.info("Total: {}", extractionResult.size());
+        log.info("Thematic: {} - {}", thematicElementValuesCountMap.size(), thematicElementValues.size());
+        log.info("Spatial:  {} - {}", spatialElementValuesCountMap.size(), spatialElementValues.size());
+        log.info("Temporal: {} - {}", temporalElementValuesCountMap.size(), temporalElementValues.size());
+
+        /*
+        for(ElementExtractionData elementExtractionData : temporalElementValuesCountMap.keySet()) {
+            log.info("{} - {}", elementExtractionData.getElementValue(), temporalElementValuesCountMap.get(elementExtractionData));
+        }*/
         
         return  categories;
     }

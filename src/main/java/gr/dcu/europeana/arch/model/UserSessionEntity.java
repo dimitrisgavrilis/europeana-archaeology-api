@@ -19,7 +19,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Getter
 @Setter
-public class UserSession {
+public class UserSessionEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

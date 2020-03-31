@@ -1,9 +1,9 @@
 package gr.dcu.europeana.arch.service;
 
-import gr.dcu.europeana.arch.model.SubjectTerm;
+import gr.dcu.europeana.arch.model.SubjectTermEntity;
 import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
-import gr.dcu.europeana.arch.model.SpatialTerm;
-import gr.dcu.europeana.arch.model.TemporalTerm;
+import gr.dcu.europeana.arch.model.SpatialTermEntity;
+import gr.dcu.europeana.arch.model.TemporalTermEntity;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import gr.dcu.europeana.arch.service.edm.EdmFileTermExtractionResult;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
@@ -12,7 +12,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -54,10 +53,10 @@ public class ExcelService {
      * @param limitCount
      * @return 
      */
-    public List<SubjectTerm> loadSubjectTermsFromExcel(String filename, long mappingId, 
-            int skipLineCount, int limitCount) {
+    public List<SubjectTermEntity> loadSubjectTermsFromExcel(String filename, long mappingId,
+                                                             int skipLineCount, int limitCount) {
 
-        List<SubjectTerm> terms = new LinkedList<>();
+        List<SubjectTermEntity> terms = new LinkedList<>();
         
         try {
             
@@ -146,15 +145,15 @@ public class ExcelService {
                         }
 
                         // Create mapping value
-                        SubjectTerm subjectTerm = new SubjectTerm();
+                        SubjectTermEntity subjectTermEntity = new SubjectTermEntity();
                         // spatialTerm.setId((long) -1);
-                        subjectTerm.setMappingId(mappingId);
-                        subjectTerm.setNativeTerm(nativeTerm);
-                        subjectTerm.setLanguage(language);
-                        subjectTerm.setAatConceptLabel(aatConceptLabel);
-                        subjectTerm.setAatUid(aatUid);
+                        subjectTermEntity.setMappingId(mappingId);
+                        subjectTermEntity.setNativeTerm(nativeTerm);
+                        subjectTermEntity.setLanguage(language);
+                        subjectTermEntity.setAatConceptLabel(aatConceptLabel);
+                        subjectTermEntity.setAatUid(aatUid);
 
-                        terms.add(subjectTerm);
+                        terms.add(subjectTermEntity);
                     }
 
                     // Stop processing
@@ -184,10 +183,10 @@ public class ExcelService {
      * @param limitCount
      * @return 
      */
-    public List<SpatialTerm> loadSpatialTermsFromExcel(String filename, long mappingId, 
-            int skipLineCount, int limitCount) {
+    public List<SpatialTermEntity> loadSpatialTermsFromExcel(String filename, long mappingId,
+                                                             int skipLineCount, int limitCount) {
 
-        List<SpatialTerm> terms = new LinkedList<>();
+        List<SpatialTermEntity> terms = new LinkedList<>();
         
         try {
             
@@ -267,15 +266,15 @@ public class ExcelService {
                         }
 
                         // Create mapping value
-                        SpatialTerm spatialTerm = new SpatialTerm();
+                        SpatialTermEntity spatialTermEntity = new SpatialTermEntity();
                         // spatialTerm.setId((long) -1);
-                        spatialTerm.setMappingId(mappingId);
-                        spatialTerm.setNativeTerm(nativeTerm);
-                        spatialTerm.setLanguage(language);
-                        spatialTerm.setGeonameName(geonameName);
-                        spatialTerm.setGeonameId(geonameId);
+                        spatialTermEntity.setMappingId(mappingId);
+                        spatialTermEntity.setNativeTerm(nativeTerm);
+                        spatialTermEntity.setLanguage(language);
+                        spatialTermEntity.setGeonameName(geonameName);
+                        spatialTermEntity.setGeonameId(geonameId);
 
-                        terms.add(spatialTerm);
+                        terms.add(spatialTermEntity);
                     }
 
                     // Stop processing
@@ -297,10 +296,10 @@ public class ExcelService {
         
     }
     
-    public List<TemporalTerm> loadTemporalTermsFromExcel(String filename, long mappingId, 
-            int skipLineCount, int limitCount) {
+    public List<TemporalTermEntity> loadTemporalTermsFromExcel(String filename, long mappingId,
+                                                               int skipLineCount, int limitCount) {
 
-        List<TemporalTerm> terms = new LinkedList<>();
+        List<TemporalTermEntity> terms = new LinkedList<>();
         
         try {
             
@@ -380,15 +379,15 @@ public class ExcelService {
                         }
 
                         // Create mapping value
-                        TemporalTerm temporalTerm = new TemporalTerm();
+                        TemporalTermEntity temporalTermEntity = new TemporalTermEntity();
                         // spatialTerm.setId((long) -1);
-                        temporalTerm.setMappingId(mappingId);
-                        temporalTerm.setNativeTerm(nativeTerm);
-                        temporalTerm.setLanguage(language);
-                        temporalTerm.setAatConceptLabel(aatConceptLabel);
-                        temporalTerm.setAatUid(aatUid);
+                        temporalTermEntity.setMappingId(mappingId);
+                        temporalTermEntity.setNativeTerm(nativeTerm);
+                        temporalTermEntity.setLanguage(language);
+                        temporalTermEntity.setAatConceptLabel(aatConceptLabel);
+                        temporalTermEntity.setAatUid(aatUid);
 
-                        terms.add(temporalTerm);
+                        terms.add(temporalTermEntity);
                     }
 
                     // Stop processing
@@ -416,7 +415,7 @@ public class ExcelService {
      * @param terms
      * @throws IOException 
      */
-    public static String exportSubjectTermsToExcel(Path filePath, List<SubjectTerm> terms) throws IOException {
+    public static String exportSubjectTermsToExcel(Path filePath, List<SubjectTermEntity> terms) throws IOException {
         
         try {
            
@@ -453,7 +452,7 @@ public class ExcelService {
 
             // Create Other rows and cells with employees extractionData
             int rowNum = 1;
-            for(SubjectTerm term: terms) {
+            for(SubjectTermEntity term: terms) {
                 Row row = sheet.createRow(rowNum++);
 
                 row.createCell(0)
@@ -496,7 +495,7 @@ public class ExcelService {
         return filePath.toString();
     }
     
-    public static String exportSpatialTermsToExcel(Path filePath, List<SpatialTerm> terms) throws IOException {
+    public static String exportSpatialTermsToExcel(Path filePath, List<SpatialTermEntity> terms) throws IOException {
         
         try {
            
@@ -533,7 +532,7 @@ public class ExcelService {
 
             // Create Other rows and cells with employees extractionData
             int rowNum = 1;
-            for(SpatialTerm term: terms) {
+            for(SpatialTermEntity term: terms) {
                 Row row = sheet.createRow(rowNum++);
 
                 row.createCell(0)
@@ -569,7 +568,7 @@ public class ExcelService {
         return filePath.toString();
     }
     
-    public static String exportTemporalTermsToExcel(Path filePath, List<TemporalTerm> terms) throws IOException {
+    public static String exportTemporalTermsToExcel(Path filePath, List<TemporalTermEntity> terms) throws IOException {
         
         try {
            
@@ -606,7 +605,7 @@ public class ExcelService {
 
             // Create Other rows and cells with employees extractionData
             int rowNum = 1;
-            for(TemporalTerm term: terms) {
+            for(TemporalTermEntity term: terms) {
                 Row row = sheet.createRow(rowNum++);
 
                 row.createCell(0)
@@ -735,9 +734,9 @@ public class ExcelService {
     
     public static String exportExtractedThematicTerms(Path filePath, Set<ElementExtractionData> extractionResult) throws IOException {
         
-        List<SubjectTerm> terms = new LinkedList<>();
+        List<SubjectTermEntity> terms = new LinkedList<>();
         for(ElementExtractionData extractionData : extractionResult) {
-            SubjectTerm term = new SubjectTerm();
+            SubjectTermEntity term = new SubjectTermEntity();
             term.setNativeTerm(extractionData.getElementValue());
             term.setLanguage(extractionData.getXmlLangAttrValue());
             term.setAatConceptLabel("");
@@ -746,7 +745,7 @@ public class ExcelService {
         }
         
         // Sort terms
-        terms.sort(Comparator.comparing(SubjectTerm::getNativeTerm));
+        terms.sort(Comparator.comparing(SubjectTermEntity::getNativeTerm));
 
         exportSubjectTermsToExcel(filePath, terms);
         
@@ -755,9 +754,9 @@ public class ExcelService {
     
     public static String exportExtractedSpatialTerms(Path filePath, Set<ElementExtractionData> extractionResult) throws IOException {
         
-        List<SpatialTerm> terms = new LinkedList<>();
+        List<SpatialTermEntity> terms = new LinkedList<>();
         for(ElementExtractionData extractionData : extractionResult) {
-            SpatialTerm term = new SpatialTerm();
+            SpatialTermEntity term = new SpatialTermEntity();
             term.setNativeTerm(extractionData.getElementValue());
             term.setLanguage(extractionData.getXmlLangAttrValue());
             term.setGeonameName("");
@@ -766,7 +765,7 @@ public class ExcelService {
         }
         
         // Sort terms
-        terms.sort(Comparator.comparing(SpatialTerm::getNativeTerm));
+        terms.sort(Comparator.comparing(SpatialTermEntity::getNativeTerm));
 
         exportSpatialTermsToExcel(filePath, terms);
         
@@ -775,9 +774,9 @@ public class ExcelService {
     
     public static String exportExtractedTemporalTerms(Path filePath, Set<ElementExtractionData> extractionResult) throws IOException {
         
-        List<TemporalTerm> terms = new LinkedList<>();
+        List<TemporalTermEntity> terms = new LinkedList<>();
         for(ElementExtractionData extractionData : extractionResult) {
-            TemporalTerm term = new TemporalTerm();
+            TemporalTermEntity term = new TemporalTermEntity();
             term.setNativeTerm(extractionData.getElementValue());
             term.setLanguage(extractionData.getXmlLangAttrValue());
             term.setAatConceptLabel("");
@@ -786,7 +785,7 @@ public class ExcelService {
         }
         
         // Sort terms
-        terms.sort(Comparator.comparing(TemporalTerm::getNativeTerm));
+        terms.sort(Comparator.comparing(TemporalTermEntity::getNativeTerm));
 
         exportTemporalTermsToExcel(filePath, terms);
         

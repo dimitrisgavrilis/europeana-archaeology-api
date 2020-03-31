@@ -3,19 +3,12 @@ package gr.dcu.europeana.arch.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gr.dcu.europeana.arch.api.resource.EnrichDetails;
-import gr.dcu.europeana.arch.api.resource.ExtractTermResult;
+import gr.dcu.europeana.arch.api.dto.EnrichDetails;
+import gr.dcu.europeana.arch.api.dto.ExtractTermResult;
 import gr.dcu.europeana.arch.exception.NotFoundException;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
-import gr.dcu.europeana.arch.model.AatSubject;
-import gr.dcu.europeana.arch.model.EdmArchive;
-import gr.dcu.europeana.arch.model.EdmArchiveTerms;
-import gr.dcu.europeana.arch.model.Mapping;
-import gr.dcu.europeana.arch.model.MappingType;
-import gr.dcu.europeana.arch.model.MappingUploadRequest;
-import gr.dcu.europeana.arch.model.SpatialTerm;
-import gr.dcu.europeana.arch.model.SubjectTerm;
-import gr.dcu.europeana.arch.model.TemporalTerm;
+import gr.dcu.europeana.arch.model.*;
+import gr.dcu.europeana.arch.model.EdmArchiveTermsEntity;
 import gr.dcu.europeana.arch.model.mappers.SpatialTermMapper;
 import gr.dcu.europeana.arch.model.mappers.SubjectTermMapper;
 import gr.dcu.europeana.arch.model.mappers.TemporalTermMapper;
@@ -44,6 +37,7 @@ import gr.dcu.europeana.arch.repository.SpatialTermRepository;
 import gr.dcu.europeana.arch.repository.SubjectTermRepository;
 import gr.dcu.europeana.arch.repository.TemporalTermRepository;
 import java.nio.file.Files;
+import java.util.stream.Collectors;
 import javax.xml.transform.TransformerException;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -84,18 +78,18 @@ public class EDMService {
         this.temporalTermMapper = temporalTermMapper;
     }
 
-    public List<EdmArchive> getEdmArchives(Integer userId) {
+    public List<EdmArchiveEntity> getEdmArchives(Integer userId) {
         return edmArchiveRepository.findAllByCreatedBy(userId);
     }
     
     
-    public EdmArchive getEdmArchive(Long id) {
+    public EdmArchiveEntity getEdmArchive(Long id) {
         return edmArchiveRepository.findById(id).orElseThrow(()
                 -> new NotFoundException("EDM Upload", id));
     }
     
     @Transactional
-    public EdmArchive uploadEdmArchiveAndExtractFiles(MultipartFile file, int userId) throws IOException {
+    public EdmArchiveEntity uploadEdmArchiveAndExtractFiles(MultipartFile file, int userId) throws IOException {
         
         // File system hierarchy
         // storage_tmp/europeana_Arch
@@ -110,16 +104,16 @@ public class EDMService {
         //            -- eEDM
         
         // Create an upload request
-        EdmArchive edmArchive = new EdmArchive();
-        edmArchive.setName(file.getOriginalFilename());
-        edmArchive.setItemCount(0);
-        edmArchive.setFilename(file.getOriginalFilename());
-        edmArchive.setFilepath("");
-        edmArchive.setThematicMapping(0L);
-        edmArchive.setSpatialMapping(0L);
-        edmArchive.setTemporalMapping(0L);
-        edmArchive.setCreatedBy(userId);
-        long edmUploadId = edmArchiveRepository.save(edmArchive).getId();
+        EdmArchiveEntity edmArchiveEntity = new EdmArchiveEntity();
+        edmArchiveEntity.setName(file.getOriginalFilename());
+        edmArchiveEntity.setItemCount(0);
+        edmArchiveEntity.setFilename(file.getOriginalFilename());
+        edmArchiveEntity.setFilepath("");
+        edmArchiveEntity.setThematicMapping(0L);
+        edmArchiveEntity.setSpatialMapping(0L);
+        edmArchiveEntity.setTemporalMapping(0L);
+        edmArchiveEntity.setCreatedBy(userId);
+        long edmUploadId = edmArchiveRepository.save(edmArchiveEntity).getId();
         
         // Upload EDM archive
         log.info("Upload EDM archive. RequestId: {}", edmUploadId);
@@ -136,13 +130,13 @@ public class EDMService {
         log.info("EDM archive extracted. Path: {} #Files: {}", edmExtractDirPath, edmFilesCount);
         
         // Update upload request
-        edmArchive.setId(edmUploadId);
-        edmArchive.setFilepath(edmArchiveFilePath.toString());
-        edmArchive.setEnrichedFilepath(null);
-        edmArchive.setItemCount(edmFilesCount);
-        edmArchive = edmArchiveRepository.save(edmArchive);
+        edmArchiveEntity.setId(edmUploadId);
+        edmArchiveEntity.setFilepath(edmArchiveFilePath.toString());
+        edmArchiveEntity.setEnrichedFilepath(null);
+        edmArchiveEntity.setItemCount(edmFilesCount);
+        edmArchiveEntity = edmArchiveRepository.save(edmArchiveEntity);
         
-        return edmArchive;
+        return edmArchiveEntity;
     }
     
     /**
@@ -153,15 +147,15 @@ public class EDMService {
      */
     public File loadEdmArchive(long archiveId, String type) throws IOException {
         
-        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+        EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
         String filepath;
         // String filename =  edmArchive.getFilename();
         if(type != null && type.equalsIgnoreCase("eEDM")) {
-            filepath = edmArchive.getEnrichedFilepath();
+            filepath = edmArchiveEntity.getEnrichedFilepath();
         } else {
-            filepath = edmArchive.getFilepath();
+            filepath = edmArchiveEntity.getFilepath();
         }
         
         File file = null;
@@ -189,25 +183,30 @@ public class EDMService {
         // Get thematic terms
         Set<ElementExtractionData> thematicElementValues = extractionCategories.getThematicElementValues();
         if(!thematicElementValues.isEmpty()) {
-            extractTermResult.setSubjectTerms(subjectTermMapper.toSubjectTermList(thematicElementValues));
+            extractTermResult.setSubjectTermEntities(
+                    subjectTermMapper.toSubjectTermList(thematicElementValues, extractionCategories.getThematicElementValuesCountMap())
+                    .stream()
+                    .sorted(Comparator.comparingInt(SubjectTermEntity::getCount).reversed())
+                    .collect(Collectors.toList())
+            );
         } else {
-            extractTermResult.setSubjectTerms(new LinkedList<>());
+            extractTermResult.setSubjectTermEntities(new LinkedList<>());
             log.warn("No thematic terms to extract.");
         }
 
         Set<ElementExtractionData> spatialElementValues = extractionCategories.getSpatialElementValues();
         if(!spatialElementValues.isEmpty()) {
-            extractTermResult.setSpatialTerms(spatialTermMapper.toSpatialTermList(spatialElementValues));
+            extractTermResult.setSpatialTermEntities(spatialTermMapper.toSpatialTermList(spatialElementValues));
         } else {
-            extractTermResult.setSpatialTerms(new LinkedList<>());
+            extractTermResult.setSpatialTermEntities(new LinkedList<>());
             log.warn("No spatial terms to extract.");
         }
 
         Set<ElementExtractionData> temporalElementValues = extractionCategories.getTemporalElementValues();
         if(!temporalElementValues.isEmpty()) {
-            extractTermResult.setTemporalTerms(temporalTermMapper.toTemporalTermList(temporalElementValues));
+            extractTermResult.setTemporalTermEntities(temporalTermMapper.toTemporalTermList(temporalElementValues));
         } else {
-            extractTermResult.setTemporalTerms(new LinkedList<>());
+            extractTermResult.setTemporalTermEntities(new LinkedList<>());
             log.warn("No temporal terms to extract.");
         }
 
@@ -219,7 +218,7 @@ public class EDMService {
     
     public List<EdmFileTermExtractionResult> extractTermsFromEdmArchive(Long edmArchiveId) {
         
-        EdmArchive edmArchive = edmArchiveRepository.findById(edmArchiveId).orElseThrow(() 
+        EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(edmArchiveId).orElseThrow(()
                 -> new NotFoundException("EDM Archive", edmArchiveId));
 
         List<EdmFileTermExtractionResult> extractionResult = new LinkedList<>();
@@ -236,9 +235,9 @@ public class EDMService {
     }
 
     @Transactional
-    public EdmArchiveTerms saveTerms(Long archiveId, ExtractTermResult extractTermResult, Integer userId) {
+    public EdmArchiveTermsEntity saveTerms(Long archiveId, ExtractTermResult extractTermResult, Integer userId) {
         
-        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+        EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
         String subjectTermsInJson = null;
@@ -246,61 +245,61 @@ public class EDMService {
         String temporalTermsInJson = null;
         try {
             ObjectMapper mapper = new ObjectMapper();
-            subjectTermsInJson = mapper.writeValueAsString(extractTermResult.getSubjectTerms());
-            spatialTermsInJson = mapper.writeValueAsString(extractTermResult.getSpatialTerms());
-            temporalTermsInJson = mapper.writeValueAsString(extractTermResult.getTemporalTerms());
+            subjectTermsInJson = mapper.writeValueAsString(extractTermResult.getSubjectTermEntities());
+            spatialTermsInJson = mapper.writeValueAsString(extractTermResult.getSpatialTermEntities());
+            temporalTermsInJson = mapper.writeValueAsString(extractTermResult.getTemporalTermEntities());
         } catch (JsonProcessingException ex) {
             log.error("");
         }
                 
-        EdmArchiveTerms edmArchiveTerms = new EdmArchiveTerms();
-        edmArchiveTerms.setArchiveId(archiveId);
-        edmArchiveTerms.setSubjectTerms(subjectTermsInJson);
-        edmArchiveTerms.setSpatialTerms(spatialTermsInJson);
-        edmArchiveTerms.setTemporalTerms(temporalTermsInJson);
-        edmArchiveTerms.setCreatedBy(userId);
-        edmArchiveTerms = edmArchiveTermsRepository.save(edmArchiveTerms);
+        EdmArchiveTermsEntity edmArchiveTermsEntity = new EdmArchiveTermsEntity();
+        edmArchiveTermsEntity.setArchiveId(archiveId);
+        edmArchiveTermsEntity.setSubjectTerms(subjectTermsInJson);
+        edmArchiveTermsEntity.setSpatialTerms(spatialTermsInJson);
+        edmArchiveTermsEntity.setTemporalTerms(temporalTermsInJson);
+        edmArchiveTermsEntity.setCreatedBy(userId);
+        edmArchiveTermsEntity = edmArchiveTermsRepository.save(edmArchiveTermsEntity);
         
-        return edmArchiveTerms;
+        return edmArchiveTermsEntity;
     }
     
     public ExtractTermResult loadTerms(Long archiveId, Integer userId) {
         
-        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+        EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
-        boolean hasThematicMapping = edmArchive.getThematicMapping() > 0;
-        boolean hasSpatialMapping  = edmArchive.getSpatialMapping() > 0;
-        boolean hasTemporalMapping = edmArchive.getTemporalMapping() > 0;
+        boolean hasThematicMapping = edmArchiveEntity.getThematicMapping() > 0;
+        boolean hasSpatialMapping  = edmArchiveEntity.getSpatialMapping() > 0;
+        boolean hasTemporalMapping = edmArchiveEntity.getTemporalMapping() > 0;
         
-        EdmArchiveTerms edmArchiveTerms = edmArchiveTermsRepository.findByArchiveId(archiveId);
+        EdmArchiveTermsEntity edmArchiveTermsEntity = edmArchiveTermsRepository.findByArchiveId(archiveId);
         
-        List<SubjectTerm> subjectTerms = new LinkedList<>();
-        List<SpatialTerm> spatialTerms = new LinkedList<>();
-        List<TemporalTerm> temporalTerms = new LinkedList<>();
-        if(edmArchiveTerms != null) {
+        List<SubjectTermEntity> subjectTermEntities = new LinkedList<>();
+        List<SpatialTermEntity> spatialTermEntities = new LinkedList<>();
+        List<TemporalTermEntity> temporalTermEntities = new LinkedList<>();
+        if(edmArchiveTermsEntity != null) {
             try {
                 
                 ObjectMapper mapper = new ObjectMapper();
                 if(hasThematicMapping) {
-                    subjectTerms = subjectTermRepository.findByMappingId(edmArchive.getThematicMapping());
+                    subjectTermEntities = subjectTermRepository.findByMappingId(edmArchiveEntity.getThematicMapping());
                 } else {
-                    subjectTerms = mapper.readValue(edmArchiveTerms.getSubjectTerms(), 
-                                    new TypeReference<List<SubjectTerm>>(){});
+                    subjectTermEntities = mapper.readValue(edmArchiveTermsEntity.getSubjectTerms(),
+                                    new TypeReference<List<SubjectTermEntity>>(){});
                 }
                 
                 if(hasSpatialMapping) {
-                    spatialTerms = spatialTermRepository.findByMappingId(edmArchive.getSpatialMapping());
+                    spatialTermEntities = spatialTermRepository.findByMappingId(edmArchiveEntity.getSpatialMapping());
                 } else {
-                    spatialTerms = mapper.readValue(edmArchiveTerms.getSpatialTerms(), 
-                                    new TypeReference<List<SpatialTerm>>(){});
+                    spatialTermEntities = mapper.readValue(edmArchiveTermsEntity.getSpatialTerms(),
+                                    new TypeReference<List<SpatialTermEntity>>(){});
                 }
                 
                 if(hasTemporalMapping) {
-                    temporalTerms = temporalTermRepository.findByMappingId(edmArchive.getTemporalMapping());
+                    temporalTermEntities = temporalTermRepository.findByMappingId(edmArchiveEntity.getTemporalMapping());
                 } else {
-                    temporalTerms = mapper.readValue(edmArchiveTerms.getTemporalTerms(), 
-                                    new TypeReference<List<TemporalTerm>>(){});
+                    temporalTermEntities = mapper.readValue(edmArchiveTermsEntity.getTemporalTerms(),
+                                    new TypeReference<List<TemporalTermEntity>>(){});
                 }
                 
                 /*
@@ -313,14 +312,14 @@ public class EDMService {
                                     new TypeReference<List<TemporalTerm>>(){});
                 */
             } catch (IOException ex) {
-                log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTerms.getId());
+                log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTermsEntity.getId());
             }
         } log.warn("Cannot get Edm Archive Terms. ArchiveID: {}", archiveId);
         
         ExtractTermResult extractTermResult = new ExtractTermResult();
-        extractTermResult.setSubjectTerms(subjectTerms);
-        extractTermResult.setSpatialTerms(spatialTerms);
-        extractTermResult.setTemporalTerms(temporalTerms);
+        extractTermResult.setSubjectTermEntities(subjectTermEntities);
+        extractTermResult.setSpatialTermEntities(spatialTermEntities);
+        extractTermResult.setTemporalTermEntities(temporalTermEntities);
 
         return extractTermResult;
     }
@@ -339,12 +338,12 @@ public class EDMService {
      */
     public EnrichDetails enrich(Long archiveId, int userId) {
         
-        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+        EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
-        long thematicMappingId = edmArchive.getThematicMapping();
-        long spatialMappingId = edmArchive.getSpatialMapping();
-        long temporalMappingId = edmArchive.getTemporalMapping();
+        long thematicMappingId = edmArchiveEntity.getThematicMapping();
+        long spatialMappingId = edmArchiveEntity.getSpatialMapping();
+        long temporalMappingId = edmArchiveEntity.getTemporalMapping();
         
         // Check existence of mapping
         // Mapping mapping = mappingRepository.findById(thematicMappingId)
@@ -358,44 +357,44 @@ public class EDMService {
                 archiveId, thematicMappingId, spatialMappingId, temporalMappingId);
         
         // Load thematic mapping terms
-        Map<String, AatSubject> aatSubjectMap = new HashMap<>();
-        List<SubjectTerm> subjectTerms = new LinkedList<>();
-        Map<String,SubjectTerm> subjectTermsMap = new HashMap<>();
+        Map<String, AatSubjectEntity> aatSubjectMap = new HashMap<>();
+        List<SubjectTermEntity> subjectTermEntities = new LinkedList<>();
+        Map<String, SubjectTermEntity> subjectTermsMap = new HashMap<>();
         if(thematicEnrichment) {
             // Get mapping subjectTerms. Convert them to map
-            subjectTerms = subjectTermRepository.findByMappingId(thematicMappingId);
-            for(SubjectTerm mp : subjectTerms) {
+            subjectTermEntities = subjectTermRepository.findByMappingId(thematicMappingId);
+            for(SubjectTermEntity mp : subjectTermEntities) {
                 subjectTermsMap.put(mp.getNativeTerm(), mp);
             }
-            log.info("Thematic mapping loaded. MappingId: {} #Terms: {}", thematicMappingId, subjectTerms.size());
+            log.info("Thematic mapping loaded. MappingId: {} #Terms: {}", thematicMappingId, subjectTermEntities.size());
         
             // Create aat subject map
-            List<AatSubject> aatSubjects = aatSubjectRepository.findAll();
-            for(AatSubject tmpAatSubject : aatSubjects) {
-                aatSubjectMap.put(tmpAatSubject.getAatUid(), tmpAatSubject);
+            List<AatSubjectEntity> aatSubjectEntities = aatSubjectRepository.findAll();
+            for(AatSubjectEntity tmpAatSubjectEntity : aatSubjectEntities) {
+                aatSubjectMap.put(tmpAatSubjectEntity.getAatUid(), tmpAatSubjectEntity);
             }
         }
         
         // Load spatial mapping terms
-        List<SpatialTerm> spatialTerms = new LinkedList<>();
-        Map<String,SpatialTerm> spatialTermsMap = new HashMap<>();
+        List<SpatialTermEntity> spatialTermEntities = new LinkedList<>();
+        Map<String, SpatialTermEntity> spatialTermsMap = new HashMap<>();
         if(spatialEnrichment) {
-            spatialTerms = spatialTermRepository.findByMappingId(spatialMappingId);
-            for(SpatialTerm mp : spatialTerms) {
+            spatialTermEntities = spatialTermRepository.findByMappingId(spatialMappingId);
+            for(SpatialTermEntity mp : spatialTermEntities) {
                 spatialTermsMap.put(mp.getNativeTerm(), mp);
             }
-            log.info("Spatial mapping loaded. MappingId: {} #Terms: {}", spatialMappingId, spatialTerms.size());
+            log.info("Spatial mapping loaded. MappingId: {} #Terms: {}", spatialMappingId, spatialTermEntities.size());
         }
         
         // Load temporal mapping terms
-        List<TemporalTerm> temporalTerms = new LinkedList<>();
-        Map<String,TemporalTerm> temporalTermsMap = new HashMap<>();
+        List<TemporalTermEntity> temporalTermEntities = new LinkedList<>();
+        Map<String, TemporalTermEntity> temporalTermsMap = new HashMap<>();
         if(temporalEnrichment) {
-            temporalTerms = temporalTermRepository.findByMappingId(temporalMappingId);
-            for(TemporalTerm mp : temporalTerms) {
+            temporalTermEntities = temporalTermRepository.findByMappingId(temporalMappingId);
+            for(TemporalTermEntity mp : temporalTermEntities) {
                 temporalTermsMap.put(mp.getNativeTerm(), mp);
             }
-            log.info("Temporal mapping loaded. MappingId: {} #Terms: {}", temporalMappingId, temporalTerms.size());
+            log.info("Temporal mapping loaded. MappingId: {} #Terms: {}", temporalMappingId, temporalTermEntities.size());
         }
             
         
@@ -426,7 +425,7 @@ public class EDMService {
         int edmFileCount = 0;
         try {
             // Get EDM files
-            Path edmArchiveFilePath =  Paths.get(edmArchive.getFilepath());
+            Path edmArchiveFilePath =  Paths.get(edmArchiveEntity.getFilepath());
             Path edmExtractDirPath = Paths.get(edmArchiveFilePath.getParent().toString(), "EDM");
             File[] edmFiles = edmExtractDirPath.toFile().listFiles(); 
             edmFileCount = edmFiles != null ? edmFiles.length : 0;
@@ -455,7 +454,7 @@ public class EDMService {
                         // String itemContent = XMLUtils.transform(doc);
 
                         // ~~~~~~~~~~ Thematic ~~~~~~~~~~ //
-                        List<SubjectTerm> subjectMappingsTerms = new LinkedList<> (); // List with matches
+                        List<SubjectTermEntity> subjectMappingsTerms = new LinkedList<> (); // List with matches
                         if(thematicEnrichment) {
                         
                             // TODO: Get all elements from extraction process
@@ -481,7 +480,7 @@ public class EDMService {
                         }
                         
                         // ~~~~~~~~~~ Spatial ~~~~~~~~~ //
-                        List<SpatialTerm> spatialMappingsTerms = new LinkedList<> ();
+                        List<SpatialTermEntity> spatialMappingsTerms = new LinkedList<> ();
                         if(spatialEnrichment) {
                             List<String> dcTermsSpatialValues =
                                     XMLUtils.getElementValues(doc, "//" + EdmExtractUtils.DC_TERMS_SPATIAL);
@@ -499,7 +498,7 @@ public class EDMService {
                         }
 
                         // ~~~~~~~~~~ Temporal ~~~~~~~~~ //
-                        List<SpatialTerm> temporalMappingsTerms = new LinkedList<> ();
+                        List<SpatialTermEntity> temporalMappingsTerms = new LinkedList<> ();
                         if(temporalEnrichment) {
                             // TODO: Unimplemented
                         }
@@ -555,8 +554,8 @@ public class EDMService {
                 enrichedArchiveFilePath = archiveFilePath.toString();
 
                 // Save enrichment filepath
-                edmArchive.setEnrichedFilepath(enrichedArchiveFilePath);
-                edmArchiveRepository.save(edmArchive);
+                edmArchiveEntity.setEnrichedFilepath(enrichedArchiveFilePath);
+                edmArchiveRepository.save(edmArchiveEntity);
                 
                 log.info("Enrichment Result. #Files: {} #Enriched: {} Enriched Archive: {}",
                         edmFiles.length, enrichedFileCount, archiveFilePath.toString());
@@ -573,7 +572,7 @@ public class EDMService {
         enrichDetails.setSuccess(true);
         enrichDetails.setMessage(message);
         enrichDetails.setEdmFileCount(edmFileCount);
-        enrichDetails.setEdmArchiveName(edmArchive.getFilename());
+        enrichDetails.setEdmArchiveName(edmArchiveEntity.getFilename());
         enrichDetails.setEnrichedFileCount(enrichedFileCount);
         enrichDetails.setEnrichedArchiveName(enrichedArchiveName);
         // enrichDetails.setEnrichedArchiveUrl("/enrich/requests/" + requestId + "/download");
@@ -591,7 +590,7 @@ public class EDMService {
     }
     
     
-    public List<MappingUploadRequest> getEdmPackages(Integer userId) {
+    public List<MappingUploadRequestEntity> getEdmPackages(Integer userId) {
         return uploadRequestRepository.findAllByCreatedBy(userId);
     }
     

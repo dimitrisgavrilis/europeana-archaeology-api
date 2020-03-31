@@ -1,4 +1,4 @@
-package gr.dcu.europeana.arch.api.resource.auth;
+package gr.dcu.europeana.arch.api.dto.auth;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,9 +11,10 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ValidateTokenResponse {
+public class LogoutResponse {
     
-    // private String token;
+    // private String status;
     
-    private boolean isValid;
+    private boolean success;
+    
 }

@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.repository;
 
-import gr.dcu.europeana.arch.model.TemporalTerm;
+import gr.dcu.europeana.arch.model.TemporalTermEntity;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -10,9 +10,9 @@ import org.springframework.stereotype.Repository;
  * @author Vangelis Nomikos
  */
 @Repository
-public interface TemporalTermRepository extends JpaRepository<TemporalTerm, Long> {
+public interface TemporalTermRepository extends JpaRepository<TemporalTermEntity, Long> {
     
-     List<TemporalTerm> findByMappingId(Long mappingId);
+     List<TemporalTermEntity> findByMappingId(Long mappingId);
     
     void deleteByMappingId(Long mappingId);
     

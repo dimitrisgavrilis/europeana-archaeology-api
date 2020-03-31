@@ -9,7 +9,7 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "setting")
 @Data
-public class Setting {
+public class SettingEntity {
 
     @Id
     private String key;

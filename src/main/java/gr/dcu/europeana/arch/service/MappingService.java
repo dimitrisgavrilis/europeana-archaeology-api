@@ -2,19 +2,11 @@ package gr.dcu.europeana.arch.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gr.dcu.europeana.arch.api.resource.AppendTermsResult;
-import gr.dcu.europeana.arch.api.resource.EnrichDetails;
+import gr.dcu.europeana.arch.api.dto.AppendTermsResult;
+import gr.dcu.europeana.arch.api.dto.EnrichDetails;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
-import gr.dcu.europeana.arch.model.EdmArchive;
-import gr.dcu.europeana.arch.model.EdmArchiveTerms;
-import gr.dcu.europeana.arch.model.EnrichRequest;
-import gr.dcu.europeana.arch.model.MappingExportRequest;
-import gr.dcu.europeana.arch.model.MappingType;
-import gr.dcu.europeana.arch.model.SpatialTerm;
-import gr.dcu.europeana.arch.model.SubjectTerm;
-import gr.dcu.europeana.arch.model.Mapping;
-import gr.dcu.europeana.arch.model.MappingUploadRequest;
-import gr.dcu.europeana.arch.model.TemporalTerm;
+import gr.dcu.europeana.arch.model.*;
+import gr.dcu.europeana.arch.model.EdmArchiveTermsEntity;
 import gr.dcu.europeana.arch.repository.EdmArchiveRepository;
 import gr.dcu.europeana.arch.repository.EdmArchiveTermsRepository;
 import gr.dcu.europeana.arch.repository.EnrichRequestRepository;
@@ -44,7 +36,7 @@ import org.xml.sax.SAXException;
 import gr.dcu.europeana.arch.repository.SubjectTermRepository;
 import gr.dcu.europeana.arch.repository.TemporalTermRepository;
 import gr.dcu.europeana.arch.repository.MappingRepository;
-import javax.transaction.TransactionScoped;
+
 import javax.transaction.Transactional;
 
 /**
@@ -92,7 +84,7 @@ public class MappingService {
      * 
      * @return 
      */
-    public List<Mapping> findAll() {
+    public List<MappingEntity> findAll() {
         
         return mappingRepository.findAll();
     }
@@ -102,40 +94,40 @@ public class MappingService {
      * @param userId
      * @return 
      */
-    public List<Mapping> findAllByUserId(int userId) {
+    public List<MappingEntity> findAllByUserId(int userId) {
         
         return mappingRepository.findAllByCreatedBy(userId);
     }
 
-    public Mapping findById(Long id) {
+    public MappingEntity findById(Long id) {
         return mappingRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(id));
     }
     
     /**
      * 
      * @param userId
-     * @param mapping
+     * @param mappingEntity
      * @return 
      */
-    public Mapping save(int userId, Mapping mapping) {
+    public MappingEntity save(int userId, MappingEntity mappingEntity) {
         
-        mapping.setCreatedBy(userId);
+        mappingEntity.setCreatedBy(userId);
         
-        return mappingRepository.save(mapping);
+        return mappingRepository.save(mappingEntity);
     }
 
-    public Mapping updateMapping(Long id, Mapping mapping) {
+    public MappingEntity updateMapping(Long id, MappingEntity mappingEntity) {
 
-        Mapping existingMapping = mappingRepository.findById(id)
+        MappingEntity existingMappingEntity = mappingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(id));
 
-        existingMapping.setLabel(mapping.getLabel());
-        existingMapping.setDescription(mapping.getDescription());
-        existingMapping.setLanguage(mapping.getLanguage());
-        existingMapping.setProviderName(mapping.getProviderName());
-        existingMapping.setVocabularyName(mapping.getVocabularyName());
+        existingMappingEntity.setLabel(mappingEntity.getLabel());
+        existingMappingEntity.setDescription(mappingEntity.getDescription());
+        existingMappingEntity.setLanguage(mappingEntity.getLanguage());
+        existingMappingEntity.setProviderName(mappingEntity.getProviderName());
+        existingMappingEntity.setVocabularyName(mappingEntity.getVocabularyName());
 
-        return mappingRepository.save(existingMapping);
+        return mappingRepository.save(existingMappingEntity);
     }
     
     /**
@@ -147,11 +139,11 @@ public class MappingService {
     public void delete(int userId, long mappingId) {
         
         // Check if mapping exists
-        Mapping mapping = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
                     .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Delete terms
-        switch(mapping.getType()) {
+        switch(mappingEntity.getType()) {
             case MappingType.MAPPING_TYPE_SUBJECT:
                 subjectTermRepository.deleteByMappingId(mappingId);
                 break;
@@ -182,25 +174,25 @@ public class MappingService {
         
         try {
             // Check if mapping exists
-            Mapping mapping = mappingRepository.findById(mappingId)
+            MappingEntity mappingEntity = mappingRepository.findById(mappingId)
                     .orElseThrow(() -> new ResourceNotFoundException(mappingId));
 
             // Export to tmp file
             Path filePath = fileStorageService.buildMappingExportFilePath(mappingId);
             
-            switch(mapping.getType()) {
+            switch(mappingEntity.getType()) {
                 case MappingType.MAPPING_TYPE_SUBJECT:
                     // Get terms
-                    List<SubjectTerm> termList = subjectTermRepository.findByMappingId(mappingId);
+                    List<SubjectTermEntity> termList = subjectTermRepository.findByMappingId(mappingId);
                     log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, termList.size());
             
                     // Export
                     excelService.exportSubjectTermsToExcel(filePath, termList);
                     break;
                 case MappingType.MAPPING_TYPE_SPATIAL:
-                    List<SpatialTerm> spatialTermList = spatialTermRepository.findByMappingId(mappingId);
-                    log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, spatialTermList.size());
-                    excelService.exportSpatialTermsToExcel(filePath, spatialTermList);
+                    List<SpatialTermEntity> spatialTermEntityList = spatialTermRepository.findByMappingId(mappingId);
+                    log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, spatialTermEntityList.size());
+                    excelService.exportSpatialTermsToExcel(filePath, spatialTermEntityList);
                     break;
                 case MappingType.MAPPING_TYPE_TEMPORAL:
                     
@@ -216,7 +208,7 @@ public class MappingService {
             resource = fileStorageService.loadFileAsResource(filePath);
 
             // Create exportExtractedAllTerms enrichRequest
-            MappingExportRequest exportRequest = new MappingExportRequest();
+            MappingExportRequestEntity exportRequest = new MappingExportRequestEntity();
             exportRequest.setMappingId(mappingId);
             exportRequest.setFilepath(filePath.toString());
             exportRequest.setCreatedBy(userId);
@@ -238,10 +230,10 @@ public class MappingService {
      * @return 
      * @throws IOException 
      */
-    public List<SubjectTerm> uploadSubjectTerms(long mappingId, MultipartFile file, int userId) throws IOException {
+    public List<SubjectTermEntity> uploadSubjectTerms(long mappingId, MultipartFile file, int userId) throws IOException {
         
         // Check existemce of mapping
-        Mapping mapping = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Upload mapping file
@@ -249,7 +241,7 @@ public class MappingService {
         fileStorageService.upload(filePath, file);
         
         // Load terms
-        List<SubjectTerm> termList = 
+        List<SubjectTermEntity> termList =
                 excelService.loadSubjectTermsFromExcel(filePath.toString(), mappingId, 1, -1);
         
         // Save terms
@@ -259,7 +251,7 @@ public class MappingService {
         subjectTermRepository.saveAll(termList);
         
         // Create upload enrichRequest
-        MappingUploadRequest uploadRequest = new MappingUploadRequest();
+        MappingUploadRequestEntity uploadRequest = new MappingUploadRequestEntity();
         uploadRequest.setMappingId(mappingId);
         uploadRequest.setFilename(file.getOriginalFilename());
         uploadRequest.setFilepath(filePath.toString());
@@ -277,10 +269,10 @@ public class MappingService {
      * @return
      * @throws IOException 
      */
-    public List<SpatialTerm> uploadSpatialTerms(long mappingId, MultipartFile file, int userId) throws IOException {
+    public List<SpatialTermEntity> uploadSpatialTerms(long mappingId, MultipartFile file, int userId) throws IOException {
         
         // Check existemce of mapping
-        Mapping mapping = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Upload mapping file
@@ -288,7 +280,7 @@ public class MappingService {
         fileStorageService.upload(filePath, file);
         
         // Load terms
-        List<SpatialTerm> termList = 
+        List<SpatialTermEntity> termList =
                 excelService.loadSpatialTermsFromExcel(filePath.toString(), mappingId, 1, -1);
         
         // Save terms
@@ -298,7 +290,7 @@ public class MappingService {
         spatialTermRepository.saveAll(termList);
         
         // Create upload enrichRequest
-        MappingUploadRequest uploadRequest = new MappingUploadRequest();
+        MappingUploadRequestEntity uploadRequest = new MappingUploadRequestEntity();
         uploadRequest.setMappingId(mappingId);
         uploadRequest.setFilename(file.getOriginalFilename());
         uploadRequest.setFilepath(filePath.toString());
@@ -308,10 +300,10 @@ public class MappingService {
         return termList;
     }
     
-    public List<TemporalTerm> uploadTemporalTerms(long mappingId, MultipartFile file, int userId) throws IOException {
+    public List<TemporalTermEntity> uploadTemporalTerms(long mappingId, MultipartFile file, int userId) throws IOException {
         
         // Check existemce of mapping
-        Mapping mapping = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Upload mapping file
@@ -319,7 +311,7 @@ public class MappingService {
         fileStorageService.upload(filePath, file);
         
         // Load terms
-        List<TemporalTerm> termList = 
+        List<TemporalTermEntity> termList =
                 excelService.loadTemporalTermsFromExcel(filePath.toString(), mappingId, 1, -1);
         
         // Save terms
@@ -329,7 +321,7 @@ public class MappingService {
         temporalTermRepository.saveAll(termList);
         
         // Create upload enrichRequest
-        MappingUploadRequest uploadRequest = new MappingUploadRequest();
+        MappingUploadRequestEntity uploadRequest = new MappingUploadRequestEntity();
         uploadRequest.setMappingId(mappingId);
         uploadRequest.setFilename(file.getOriginalFilename());
         uploadRequest.setFilepath(filePath.toString());
@@ -349,13 +341,13 @@ public class MappingService {
     public EnrichDetails enrich(long mappingId, MultipartFile file, int userId) throws IOException {
          
         // Check existemce of mapping
-        Mapping mapping = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Get mapping terms. Convert them to map
-        List<SubjectTerm> terms = subjectTermRepository.findByMappingId(mappingId);
-        Map<String,SubjectTerm> termsMap = new HashMap<>();
-        for(SubjectTerm mp : terms) {
+        List<SubjectTermEntity> terms = subjectTermRepository.findByMappingId(mappingId);
+        Map<String, SubjectTermEntity> termsMap = new HashMap<>();
+        for(SubjectTermEntity mp : terms) {
             termsMap.put(mp.getNativeTerm(), mp);
         }
         log.info("Mapping: {} #Terms: {}", mappingId, terms.size());
@@ -371,12 +363,12 @@ public class MappingService {
         //    -- exports
         
         // Create enrich enrichRequest
-        EnrichRequest enrichRequest = new EnrichRequest();
-        enrichRequest.setMappingId(mappingId);
-        enrichRequest.setFilename(file.getOriginalFilename());
-        enrichRequest.setCreatedBy(userId);
-        enrichRequest = enrichRequestRepository.save(enrichRequest);
-        long requestId = enrichRequest.getId();
+        EnrichRequestEntity enrichRequestEntity = new EnrichRequestEntity();
+        enrichRequestEntity.setMappingId(mappingId);
+        enrichRequestEntity.setFilename(file.getOriginalFilename());
+        enrichRequestEntity.setCreatedBy(userId);
+        enrichRequestEntity = enrichRequestRepository.save(enrichRequestEntity);
+        long requestId = enrichRequestEntity.getId();
         
         // Upload EDM archive
         log.info("Upload EDM archive. RequestId: {}", requestId);
@@ -385,8 +377,8 @@ public class MappingService {
         log.info("EDM archive uploaded. Path: {}", edmArchiveFilePath);
         
         // Update enrich enrichRequest
-        enrichRequest.setFilepath(edmArchiveFilePath.toString());
-        enrichRequest = enrichRequestRepository.save(enrichRequest);
+        enrichRequestEntity.setFilepath(edmArchiveFilePath.toString());
+        enrichRequestEntity = enrichRequestRepository.save(enrichRequestEntity);
         
         // Extract EDM archive
         log.info("Extract EDM archive. RequestId: {}", requestId);
@@ -483,10 +475,10 @@ public class MappingService {
         String details = objectMaper.writeValueAsString(enrichDetails);
         
         // Update enrich enrichRequest
-        enrichRequest.setEnrichedFilename(enrichedArchiveName);
-        enrichRequest.setEnrichedFilepath(enrichedArchiveFilePath);
-        enrichRequest.setDetails(details);
-        enrichRequestRepository.save(enrichRequest);
+        enrichRequestEntity.setEnrichedFilename(enrichedArchiveName);
+        enrichRequestEntity.setEnrichedFilepath(enrichedArchiveFilePath);
+        enrichRequestEntity.setDetails(details);
+        enrichRequestRepository.save(enrichRequestEntity);
         
         return enrichDetails;
     }
@@ -501,11 +493,11 @@ public class MappingService {
      */
     public File loadEnrichedArchive(long requestId) throws IOException {
         
-        EnrichRequest enrichRequest = enrichRequestRepository.findById(requestId)
+        EnrichRequestEntity enrichRequestEntity = enrichRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException(requestId));
         
-        String filename = enrichRequest.getFilename();
-        String filepath = enrichRequest.getEnrichedFilepath();
+        String filename = enrichRequestEntity.getFilename();
+        String filepath = enrichRequestEntity.getEnrichedFilepath();
         
         File file = fileStorageService.loadFile(filepath);
         
@@ -520,87 +512,87 @@ public class MappingService {
      * @return 
      */
     @Transactional
-    public Mapping createMappingByArchiveId(Long archiveId, String type, Integer userId) {
+    public MappingEntity createMappingByArchiveId(Long archiveId, String type, Integer userId) {
         
-        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+        EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
-        EdmArchiveTerms edmArchiveTerms = edmArchiveTermsRepository.findByArchiveId(archiveId);
+        EdmArchiveTermsEntity edmArchiveTermsEntity = edmArchiveTermsRepository.findByArchiveId(archiveId);
         
         log.info("Create mapping for archive. Archive: {} Type: {}", archiveId, type);
-        List<SubjectTerm> subjectTerms = new LinkedList<>();
-        List<SpatialTerm> spatialTerms = new LinkedList<>();
-        List<TemporalTerm> temporalTerms = new LinkedList<>();
-        if(edmArchiveTerms != null) {
+        List<SubjectTermEntity> subjectTermEntities = new LinkedList<>();
+        List<SpatialTermEntity> spatialTermEntities = new LinkedList<>();
+        List<TemporalTermEntity> temporalTermEntities = new LinkedList<>();
+        if(edmArchiveTermsEntity != null) {
         
             try { 
                 ObjectMapper mapper = new ObjectMapper();
                 switch(type) {
                     case MappingType.MAPPING_TYPE_SUBJECT:
-                        subjectTerms = mapper.readValue(edmArchiveTerms.getSubjectTerms(), 
-                                new TypeReference<List<SubjectTerm>>(){});
+                        subjectTermEntities = mapper.readValue(edmArchiveTermsEntity.getSubjectTerms(),
+                                new TypeReference<List<SubjectTermEntity>>(){});
                         break;
                     case MappingType.MAPPING_TYPE_SPATIAL:
-                        spatialTerms = mapper.readValue(edmArchiveTerms.getSpatialTerms(), 
-                                new TypeReference<List<SpatialTerm>>(){});
+                        spatialTermEntities = mapper.readValue(edmArchiveTermsEntity.getSpatialTerms(),
+                                new TypeReference<List<SpatialTermEntity>>(){});
                         break;
                     case MappingType.MAPPING_TYPE_TEMPORAL:
-                        temporalTerms = mapper.readValue(edmArchiveTerms.getTemporalTerms(), 
-                                new TypeReference<List<TemporalTerm>>(){});
+                        temporalTermEntities = mapper.readValue(edmArchiveTermsEntity.getTemporalTerms(),
+                                new TypeReference<List<TemporalTermEntity>>(){});
                         break;
                 }
             } catch (IOException ex){
-                log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTerms.getId());
+                log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTermsEntity.getId());
             }
         } else {
             log.warn("Cannot get Edm Archive Terms. ArchiveID: {}", archiveId);
         }
         
         // Create mapping
-        Mapping mapping = new Mapping();
-        mapping.setLabel(edmArchive.getFilename());
-        mapping.setDescription(edmArchive.getFilename());
-        mapping.setType(type);
-        mapping.setLanguage("");
-        mapping.setProviderName(edmArchive.getFilename());
-        mapping.setVocabularyName(edmArchive.getFilename());
-        mapping.setCreatedBy(userId);
-        long mappingId = mappingRepository.save(mapping).getId();
+        MappingEntity mappingEntity = new MappingEntity();
+        mappingEntity.setLabel(edmArchiveEntity.getFilename());
+        mappingEntity.setDescription(edmArchiveEntity.getFilename());
+        mappingEntity.setType(type);
+        mappingEntity.setLanguage("");
+        mappingEntity.setProviderName(edmArchiveEntity.getFilename());
+        mappingEntity.setVocabularyName(edmArchiveEntity.getFilename());
+        mappingEntity.setCreatedBy(userId);
+        long mappingId = mappingRepository.save(mappingEntity).getId();
         log.info("Mapping created. MappingId:{}", mappingId);
         
         // Add terms to mapping
-        if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) && !subjectTerms.isEmpty()) {
+        if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) && !subjectTermEntities.isEmpty()) {
             
-            log.info("Add terms to mappings. Size: {}", subjectTerms.size());
+            log.info("Add terms to mappings. Size: {}", subjectTermEntities.size());
             
-            for(SubjectTerm term : subjectTerms) {
+            for(SubjectTermEntity term : subjectTermEntities) {
                 term.setMappingId(mappingId);
             }
-            subjectTermRepository.saveAll(subjectTerms);
-            edmArchive.setThematicMapping(mappingId);
-        } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !spatialTerms.isEmpty()) {
+            subjectTermRepository.saveAll(subjectTermEntities);
+            edmArchiveEntity.setThematicMapping(mappingId);
+        } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !spatialTermEntities.isEmpty()) {
             
-            log.info("Add terms to mappings. Size: {}", spatialTerms.size());
+            log.info("Add terms to mappings. Size: {}", spatialTermEntities.size());
             
-            for(SpatialTerm term : spatialTerms) {
+            for(SpatialTermEntity term : spatialTermEntities) {
                 term.setMappingId(mappingId);
             }
-            spatialTermRepository.saveAll(spatialTerms);
-            edmArchive.setSpatialMapping(mappingId);
-        } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !temporalTerms.isEmpty()) {
+            spatialTermRepository.saveAll(spatialTermEntities);
+            edmArchiveEntity.setSpatialMapping(mappingId);
+        } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !temporalTermEntities.isEmpty()) {
             
-            log.info("Add terms to mappings. Size: {}", temporalTerms.size());
+            log.info("Add terms to mappings. Size: {}", temporalTermEntities.size());
             
-            for(TemporalTerm term : temporalTerms) {
+            for(TemporalTermEntity term : temporalTermEntities) {
                 term.setMappingId(mappingId);
             }
-            temporalTermRepository.saveAll(temporalTerms);
-            edmArchive.setTemporalMapping(mappingId);
+            temporalTermRepository.saveAll(temporalTermEntities);
+            edmArchiveEntity.setTemporalMapping(mappingId);
         }
         
-        edmArchiveRepository.save(edmArchive);
+        edmArchiveRepository.save(edmArchiveEntity);
         
-        return mapping;
+        return mappingEntity;
     }
     
     @Transactional
@@ -610,100 +602,100 @@ public class MappingService {
         long existingTermCount = 0;
         long appendTermCount = 0;
         
-        Mapping mapping = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
-        String mappingType = mapping.getType();
+        String mappingType = mappingEntity.getType();
         
         log.info("Append archive terms to mapping. Archive: {} Mapping: {} Type: {}", 
                 archiveId, mappingId, mappingType);
         
-        EdmArchive edmArchive = edmArchiveRepository.findById(archiveId)
+        EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
-        EdmArchiveTerms edmArchiveTerms = edmArchiveTermsRepository.findByArchiveId(archiveId);
+        EdmArchiveTermsEntity edmArchiveTermsEntity = edmArchiveTermsRepository.findByArchiveId(archiveId);
         
-        List<SubjectTerm> mappingSubjectTerms = new LinkedList<>();
-        List<SpatialTerm> mappingSpatialTerms = new LinkedList<>();
-        List<TemporalTerm> mappingTemporalTerms = new LinkedList<>();
+        List<SubjectTermEntity> mappingSubjectTermEntities = new LinkedList<>();
+        List<SpatialTermEntity> mappingSpatialTermEntities = new LinkedList<>();
+        List<TemporalTermEntity> mappingTemporalTermEntities = new LinkedList<>();
         
-        List<SubjectTerm> archiveSubjectTerms = new LinkedList<>();
-        List<SpatialTerm> archiveSpatialTerms = new LinkedList<>();
-        List<TemporalTerm> archiveTemporalTerms = new LinkedList<>();
-        if(edmArchiveTerms != null) {
+        List<SubjectTermEntity> archiveSubjectTermEntities = new LinkedList<>();
+        List<SpatialTermEntity> archiveSpatialTermEntities = new LinkedList<>();
+        List<TemporalTermEntity> archiveTemporalTermEntities = new LinkedList<>();
+        if(edmArchiveTermsEntity != null) {
         
             try { 
                 ObjectMapper mapper = new ObjectMapper();
                 switch(mappingType) {
                     case MappingType.MAPPING_TYPE_SUBJECT:
-                        archiveSubjectTerms = mapper.readValue(edmArchiveTerms.getSubjectTerms(), 
-                                new TypeReference<List<SubjectTerm>>(){});
+                        archiveSubjectTermEntities = mapper.readValue(edmArchiveTermsEntity.getSubjectTerms(),
+                                new TypeReference<List<SubjectTermEntity>>(){});
                         
-                        mappingSubjectTerms = subjectTermRepository.findByMappingId(mappingId);
+                        mappingSubjectTermEntities = subjectTermRepository.findByMappingId(mappingId);
                         
                         log.info("ArchiveSubjectTerms: {}, MappingSubjectTerms: {}", 
-                                archiveSubjectTerms.size(), mappingSubjectTerms.size());
+                                archiveSubjectTermEntities.size(), mappingSubjectTermEntities.size());
                         break;
                     case MappingType.MAPPING_TYPE_SPATIAL:
-                        archiveSpatialTerms = mapper.readValue(edmArchiveTerms.getSpatialTerms(), 
-                                new TypeReference<List<SpatialTerm>>(){});
+                        archiveSpatialTermEntities = mapper.readValue(edmArchiveTermsEntity.getSpatialTerms(),
+                                new TypeReference<List<SpatialTermEntity>>(){});
                         
-                        mappingSpatialTerms = spatialTermRepository.findByMappingId(mappingId);
+                        mappingSpatialTermEntities = spatialTermRepository.findByMappingId(mappingId);
                         
                         log.info("ArchiveSpatialTerms: {}, MappingSpatialTerms: {}", 
-                                archiveSpatialTerms.size(), mappingSpatialTerms.size());
+                                archiveSpatialTermEntities.size(), mappingSpatialTermEntities.size());
                         break;
                     case MappingType.MAPPING_TYPE_TEMPORAL:
-                        archiveTemporalTerms = mapper.readValue(edmArchiveTerms.getTemporalTerms(), 
-                                new TypeReference<List<TemporalTerm>>(){});
+                        archiveTemporalTermEntities = mapper.readValue(edmArchiveTermsEntity.getTemporalTerms(),
+                                new TypeReference<List<TemporalTermEntity>>(){});
                         
-                        mappingTemporalTerms = temporalTermRepository.findByMappingId(mappingId);
+                        mappingTemporalTermEntities = temporalTermRepository.findByMappingId(mappingId);
                         
                         log.info("ArchiveTemporalTerms: {}, MappingTemporalTerms: {}", 
-                                archiveTemporalTerms.size(), mappingTemporalTerms.size());
+                                archiveTemporalTermEntities.size(), mappingTemporalTermEntities.size());
                         break;
                 }
             } catch (IOException ex){
-                log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTerms.getId());
+                log.warn("Cannot parse Edm Archive Terms. ArchiveID: {} ArchiveIdTerms: {}", archiveId, edmArchiveTermsEntity.getId());
             }
         } else {
             log.warn("Cannot get Edm Archive Terms. ArchiveID: {}", archiveId);
         }
         
         // Add terms to mapping
-        if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) && !archiveSubjectTerms.isEmpty()) {
+        if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) && !archiveSubjectTermEntities.isEmpty()) {
             
-            existingTermCount = mappingSubjectTerms.size();
-            appendTermCount = archiveSubjectTerms.size();
+            existingTermCount = mappingSubjectTermEntities.size();
+            appendTermCount = archiveSubjectTermEntities.size();
             
-            for(SubjectTerm term : archiveSubjectTerms) {
+            for(SubjectTermEntity term : archiveSubjectTermEntities) {
                 term.setMappingId(mappingId);
             }
             
-            mappingSubjectTerms.addAll(archiveSubjectTerms);
-            subjectTermRepository.saveAll(mappingSubjectTerms);
+            mappingSubjectTermEntities.addAll(archiveSubjectTermEntities);
+            subjectTermRepository.saveAll(mappingSubjectTermEntities);
             
             
-        } else if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !archiveSpatialTerms.isEmpty()) {
+        } else if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !archiveSpatialTermEntities.isEmpty()) {
             
-            existingTermCount = mappingSpatialTerms.size();
-            appendTermCount = archiveSpatialTerms.size();
+            existingTermCount = mappingSpatialTermEntities.size();
+            appendTermCount = archiveSpatialTermEntities.size();
             
-            for(SpatialTerm term : archiveSpatialTerms) {
+            for(SpatialTermEntity term : archiveSpatialTermEntities) {
                 term.setMappingId(mappingId);
             }
             
-            mappingSpatialTerms.addAll(archiveSpatialTerms);
-            spatialTermRepository.saveAll(mappingSpatialTerms);
-        } else if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !archiveTemporalTerms.isEmpty()) {
+            mappingSpatialTermEntities.addAll(archiveSpatialTermEntities);
+            spatialTermRepository.saveAll(mappingSpatialTermEntities);
+        } else if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !archiveTemporalTermEntities.isEmpty()) {
             
-            existingTermCount = mappingTemporalTerms.size();
-            appendTermCount = archiveTemporalTerms.size();
+            existingTermCount = mappingTemporalTermEntities.size();
+            appendTermCount = archiveTemporalTermEntities.size();
             
-            for(TemporalTerm term : archiveTemporalTerms) {
+            for(TemporalTermEntity term : archiveTemporalTermEntities) {
                 term.setMappingId(mappingId);
             }
-            mappingTemporalTerms.addAll(archiveTemporalTerms);
-            temporalTermRepository.saveAll(mappingTemporalTerms);
+            mappingTemporalTermEntities.addAll(archiveTemporalTermEntities);
+            temporalTermRepository.saveAll(mappingTemporalTermEntities);
         }
         
         appendTermResult.setExistingTermCount(existingTermCount);

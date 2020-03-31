@@ -2,12 +2,8 @@ package gr.dcu.europeana.arch.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -23,7 +19,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @NoArgsConstructor
-public class SubjectTerm implements Serializable {
+public class SubjectTermEntity implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,4 +40,7 @@ public class SubjectTerm implements Serializable {
     
     @Column (name="aat_uid")
     private String aatUid;
+
+    @Transient
+    private Integer count;
 }

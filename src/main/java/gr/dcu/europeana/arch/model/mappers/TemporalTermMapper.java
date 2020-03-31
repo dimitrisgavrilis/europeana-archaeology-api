@@ -1,7 +1,6 @@
 package gr.dcu.europeana.arch.model.mappers;
 
-import gr.dcu.europeana.arch.model.SubjectTerm;
-import gr.dcu.europeana.arch.model.TemporalTerm;
+import gr.dcu.europeana.arch.model.TemporalTermEntity;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -15,9 +14,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class TemporalTermMapper {
     
-    public TemporalTerm toTemporalTerm(ElementExtractionData extractionData) {
+    public TemporalTermEntity toTemporalTerm(ElementExtractionData extractionData) {
         
-        TemporalTerm term = new TemporalTerm();
+        TemporalTermEntity term = new TemporalTermEntity();
         term.setNativeTerm(extractionData.getElementValue());
         term.setLanguage(extractionData.getXmlLangAttrValue());
         term.setAatConceptLabel("");
@@ -25,8 +24,8 @@ public class TemporalTermMapper {
         return term;
     }
     
-    public List<TemporalTerm> toTemporalTermList(Collection<ElementExtractionData> extractionDataList) {
-        List<TemporalTerm> terms = new LinkedList<>();
+    public List<TemporalTermEntity> toTemporalTermList(Collection<ElementExtractionData> extractionDataList) {
+        List<TemporalTermEntity> terms = new LinkedList<>();
         
         for(ElementExtractionData extractionData : extractionDataList) {
             terms.add(toTemporalTerm(extractionData));

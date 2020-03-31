@@ -1,4 +1,4 @@
-package gr.dcu.europeana.arch.api.resource.auth;
+package gr.dcu.europeana.arch.api.dto.auth;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

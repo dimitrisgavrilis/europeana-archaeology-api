@@ -1,6 +1,6 @@
-package gr.dcu.europeana.arch.api.resource;
+package gr.dcu.europeana.arch.api.dto;
 
-import gr.dcu.europeana.arch.model.User;
+import gr.dcu.europeana.arch.model.UserEntity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -24,16 +24,16 @@ public class UserResource {
     
     // private int viewCount;
     
-    public static UserResource toResource(User user) {
+    public static UserResource toResource(UserEntity userEntity) {
         
-        if(user == null) {
+        if(userEntity == null) {
             return null;
         }
         
         UserResource resource = new UserResource();
-        resource.setId(user.getId());
-        resource.setName(user.getName());
-        resource.setEmail(user.getEmail());
+        resource.setId(userEntity.getId());
+        resource.setName(userEntity.getName());
+        resource.setEmail(userEntity.getEmail());
         
         return resource;
         

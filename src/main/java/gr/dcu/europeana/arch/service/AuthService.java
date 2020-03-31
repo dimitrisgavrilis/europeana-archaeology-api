@@ -2,12 +2,12 @@ package gr.dcu.europeana.arch.service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
-import gr.dcu.europeana.arch.api.resource.auth.*;
-import gr.dcu.europeana.arch.api.resource.UserResource;
+import gr.dcu.europeana.arch.api.dto.auth.*;
+import gr.dcu.europeana.arch.api.dto.UserResource;
 import gr.dcu.europeana.arch.config.AppConfig;
-import gr.dcu.europeana.arch.model.Setting;
-import gr.dcu.europeana.arch.model.User;
-import gr.dcu.europeana.arch.model.UserSession;
+import gr.dcu.europeana.arch.model.SettingEntity;
+import gr.dcu.europeana.arch.model.UserEntity;
+import gr.dcu.europeana.arch.model.UserSessionEntity;
 import gr.dcu.europeana.arch.exception.AuthorizationException;
 import gr.dcu.europeana.arch.exception.BadRequestException;
 import gr.dcu.europeana.arch.exception.ForbiddenException;
@@ -59,7 +59,7 @@ public class AuthService {
     /**
      * Signup a new user
      */
-    public User signup(SignupRequest request) throws NoSuchAlgorithmException, BadRequestException {
+    public UserEntity signup(SignupRequest request) throws NoSuchAlgorithmException, BadRequestException {
         
         // Validate credentials
         String email = request.getEmail();
@@ -70,25 +70,25 @@ public class AuthService {
         }
         
         // Check if the email already exists
-        List<User> users = userRepository.findAllByEmail(request.getEmail());
-        if(users.size() > 0) {
+        List<UserEntity> userEntities = userRepository.findAllByEmail(request.getEmail());
+        if(userEntities.size() > 0) {
             throw new BadRequestException("Email already exists.");
         }
         
         // Create user
-        User user = new User();
-        user.setName(request.getName());
-        user.setEmail(email);
-        user.setPassword(password);
+        UserEntity userEntity = new UserEntity();
+        userEntity.setName(request.getName());
+        userEntity.setEmail(email);
+        userEntity.setPassword(password);
         
         // String passwordhash = MySQLUtils.toMd5(password);
         // user.setPassword(passwordhash);
         // log.debug("Plain: {} | PasswordHash: {}", request.getPassword(), passwordhash);
         
-        user.setOrganization(request.getOrganization());
-        user.setActive((short) 1);
+        userEntity.setOrganization(request.getOrganization());
+        userEntity.setActive((short) 1);
 
-        user = userRepository.save(user);
+        userEntity = userRepository.save(userEntity);
 
         // Notify user & admins by email
         try {
@@ -97,7 +97,7 @@ public class AuthService {
             List<String> recipients = new LinkedList<>();
             recipients.add(email);
 
-            List<String> adminRecipients = settingService.getRecipientList(Setting.MAILGUN_RECIPIENTS_SIGN_UP);
+            List<String> adminRecipients = settingService.getRecipientList(SettingEntity.MAILGUN_RECIPIENTS_SIGN_UP);
             recipients.addAll(adminRecipients);
             log.info("Notify users. User: {} Admins: {}", email, adminRecipients);
 
@@ -105,7 +105,7 @@ public class AuthService {
             String subject = AppConfig.PROJECT_NAME + " - " + AppConfig.SERVICE_NAME + ": New account";
 
             Map<String, String> variables = new HashMap<>();
-            variables.put(EmailBuilderService.VAR_USER_NAME, user.getName());
+            variables.put(EmailBuilderService.VAR_USER_NAME, userEntity.getName());
             variables.put(EmailBuilderService.VAR_PROJECT_NAME, AppConfig.PROJECT_NAME);
             variables.put(EmailBuilderService.VAR_SERVICE_NAME, AppConfig.SERVICE_NAME);
 
@@ -121,7 +121,7 @@ public class AuthService {
 
 
 
-        return user;
+        return userEntity;
     }
 
     public LoginResponse login(HttpServletRequest requestContext) {
@@ -143,12 +143,12 @@ public class AuthService {
         String username = tokenizer.nextToken();
         String password = tokenizer.nextToken();
 
-        List<User> users = userRepository.findAllByEmailAndPassword(username, password);
+        List<UserEntity> userEntities = userRepository.findAllByEmailAndPassword(username, password);
         
-        if(users.size() != 1) {
+        if(userEntities.size() != 1) {
            throw new AuthorizationException("Cannot authorize.");
         } else {
-            User user = users.get(0);
+            UserEntity userEntity = userEntities.get(0);
             
             // TODO: Save last login
             Instant now = Instant.now();
@@ -161,22 +161,22 @@ public class AuthService {
                     .sign(algorithm);
             
             // Save user session
-            UserSession userSession = new UserSession();
-            userSession.setUserId(user.getId());
-            userSession.setSessionId(token);
-            userSession.setIpAddress(ipAddress);
-            userSession.setStatus("LOGIN");
-            userSession.setLoginAt(LocalDateTime.now());
-            userSession.setLogoutAt(LocalDateTime.now());
-            userSessionRepository.save(userSession);
+            UserSessionEntity userSessionEntity = new UserSessionEntity();
+            userSessionEntity.setUserId(userEntity.getId());
+            userSessionEntity.setSessionId(token);
+            userSessionEntity.setIpAddress(ipAddress);
+            userSessionEntity.setStatus("LOGIN");
+            userSessionEntity.setLoginAt(LocalDateTime.now());
+            userSessionEntity.setLogoutAt(LocalDateTime.now());
+            userSessionRepository.save(userSessionEntity);
             
             // Prepare response
             response.setToken(token);
             
             UserResource userResource = new UserResource();
-            userResource.setId(user.getId());
-            userResource.setName(user.getName());
-            userResource.setEmail(user.getEmail());
+            userResource.setId(userEntity.getId());
+            userResource.setName(userEntity.getName());
+            userResource.setEmail(userEntity.getEmail());
             
             response.setUser(userResource);
             
@@ -199,11 +199,11 @@ public class AuthService {
             return response;
         } 
         
-        UserSession userSession = userSessionRepository.findBySessionIdAndIpAddress(authHeader, ipAddress);
-        if(userSession != null) {
-            userSession.setStatus("LOGOUT");
-            userSession.setLogoutAt(LocalDateTime.now());
-            userSessionRepository.save(userSession);
+        UserSessionEntity userSessionEntity = userSessionRepository.findBySessionIdAndIpAddress(authHeader, ipAddress);
+        if(userSessionEntity != null) {
+            userSessionEntity.setStatus("LOGOUT");
+            userSessionEntity.setLogoutAt(LocalDateTime.now());
+            userSessionRepository.save(userSessionEntity);
             
             response.setSuccess(true);
             return response;
@@ -229,10 +229,10 @@ public class AuthService {
             // return authStatus; 
         } 
         
-        UserSession userSession = userSessionRepository.findBySessionIdAndIpAddress(authHeader, ipAddress);
-        if(userSession != null) {
+        UserSessionEntity userSessionEntity = userSessionRepository.findBySessionIdAndIpAddress(authHeader, ipAddress);
+        if(userSessionEntity != null) {
             
-            if(userSession.getStatus().equals("LOGOUT")) { // Is already logout
+            if(userSessionEntity.getStatus().equals("LOGOUT")) { // Is already logout
                 // authStatus.setValid(false);
                 throw new ForbiddenException("User has been logged out.");
             } else {
@@ -269,14 +269,14 @@ public class AuthService {
 
         String accessToken = authorizationHeader.replace("Bearer ", "");
         
-        UserSession userSession = userSessionRepository.findBySessionIdAndIpAddress(accessToken, ipAddress);
-        if(userSession != null) {
+        UserSessionEntity userSessionEntity = userSessionRepository.findBySessionIdAndIpAddress(accessToken, ipAddress);
+        if(userSessionEntity != null) {
 
-            if(userSession.getStatus().equals("LOGOUT")) { // Is already logout
+            if(userSessionEntity.getStatus().equals("LOGOUT")) { // Is already logout
                 throw new AuthorizationException("User has been logged out.");
             }
 
-            userId = userSession.getUserId();
+            userId = userSessionEntity.getUserId();
         } else {
             throw new AuthorizationException("Invalid user session.");
         }
@@ -304,13 +304,13 @@ public class AuthService {
             throw new BadRequestException("Username is missing or empty.");
         }
 
-        List<User> users = userRepository.findAllByEmail(email);
+        List<UserEntity> userEntities = userRepository.findAllByEmail(email);
 
-        if(users.size() != 1) {
+        if(userEntities.size() != 1) {
             throw new AuthorizationException("Cannot reset password. Cannot identify user.");
         } else {
             try {
-                User user = users.get(0);
+                UserEntity userEntity = userEntities.get(0);
 
                 LocalDate today = LocalDate.now();
                 String todayInString = today.toString().replace("-", "");
@@ -318,8 +318,8 @@ public class AuthService {
                 // String password = 1 + todayInString + "!";
                 String password = generateRandomString(10, true, true);
                 String passwordHash = MySQLUtils.toMd5(password);
-                user.setPassword(passwordHash);
-                userRepository.save(user);
+                userEntity.setPassword(passwordHash);
+                userRepository.save(userEntity);
 
                 log.info("Password reset successfully. Password: {}", password);
 
@@ -330,7 +330,7 @@ public class AuthService {
                     List<String> recipients = new LinkedList<>();
                     recipients.add(email);
 
-                    List<String> adminRecipients = settingService.getRecipientList(Setting.MAILGUN_RECIPIENTS_RESET_PASSWORD);
+                    List<String> adminRecipients = settingService.getRecipientList(SettingEntity.MAILGUN_RECIPIENTS_RESET_PASSWORD);
                     recipients.addAll(adminRecipients);
                     log.info("Notify users. User: {} Admins: {}", email, adminRecipients);
 
@@ -338,7 +338,7 @@ public class AuthService {
                     String subject = AppConfig.PROJECT_NAME + " - " + AppConfig.SERVICE_NAME + " : Reset password";
 
                     Map<String, String> variables = new HashMap<>();
-                    variables.put(EmailBuilderService.VAR_USER_NAME, user.getName());
+                    variables.put(EmailBuilderService.VAR_USER_NAME, userEntity.getName());
                     variables.put(EmailBuilderService.VAR_SERVICE_NAME, AppConfig.SERVICE_NAME);
                     variables.put(EmailBuilderService.VAR_PASSWORD, password);
 

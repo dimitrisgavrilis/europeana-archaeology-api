@@ -1,8 +1,6 @@
 package gr.dcu.europeana.arch.model.mappers;
 
-import gr.dcu.europeana.arch.model.SpatialTerm;
-import gr.dcu.europeana.arch.model.SubjectTerm;
-import gr.dcu.europeana.arch.model.TemporalTerm;
+import gr.dcu.europeana.arch.model.SpatialTermEntity;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -16,9 +14,9 @@ import org.springframework.stereotype.Component;
 @Component
 public class SpatialTermMapper {
     
-    public SpatialTerm toSpatialTerm(ElementExtractionData extractionData) {
+    public SpatialTermEntity toSpatialTerm(ElementExtractionData extractionData) {
         
-        SpatialTerm term = new SpatialTerm();
+        SpatialTermEntity term = new SpatialTermEntity();
         term.setNativeTerm(extractionData.getElementValue());
         term.setLanguage(extractionData.getXmlLangAttrValue());
         term.setGeonameName("");
@@ -26,8 +24,8 @@ public class SpatialTermMapper {
         return term;
     }
     
-    public List<SpatialTerm> toSpatialTermList(Collection<ElementExtractionData> extractionDataList) {
-        List<SpatialTerm> terms = new LinkedList<>();
+    public List<SpatialTermEntity> toSpatialTermList(Collection<ElementExtractionData> extractionDataList) {
+        List<SpatialTermEntity> terms = new LinkedList<>();
         
         for(ElementExtractionData extractionData : extractionDataList) {
             terms.add(toSpatialTerm(extractionData));

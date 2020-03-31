@@ -1,4 +1,4 @@
-package gr.dcu.europeana.arch.api.resource.auth;
+package gr.dcu.europeana.arch.api.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,6 +11,9 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class ResetPasswordRequest {
-    private String username;
+public class AppendTermsResult {
+    
+    private long existingTermCount;
+    private long appendTermCount;
+    
 }

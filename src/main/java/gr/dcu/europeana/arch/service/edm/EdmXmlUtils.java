@@ -1,8 +1,8 @@
 package gr.dcu.europeana.arch.service.edm;
 
-import gr.dcu.europeana.arch.model.AatSubject;
-import gr.dcu.europeana.arch.model.SpatialTerm;
-import gr.dcu.europeana.arch.model.SubjectTerm;
+import gr.dcu.europeana.arch.model.AatSubjectEntity;
+import gr.dcu.europeana.arch.model.SpatialTermEntity;
+import gr.dcu.europeana.arch.model.SubjectTermEntity;
 import gr.dcu.utils.MoReNamespaceContext;
 import java.util.List;
 import java.util.Map;
@@ -22,8 +22,8 @@ import org.w3c.dom.NodeList;
 @Slf4j
 public class EdmXmlUtils {
     
-    public static Document appendThematicElements(Document doc, String xPathExpr, String label, 
-            List<SubjectTerm> subjectTerms, Map<String, AatSubject> aatSubjectMap) throws XPathExpressionException {
+    public static Document appendThematicElements(Document doc, String xPathExpr, String label,
+                                                  List<SubjectTermEntity> subjectTermEntities, Map<String, AatSubjectEntity> aatSubjectMap) throws XPathExpressionException {
 		
             try {
                 XPath xPath = XPathFactory.newInstance().newXPath();
@@ -34,14 +34,14 @@ public class EdmXmlUtils {
                     Element element = (Element) nodeList.item(i);
 
                     int termsWithoutMappings = 0;
-                    for(SubjectTerm subjectTerm : subjectTerms) {
+                    for(SubjectTermEntity subjectTermEntity : subjectTermEntities) {
                         
-                        if(subjectTerm.getAatUid() != null && !subjectTerm.getAatUid().isEmpty()) {
+                        if(subjectTermEntity.getAatUid() != null && !subjectTermEntity.getAatUid().isEmpty()) {
                             
-                            AatSubject aatSubject = aatSubjectMap.get(subjectTerm.getAatUid());
+                            AatSubjectEntity aatSubjectEntity = aatSubjectMap.get(subjectTermEntity.getAatUid());
                             
                             Element childElement = doc.createElement(label);
-                            childElement.setAttribute("rdf:resource", aatSubject.getUri());
+                            childElement.setAttribute("rdf:resource", aatSubjectEntity.getUri());
                             // childElement.appendChild(doc.createTextNode(spatialTerm));
                             element.appendChild(childElement);
                         } else {
@@ -61,7 +61,7 @@ public class EdmXmlUtils {
 	}
     
     public static Document appendSpatialElements(Document doc, String xPathExpr, String label, 
-            List<SpatialTerm> spatialTerms) throws XPathExpressionException {
+            List<SpatialTermEntity> spatialTermEntities) throws XPathExpressionException {
 		
             try {
                 XPath xPath = XPathFactory.newInstance().newXPath();
@@ -72,14 +72,14 @@ public class EdmXmlUtils {
                     Element element = (Element) nodeList.item(i);
 
                     int termsWithoutMappings = 0;
-                    for(SpatialTerm spatialTerm : spatialTerms) {
+                    for(SpatialTermEntity spatialTermEntity : spatialTermEntities) {
                         
-                        if(spatialTerm.getGeonameId() != null && !spatialTerm.getGeonameId().isEmpty()) {
+                        if(spatialTermEntity.getGeonameId() != null && !spatialTermEntity.getGeonameId().isEmpty()) {
                             
                             // AatSubject aatSubject = aatSubjectMap.get(spatialTerm.getAatUid());
                             
                             Element childElement = doc.createElement(label);
-                            childElement.setAttribute("rdf:resource", "https://www.geonames.org/" + spatialTerm.getGeonameId());
+                            childElement.setAttribute("rdf:resource", "https://www.geonames.org/" + spatialTermEntity.getGeonameId());
                             // childElement.appendChild(doc.createTextNode(spatialTerm));
                             element.appendChild(childElement);
                         } else {

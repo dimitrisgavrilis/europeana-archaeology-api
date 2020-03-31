@@ -1,8 +1,8 @@
 package gr.dcu.europeana.arch.api.controller;
 
-import gr.dcu.europeana.arch.model.SubjectTerm;
-import gr.dcu.europeana.arch.model.SpatialTerm;
-import gr.dcu.europeana.arch.model.Mapping;
+import gr.dcu.europeana.arch.model.MappingEntity;
+import gr.dcu.europeana.arch.model.SubjectTermEntity;
+import gr.dcu.europeana.arch.model.SpatialTermEntity;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.MappingService;
 import java.io.IOException;
@@ -40,7 +40,7 @@ public class MappingController {
 
     @Operation(summary = "Get all mappings")
     @GetMapping("/mappings/all")
-    public List<Mapping> getAllMappings(HttpServletRequest requestContext) {
+    public List<MappingEntity> getAllMappings(HttpServletRequest requestContext) {
         
         // int userId = authService.authorize(requestContext);
          
@@ -49,7 +49,7 @@ public class MappingController {
 
     @Operation(summary = "Get user mappings")
     @GetMapping("/mappings")
-    public List<Mapping> getUserMappings(HttpServletRequest requestContext) {
+    public List<MappingEntity> getUserMappings(HttpServletRequest requestContext) {
         
         int userId = authService.authorize(requestContext);
          
@@ -58,7 +58,7 @@ public class MappingController {
 
     @Operation(summary = "Get an existing mapping")
     @GetMapping("/mappings/{id}")
-    public Mapping getMapping(HttpServletRequest requestContext, @PathVariable Long id) { 
+    public MappingEntity getMapping(HttpServletRequest requestContext, @PathVariable Long id) {
         
         // int userId = authService.authorize(requestContext);
                 
@@ -67,19 +67,19 @@ public class MappingController {
 
     @Operation(summary = "Create a new mapping")
     @PostMapping("/mappings")
-    public Mapping saveMapping(HttpServletRequest requestContext, @RequestBody Mapping mapping) { 
+    public MappingEntity saveMapping(HttpServletRequest requestContext, @RequestBody MappingEntity mappingEntity) {
         
         int userId = authService.authorize(requestContext);
         
-        return mappingService.save(userId, mapping);
+        return mappingService.save(userId, mappingEntity);
     }
 
     @Operation(summary = "Update an existing mapping")
     @PutMapping("/mappings/{id}")
-    public Mapping updateMapping(HttpServletRequest requestContext, 
-            @PathVariable Long id, @RequestBody Mapping mapping) {
+    public MappingEntity updateMapping(HttpServletRequest requestContext,
+                                       @PathVariable Long id, @RequestBody MappingEntity mappingEntity) {
 
-        return mappingService.updateMapping(id, mapping);
+        return mappingService.updateMapping(id, mappingEntity);
     }
 
     @Operation(summary = "Delete a mapping")
@@ -122,8 +122,8 @@ public class MappingController {
 
     @Operation(summary = "Upload subject terms to mapping")
     @PostMapping("/mappings/{id}/upload")
-    public List<SubjectTerm> uploadTerms(HttpServletRequest requestContext, @PathVariable Long id, 
-            @RequestParam("file") MultipartFile file) throws IOException {
+    public List<SubjectTermEntity> uploadTerms(HttpServletRequest requestContext, @PathVariable Long id,
+                                               @RequestParam("file") MultipartFile file) throws IOException {
         
         int userId = authService.authorize(requestContext);
         
@@ -132,8 +132,8 @@ public class MappingController {
 
     @Operation(summary = "Upload spatial terms to mapping")
     @PostMapping("/mappings/{id}/upload_spatial")
-    public List<SpatialTerm> uploadSpatialTerms(HttpServletRequest requestContext, @PathVariable Long id, 
-            @RequestParam("file") MultipartFile file) throws IOException {
+    public List<SpatialTermEntity> uploadSpatialTerms(HttpServletRequest requestContext, @PathVariable Long id,
+                                                      @RequestParam("file") MultipartFile file) throws IOException {
         
         int userId = authService.authorize(requestContext);
         
@@ -142,8 +142,8 @@ public class MappingController {
 
     @Operation(summary = "Upload temporal terms to mapping")
     @PostMapping("/mappings/{id}/upload_temporal")
-    public List<SpatialTerm> uploadTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id, 
-            @RequestParam("file") MultipartFile file) throws IOException {
+    public List<SpatialTermEntity> uploadTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id,
+                                                       @RequestParam("file") MultipartFile file) throws IOException {
         
         int userId = authService.authorize(requestContext);
         

@@ -24,7 +24,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @Setter
 @ToString
 @NoArgsConstructor
-public class MappingUploadRequest implements Serializable {
+public class MappingUploadRequestEntity implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

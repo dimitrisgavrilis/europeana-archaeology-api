@@ -1,8 +1,7 @@
 package gr.dcu.europeana.arch.api.controller;
 
-import gr.dcu.europeana.arch.api.resource.EnrichDetails;
-import gr.dcu.europeana.arch.model.EdmArchive;
-import gr.dcu.europeana.arch.model.MappingUploadRequest;
+import gr.dcu.europeana.arch.api.dto.EnrichDetails;
+import gr.dcu.europeana.arch.model.MappingUploadRequestEntity;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.EDMService;
 import gr.dcu.europeana.arch.service.MappingService;
@@ -40,7 +39,7 @@ public class ΧΧΧEnrichEdmController {
     MappingService mappingService;
     
     @GetMapping("/edm_packages")
-    public List<MappingUploadRequest> getEdmPackages(HttpServletRequest requestContext) {
+    public List<MappingUploadRequestEntity> getEdmPackages(HttpServletRequest requestContext) {
         
         int userId = authService.authorize(requestContext);
          

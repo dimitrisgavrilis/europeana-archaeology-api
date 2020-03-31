@@ -1,4 +1,4 @@
-package gr.dcu.europeana.arch.api.resource;
+package gr.dcu.europeana.arch.api.dto;
 
 import gr.dcu.europeana.arch.geonames.Geonames;
 import java.util.LinkedList;

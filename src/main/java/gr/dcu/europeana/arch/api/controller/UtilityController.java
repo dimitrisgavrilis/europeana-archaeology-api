@@ -1,12 +1,12 @@
 package gr.dcu.europeana.arch.api.controller;
 
-import gr.dcu.europeana.arch.api.resource.GeonamesDto;
-import gr.dcu.europeana.arch.api.resource.GeonamesMapper;
+import gr.dcu.europeana.arch.api.dto.GeonamesDto;
+import gr.dcu.europeana.arch.api.dto.GeonamesMapper;
 import gr.dcu.europeana.arch.geonames.Geonames;
 import gr.dcu.europeana.arch.geonames.GeonamesSearchResult;
 import gr.dcu.europeana.arch.geonames.GeonamesService;
-import gr.dcu.europeana.arch.model.AatSubject;
-import gr.dcu.europeana.arch.model.Language;
+import gr.dcu.europeana.arch.model.AatSubjectEntity;
+import gr.dcu.europeana.arch.model.LanguageEntity;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import gr.dcu.europeana.arch.repository.LanguageRepository;
 import java.util.List;
@@ -42,8 +42,8 @@ public class UtilityController {
 
     @Operation(summary = "Search subjects by name")
     @PostMapping("/subjects/search")
-    public List<AatSubject> searchSubjectsByName(@RequestParam String q, 
-            @RequestParam(value = "type", required=false) String type) {
+    public List<AatSubjectEntity> searchSubjectsByName(@RequestParam String q,
+                                                       @RequestParam(value = "type", required=false) String type) {
         
         if(type == null || type.isEmpty()) {
             return aatSubjectRepository.findAllByLabelContainingIgnoreCase(q);
@@ -68,7 +68,7 @@ public class UtilityController {
     
     @Operation(summary = "Get all languages")
     @GetMapping("/languages")
-    public List<Language> getAllLanguages() {
+    public List<LanguageEntity> getAllLanguages() {
         return languageRepository.findAllByOrderByNameAsc();
     }
     

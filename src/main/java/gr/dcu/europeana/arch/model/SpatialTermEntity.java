@@ -1,5 +1,7 @@
 package gr.dcu.europeana.arch.model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -18,46 +20,35 @@ import org.hibernate.annotations.CreationTimestamp;
  * @author Vangelis Nomikos
  */
 @Entity 
-@Table(name = "edm_archive")
+@Table(name = "spatial_terms")
 @Getter
 @Setter
 @ToString
 @NoArgsConstructor
-public class EdmArchive {
+public class SpatialTermEntity implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column (name="name")
-    private String name;
+    @JsonIgnore
+    @Column (name="mapping_id")
+    private Long mappingId;
     
-    @Column (name="item_count")
-    private Integer itemCount;
+    @Column (name="native_term")
+    private String nativeTerm;
     
-    @Column (name="filename")
-    private String filename;
+    @Column (name="geoname_name")
+    private String geonameName;
     
-    @Column (name="filepath")
-    private String filepath;
+    @Column (name="geoname_id")
+    private String geonameId;
     
-    @Column (name="enriched_filepath")
-    private String enrichedFilepath;
-    
-    @Column (name="thematic_mapping")
-    private Long thematicMapping;
-    
-    @Column (name="spatial_mapping")
-    private Long spatialMapping;
-    
-    @Column (name="temporal_mapping")
-    private Long temporalMapping;
+    @Column (name="language")
+    private String language;
     
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
-    
-    @Column(name = "created_by")
-    private int createdBy;
     
 }

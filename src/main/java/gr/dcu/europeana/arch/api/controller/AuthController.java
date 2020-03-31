@@ -1,7 +1,7 @@
 package gr.dcu.europeana.arch.api.controller;
 
-import gr.dcu.europeana.arch.api.resource.auth.*;
-import gr.dcu.europeana.arch.model.User;
+import gr.dcu.europeana.arch.api.dto.auth.*;
+import gr.dcu.europeana.arch.model.UserEntity;
 import gr.dcu.europeana.arch.service.AuthService;
 import java.security.NoSuchAlgorithmException;
 import javax.servlet.http.HttpServletRequest;
@@ -27,7 +27,7 @@ public class AuthController {
 
     @Operation(summary = "Signup")
     @PostMapping("/auth/signup")
-    public User signup(@RequestBody SignupRequest request) throws NoSuchAlgorithmException {
+    public UserEntity signup(@RequestBody SignupRequest request) throws NoSuchAlgorithmException {
        return authService.signup(request);
     }
     

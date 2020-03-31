@@ -1,6 +1,5 @@
 package gr.dcu.europeana.arch.model;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -12,25 +11,25 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ *
+ * @author Vangelis Nomikos
+ */
 @Entity
-@Table(name = "user")
+@Table(name = "languages")
 @Getter
 @Setter
 @NoArgsConstructor
-public class User implements Serializable {
+public class LanguageEntity implements Serializable {
+    
+    @Column (name="iso639_1")
+    private String iso639_1;
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    @Column (name="iso639_2")
+    private String iso639_2;
     
     private String name;
-    
-    private String email;
-    
-    private String password;
-    
-    private String organization;
-    
-    private short active;
     
 }

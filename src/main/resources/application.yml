@@ -48,13 +48,14 @@ spring:
         temp:
           use_jdbc_metadata_defaults: false
 
-  # Enable multipart uploads
-#  servlet:
-#      multipart:
-#          enabled: true
+# Enable multipart uploads
+  servlet:
+      multipart:
+          enabled: true
 #          file-size-threshold: 2KB
 #          multipart.max-file-size: 20MB
-#          max-request-size: 215MB
+          max-file-size: 30MB
+          max-request-size: 30MB
 
 ## File Storage Properties
 # All files uploaded through the REST API will be stored in this directory

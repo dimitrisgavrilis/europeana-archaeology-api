@@ -23,7 +23,7 @@ import org.hibernate.annotations.CreationTimestamp;
 @Getter
 @Setter
 @NoArgsConstructor
-public class Mapping implements Serializable {
+public class MappingEntity implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
