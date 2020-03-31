@@ -23,7 +23,7 @@ public class SubjectTermMapper {
         term.setLanguage(extractionData.getXmlLangAttrValue());
         term.setAatConceptLabel("");
         term.setAatUid("");
-        term.setCount(count);
+        // term.setCount(count);
         return term;
     }
     
