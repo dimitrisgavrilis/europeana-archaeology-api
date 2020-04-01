@@ -1,5 +1,7 @@
 package gr.dcu.europeana.arch.api.controller;
 
+import gr.dcu.europeana.arch.api.adapter.UtilityControllerMapper;
+import gr.dcu.europeana.arch.api.dto.EArchTemporalDto;
 import gr.dcu.europeana.arch.api.dto.GeonamesDto;
 import gr.dcu.europeana.arch.api.dto.GeonamesMapper;
 import gr.dcu.europeana.arch.geonames.Geonames;
@@ -10,6 +12,8 @@ import gr.dcu.europeana.arch.model.LanguageEntity;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import gr.dcu.europeana.arch.repository.LanguageRepository;
 import java.util.List;
+import java.util.stream.Collectors;
+import gr.dcu.europeana.arch.service.EArchTemporalService;
 import io.swagger.v3.oas.annotations.Operation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -31,13 +35,18 @@ public class UtilityController {
     private final LanguageRepository languageRepository;
     private final GeonamesService geonamesService;
     private final GeonamesMapper geonamesMapper;
+    private final EArchTemporalService eArchTemporalService;
+    private final UtilityControllerMapper utilityControllerMapper;
 
     public UtilityController(AatSubjectRepository aatSubjectRepository, LanguageRepository languageRepository,
-                             GeonamesService geonamesService, GeonamesMapper geonamesMapper) {
+                             GeonamesService geonamesService, GeonamesMapper geonamesMapper, EArchTemporalService eArchTemporalService,
+                             UtilityControllerMapper utilityControllerMapper) {
         this.aatSubjectRepository = aatSubjectRepository;
         this.languageRepository = languageRepository;
         this.geonamesService = geonamesService;
         this.geonamesMapper = geonamesMapper;
+        this.eArchTemporalService = eArchTemporalService;
+        this.utilityControllerMapper = utilityControllerMapper;
     }
 
     @Operation(summary = "Search subjects by name")
@@ -64,6 +73,16 @@ public class UtilityController {
         log.info("Search geonames. Query: {} , #Results: {}", q, geonames.size());
         
         return geonamesMapper.toDtoList(geonames);
+    }
+
+    @Operation(summary = "Find all earch temporal")
+    @GetMapping("/earch_temporal")
+    public List<EArchTemporalDto> findAllEArchTemporal() {
+
+        return eArchTemporalService.findAll()
+                .stream()
+                .map(utilityControllerMapper::fromEntity)
+                .collect(Collectors.toList());
     }
     
     @Operation(summary = "Get all languages")

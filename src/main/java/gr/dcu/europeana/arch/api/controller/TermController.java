@@ -20,10 +20,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-/**
- *
- * @author Vangelis Nomikos
- */
 @CrossOrigin
 @RestController
 public class TermController {
@@ -183,8 +179,7 @@ public class TermController {
 
         existingTerm.setMappingId(id);
         existingTerm.setLanguage(term.getLanguage());
-        existingTerm.setAatConceptLabel(term.getAatConceptLabel());
-        existingTerm.setAatUid(term.getAatUid());
+        existingTerm.setEarchTemporalLabel(term.getEarchTemporalLabel());
         
         return temporalTermRepository.save(existingTerm);
     }

@@ -15,10 +15,6 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
-/**
- *
- * @author Vangelis Nomikos
- */
 @Entity 
 @Table(name = "temporal_terms")
 @Getter
@@ -30,23 +26,20 @@ public class TemporalTermEntity implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
     @JsonIgnore
     @Column (name="mapping_id")
     private Long mappingId;
     
     @Column (name="native_term")
     private String nativeTerm;
-    
+
+    @Column (name="earch_temporal_label")
+    private String earchTemporalLabel;
+
     @Column (name="language")
     private String language;
-    
-    @Column (name="aat_concept_label")
-    private String aatConceptLabel;
-    
-    @Column (name="aat_uid")
-    private String aatUid;
-    
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

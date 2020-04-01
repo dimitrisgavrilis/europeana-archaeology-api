@@ -333,8 +333,8 @@ public class ExcelService {
 
                         String nativeTerm;
                         String language;
-                        String aatConceptLabel;
-                        String aatUid;
+                        String earchTemporalLabel;
+                        // String aatUid;
 
                         // Get Native Term - It is mandatory
                         Cell nativeTermCell = currentRow.getCell(0);
@@ -359,24 +359,24 @@ public class ExcelService {
                         
 
                         // Get AAT Concept label
-                        Cell aatConceptLabelCell = currentRow.getCell(2);
-                        if(aatConceptLabelCell == null) {
-                            aatConceptLabel = "";
+                        Cell earchTemporalLabelCell = currentRow.getCell(2);
+                        if(earchTemporalLabelCell == null) {
+                            earchTemporalLabel = "";
                         } else {
                             // This guarantess that you will read the value as string
-                            aatConceptLabelCell.setCellType(CellType.STRING);
-                            aatConceptLabel = aatConceptLabelCell.getStringCellValue();
+                            earchTemporalLabelCell.setCellType(CellType.STRING);
+                            earchTemporalLabel = earchTemporalLabelCell.getStringCellValue();
                         }
                         
                         // Get AAT uid
-                        Cell aatUidCell = currentRow.getCell(3);
-                        if(aatUidCell == null) {
-                            aatUid = "";
-                        } else {
-                            // This guarantess that you will read the value as string
-                            aatUidCell.setCellType(CellType.STRING);
-                            aatUid = aatUidCell.getStringCellValue();
-                        }
+//                        Cell aatUidCell = currentRow.getCell(3);
+//                        if(aatUidCell == null) {
+//                            aatUid = "";
+//                        } else {
+//                            // This guarantess that you will read the value as string
+//                            aatUidCell.setCellType(CellType.STRING);
+//                            aatUid = aatUidCell.getStringCellValue();
+//                        }
 
                         // Create mapping value
                         TemporalTermEntity temporalTermEntity = new TemporalTermEntity();
@@ -384,8 +384,8 @@ public class ExcelService {
                         temporalTermEntity.setMappingId(mappingId);
                         temporalTermEntity.setNativeTerm(nativeTerm);
                         temporalTermEntity.setLanguage(language);
-                        temporalTermEntity.setAatConceptLabel(aatConceptLabel);
-                        temporalTermEntity.setAatUid(aatUid);
+                        temporalTermEntity.setEarchTemporalLabel(earchTemporalLabel);
+                        //temporalTermEntity.setAatUid(aatUid);
 
                         terms.add(temporalTermEntity);
                     }
@@ -613,10 +613,10 @@ public class ExcelService {
                 row.createCell(1)
                         .setCellValue(term.getLanguage());
                 row.createCell(2)
-                        .setCellValue(term.getAatConceptLabel());
+                        .setCellValue(term.getEarchTemporalLabel());
                 
-                row.createCell(3)
-                        .setCellValue(term.getAatUid());
+                // row.createCell(3)
+                //        .setCellValue(term.getAatUid());
 
 //                Cell dateOfBirthCell = row.createCell(2);
 //                dateOfBirthCell.setCellValue(employee.getDateOfBirth());
@@ -779,8 +779,8 @@ public class ExcelService {
             TemporalTermEntity term = new TemporalTermEntity();
             term.setNativeTerm(extractionData.getElementValue());
             term.setLanguage(extractionData.getXmlLangAttrValue());
-            term.setAatConceptLabel("");
-            term.setAatUid("");
+            term.setEarchTemporalLabel("");
+            // term.setAatUid("");
             terms.add(term);
         }
         

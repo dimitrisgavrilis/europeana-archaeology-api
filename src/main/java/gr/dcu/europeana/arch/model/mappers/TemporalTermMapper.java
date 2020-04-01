@@ -19,8 +19,8 @@ public class TemporalTermMapper {
         TemporalTermEntity term = new TemporalTermEntity();
         term.setNativeTerm(extractionData.getElementValue());
         term.setLanguage(extractionData.getXmlLangAttrValue());
-        term.setAatConceptLabel("");
-        term.setAatUid("");
+        term.setEarchTemporalLabel("");
+
         return term;
     }
     
