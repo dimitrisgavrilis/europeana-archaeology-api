@@ -94,6 +94,16 @@ public class UtilityController {
                 .map(utilityControllerMapper::fromEntity)
                 .collect(Collectors.toList());
     }
+
+    @Operation(summary = "Extract aat uid")
+    @PostMapping("/temporal/extract_aat_uid")
+    public List<EArchTemporalDto> extractAatUid() {
+
+        return eArchTemporalService.extractAatUid()
+                .stream()
+                .map(utilityControllerMapper::fromEntity)
+                .collect(Collectors.toList());
+    }
     
     @Operation(summary = "Get all languages")
     @GetMapping("/languages")

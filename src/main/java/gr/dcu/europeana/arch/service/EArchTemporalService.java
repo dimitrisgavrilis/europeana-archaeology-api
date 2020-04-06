@@ -4,6 +4,7 @@ import gr.dcu.europeana.arch.model.EArchTemporalEntity;
 import gr.dcu.europeana.arch.repository.EArchTemporalEntityRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,5 +24,20 @@ public class EArchTemporalService {
 
     public List<EArchTemporalEntity> search(String q) {
         return eArchTemporalEntityRepo.findAllByLabelContainingIgnoreCase(q);
+    }
+
+    @Transactional
+    public List<EArchTemporalEntity> extractAatUid() {
+        List<EArchTemporalEntity> temporalEntityList = findAll();
+
+        for(EArchTemporalEntity entity : temporalEntityList) {
+
+            String aatUri = entity.getAatUri();
+            String aatUid = aatUri.substring(aatUri.lastIndexOf("/") + 1);
+            entity.setAatUid(aatUid);
+            // log.info("AatUid: {}", aatUid);
+        }
+
+        return temporalEntityList;
     }
 }

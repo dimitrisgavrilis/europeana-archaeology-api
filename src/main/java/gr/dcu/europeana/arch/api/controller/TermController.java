@@ -180,6 +180,7 @@ public class TermController {
         existingTerm.setMappingId(id);
         existingTerm.setLanguage(term.getLanguage());
         existingTerm.setEarchTemporalLabel(term.getEarchTemporalLabel());
+        existingTerm.setAatUid(term.getAatUid());
         
         return temporalTermRepository.save(existingTerm);
     }

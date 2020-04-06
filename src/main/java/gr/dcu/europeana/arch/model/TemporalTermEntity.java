@@ -37,6 +37,9 @@ public class TemporalTermEntity implements Serializable {
     @Column (name="earch_temporal_label")
     private String earchTemporalLabel;
 
+    @Column (name="aat_uid")
+    private String aatUid;
+
     @Column (name="language")
     private String language;
 

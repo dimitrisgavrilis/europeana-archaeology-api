@@ -373,7 +373,7 @@ public class ExcelService {
                         if(aatUidCell == null) {
                             aatUid = "";
                         } else {
-                            // This guarantess that you will read the value as string
+                            // This guarantees that you will read the value as string
                             aatUidCell.setCellType(CellType.STRING);
                             aatUid = aatUidCell.getStringCellValue();
                         }
@@ -385,7 +385,7 @@ public class ExcelService {
                         temporalTermEntity.setNativeTerm(nativeTerm);
                         temporalTermEntity.setLanguage(language);
                         temporalTermEntity.setEarchTemporalLabel(earchTemporalLabel);
-                        //temporalTermEntity.setAatUid(aatUid);
+                        temporalTermEntity.setAatUid(aatUid);
 
                         terms.add(temporalTermEntity);
                     }
@@ -614,9 +614,8 @@ public class ExcelService {
                         .setCellValue(term.getLanguage());
                 row.createCell(2)
                         .setCellValue(term.getEarchTemporalLabel());
-                
                 row.createCell(3)
-                        .setCellValue("");
+                        .setCellValue(term.getAatUid());
 
 //                Cell dateOfBirthCell = row.createCell(2);
 //                dateOfBirthCell.setCellValue(employee.getDateOfBirth());

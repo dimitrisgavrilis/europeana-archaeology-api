@@ -16,6 +16,9 @@ public class EArchTemporalEntity {
     @Column(name = "label")
     private String label;
 
+    @Column(name = "aat_uid")
+    private String aatUid;
+
     @Column(name = "aat_uri")
     private String aatUri;
 

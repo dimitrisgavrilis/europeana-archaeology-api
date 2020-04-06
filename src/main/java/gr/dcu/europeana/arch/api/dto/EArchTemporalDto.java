@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class EArchTemporalDto {
     private String label;
+    private String aatUid;
     private String aatUri;
     private String startYear;
     private String endYear;
