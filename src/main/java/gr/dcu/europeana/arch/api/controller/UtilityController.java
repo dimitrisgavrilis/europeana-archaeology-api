@@ -76,7 +76,7 @@ public class UtilityController {
     }
 
     @Operation(summary = "Find all earch temporal")
-    @GetMapping("/earch_temporal")
+    @GetMapping("/temporal")
     public List<EArchTemporalDto> findAllEArchTemporal() {
 
         return eArchTemporalService.findAll()
@@ -86,7 +86,7 @@ public class UtilityController {
     }
 
     @Operation(summary = "Search geonames by name")
-    @PostMapping("/earch_temporal/search")
+    @PostMapping("/temporal/search")
     public List<EArchTemporalDto> searchEarchTemporal(@RequestParam String q) {
 
         return eArchTemporalService.search(q)
