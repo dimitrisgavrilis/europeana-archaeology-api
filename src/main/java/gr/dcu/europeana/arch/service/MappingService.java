@@ -676,8 +676,9 @@ public class MappingService {
             
             mappingSubjectTermEntities.addAll(archiveSubjectTermEntities);
             subjectTermRepository.saveAll(mappingSubjectTermEntities);
-            
-            
+
+            edmArchiveEntity.setThematicMapping(mappingId);
+
         } else if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !archiveSpatialTermEntities.isEmpty()) {
             
             existingTermCount = mappingSpatialTermEntities.size();
@@ -689,6 +690,9 @@ public class MappingService {
             
             mappingSpatialTermEntities.addAll(archiveSpatialTermEntities);
             spatialTermRepository.saveAll(mappingSpatialTermEntities);
+
+            edmArchiveEntity.setSpatialMapping(mappingId);
+
         } else if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !archiveTemporalTermEntities.isEmpty()) {
             
             existingTermCount = mappingTemporalTermEntities.size();
@@ -699,7 +703,11 @@ public class MappingService {
             }
             mappingTemporalTermEntities.addAll(archiveTemporalTermEntities);
             temporalTermRepository.saveAll(mappingTemporalTermEntities);
+
+            edmArchiveEntity.setTemporalMapping(mappingId);
         }
+
+        // edmArchiveRepository.save(edmArchiveEntity);
         
         appendTermResult.setExistingTermCount(existingTermCount);
         appendTermResult.setAppendTermCount(appendTermCount);

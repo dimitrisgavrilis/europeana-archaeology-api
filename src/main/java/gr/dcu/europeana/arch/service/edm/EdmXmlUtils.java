@@ -1,8 +1,6 @@
 package gr.dcu.europeana.arch.service.edm;
 
-import gr.dcu.europeana.arch.model.AatSubjectEntity;
-import gr.dcu.europeana.arch.model.SpatialTermEntity;
-import gr.dcu.europeana.arch.model.SubjectTermEntity;
+import gr.dcu.europeana.arch.model.*;
 import gr.dcu.utils.MoReNamespaceContext;
 import java.util.List;
 import java.util.Map;
@@ -97,4 +95,71 @@ public class EdmXmlUtils {
 
             return doc;
 	}
+
+    public static Document appendTemporalElements(Document doc, String xPathExpr, List<TemporalTermEntity> temporalTermEntities,
+                                                  Map<String, EArchTemporalEntity> earchTemporalEntityMap) throws XPathExpressionException {
+
+        try {
+            XPath xPath = XPathFactory.newInstance().newXPath();
+            xPath.setNamespaceContext(new MoReNamespaceContext());
+            NodeList nodeList = (NodeList)xPath.compile(xPathExpr).evaluate(doc, XPathConstants.NODESET);
+
+            for(int i=0; i<nodeList.getLength(); i++) {
+                Element element = (Element) nodeList.item(i);
+
+                int termsWithoutMappings = 0;
+                for(TemporalTermEntity temporalTermEntity : temporalTermEntities) {
+
+                    if(temporalTermEntity.getAatUid() != null && !temporalTermEntity.getAatUid().isEmpty()) {
+
+                        EArchTemporalEntity eArchTemporalEntity = earchTemporalEntityMap.get(temporalTermEntity.getAatUid());
+
+                        // rdf:about
+                        String rdfAboutLabel = "EUROPEANAARCH_" + temporalTermEntity.getId() + "/TMP.1";
+                        Element edmTimespanElement = doc.createElement("edm:TimeSpan");
+                        edmTimespanElement.setAttribute("rdf:about", rdfAboutLabel);
+                        // childElement.appendChild(doc.createTextNode(spatialTerm));
+                        element.appendChild(edmTimespanElement);
+
+                        // skos:prefLabel
+                        Element skosPrefLabelElement = doc.createElement("skos:prefLabel");
+                        skosPrefLabelElement.appendChild(doc.createTextNode(eArchTemporalEntity.getLabel()));
+                        edmTimespanElement.appendChild(skosPrefLabelElement);
+
+                        // edm:begin
+                        Element edmBeginElement = doc.createElement("edm:begin");
+                        edmBeginElement.appendChild(doc.createTextNode(eArchTemporalEntity.getStartYear()));
+                        edmTimespanElement.appendChild(edmBeginElement);
+
+                        // edm:end
+                        Element edmEndElement = doc.createElement("edm:end");
+                        edmEndElement.appendChild(doc.createTextNode(eArchTemporalEntity.getEndYear()));
+                        edmTimespanElement.appendChild(edmEndElement);
+
+                        // owl:sameAs - aat_uri
+                        Element owlSameAsAatUriElement = doc.createElement("owl:sameAs");
+                        owlSameAsAatUriElement.appendChild(doc.createTextNode(eArchTemporalEntity.getAatUri()));
+                        edmTimespanElement.appendChild(owlSameAsAatUriElement);
+
+                        // owl:sameAs - wikidata_uri
+                        Element owlSameAsWikidataUriElement = doc.createElement("owl:sameAs");
+                        owlSameAsWikidataUriElement.appendChild(doc.createTextNode(eArchTemporalEntity.getWikidataUri()));
+                        edmTimespanElement.appendChild(owlSameAsWikidataUriElement);
+
+                    } else {
+                        termsWithoutMappings ++;
+                    }
+                }
+
+                log.debug("Temporal Terms wo mappings. #Size: {}", termsWithoutMappings);
+            }
+
+        } catch (XPathExpressionException ex) {
+            log.error("",ex);
+            throw ex;
+        }
+
+        return doc;
+    }
+
 }
