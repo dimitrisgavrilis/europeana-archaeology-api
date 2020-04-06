@@ -334,7 +334,7 @@ public class ExcelService {
                         String nativeTerm;
                         String language;
                         String earchTemporalLabel;
-                        // String aatUid;
+                        String aatUid;
 
                         // Get Native Term - It is mandatory
                         Cell nativeTermCell = currentRow.getCell(0);
@@ -369,14 +369,14 @@ public class ExcelService {
                         }
                         
                         // Get AAT uid
-//                        Cell aatUidCell = currentRow.getCell(3);
-//                        if(aatUidCell == null) {
-//                            aatUid = "";
-//                        } else {
-//                            // This guarantess that you will read the value as string
-//                            aatUidCell.setCellType(CellType.STRING);
-//                            aatUid = aatUidCell.getStringCellValue();
-//                        }
+                        Cell aatUidCell = currentRow.getCell(3);
+                        if(aatUidCell == null) {
+                            aatUid = "";
+                        } else {
+                            // This guarantess that you will read the value as string
+                            aatUidCell.setCellType(CellType.STRING);
+                            aatUid = aatUidCell.getStringCellValue();
+                        }
 
                         // Create mapping value
                         TemporalTermEntity temporalTermEntity = new TemporalTermEntity();
@@ -594,7 +594,7 @@ public class ExcelService {
             Row headerRow = sheet.createRow(0);
 
             // 4 columns 
-            String[] columns = {"Native Term", "Language", "Aat concept label", "Aat uid"};
+            String[] columns = {"Native Term", "Language", "Earch Temporal label", "Aat uid"};
             
             // Create cells
             for(int i = 0; i < columns.length; i++) {
@@ -615,8 +615,8 @@ public class ExcelService {
                 row.createCell(2)
                         .setCellValue(term.getEarchTemporalLabel());
                 
-                // row.createCell(3)
-                //        .setCellValue(term.getAatUid());
+                row.createCell(3)
+                        .setCellValue("");
 
 //                Cell dateOfBirthCell = row.createCell(2);
 //                dateOfBirthCell.setCellValue(employee.getDateOfBirth());

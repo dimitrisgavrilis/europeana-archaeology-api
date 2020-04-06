@@ -195,8 +195,11 @@ public class MappingService {
                     excelService.exportSpatialTermsToExcel(filePath, spatialTermEntityList);
                     break;
                 case MappingType.MAPPING_TYPE_TEMPORAL:
-                    
-                    // excelService.exportSubjectTermsToExcel(filePath, termList);
+                    List<TemporalTermEntity> temporalTermEntityList = temporalTermRepository.findByMappingId(mappingId);
+                    log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, temporalTermEntityList.size());
+
+                    // Export
+                    excelService.exportTemporalTermsToExcel(filePath, temporalTermEntityList);
                     break;
                 default:
                     log.warn("Unknown mapping type.");

@@ -3,6 +3,7 @@ package gr.dcu.europeana.arch.api.controller;
 import gr.dcu.europeana.arch.model.MappingEntity;
 import gr.dcu.europeana.arch.model.SubjectTermEntity;
 import gr.dcu.europeana.arch.model.SpatialTermEntity;
+import gr.dcu.europeana.arch.model.TemporalTermEntity;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.MappingService;
 import java.io.IOException;
@@ -142,11 +143,11 @@ public class MappingController {
 
     @Operation(summary = "Upload temporal terms to mapping")
     @PostMapping("/mappings/{id}/upload_temporal")
-    public List<SpatialTermEntity> uploadTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id,
-                                                       @RequestParam("file") MultipartFile file) throws IOException {
+    public List<TemporalTermEntity> uploadTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id,
+                                                        @RequestParam("file") MultipartFile file) throws IOException {
         
         int userId = authService.authorize(requestContext);
         
-        return mappingService.uploadSpatialTerms(id, file, userId);
+        return mappingService.uploadTemporalTerms(id, file, userId);
     }
 }
