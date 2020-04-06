@@ -84,6 +84,16 @@ public class UtilityController {
                 .map(utilityControllerMapper::fromEntity)
                 .collect(Collectors.toList());
     }
+
+    @Operation(summary = "Search geonames by name")
+    @PostMapping("/earch_temporal/search")
+    public List<EArchTemporalDto> searchEarchTemporal(@RequestParam String q) {
+
+        return eArchTemporalService.search(q)
+                .stream()
+                .map(utilityControllerMapper::fromEntity)
+                .collect(Collectors.toList());
+    }
     
     @Operation(summary = "Get all languages")
     @GetMapping("/languages")

@@ -20,4 +20,8 @@ public class EArchTemporalService {
     public List<EArchTemporalEntity> findAll() {
         return eArchTemporalEntityRepo.findAll();
     }
+
+    public List<EArchTemporalEntity> search(String q) {
+        return eArchTemporalEntityRepo.findAllByLabelContainingIgnoreCase(q);
+    }
 }
