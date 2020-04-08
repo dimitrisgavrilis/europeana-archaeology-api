@@ -354,11 +354,10 @@ public class EDMService {
         
         // Load thematic mapping terms
         Map<String, AatSubjectEntity> aatSubjectMap = new HashMap<>();
-        List<SubjectTermEntity> subjectTermEntities = new LinkedList<>();
         Map<String, SubjectTermEntity> subjectTermsMap = new HashMap<>();
         if(thematicEnrichment) {
             // Get mapping subjectTerms. Convert them to map
-            subjectTermEntities = subjectTermRepository.findByMappingId(thematicMappingId);
+            List<SubjectTermEntity> subjectTermEntities = subjectTermRepository.findByMappingId(thematicMappingId);
             for(SubjectTermEntity mp : subjectTermEntities) {
                 subjectTermsMap.put(mp.getNativeTerm(), mp);
             }
@@ -372,10 +371,9 @@ public class EDMService {
         }
         
         // Load spatial mapping terms
-        List<SpatialTermEntity> spatialTermEntities = new LinkedList<>();
         Map<String, SpatialTermEntity> spatialTermsMap = new HashMap<>();
         if(spatialEnrichment) {
-            spatialTermEntities = spatialTermRepository.findByMappingId(spatialMappingId);
+            List<SpatialTermEntity> spatialTermEntities = spatialTermRepository.findByMappingId(spatialMappingId);
             for(SpatialTermEntity mp : spatialTermEntities) {
                 spatialTermsMap.put(mp.getNativeTerm(), mp);
             }
@@ -384,10 +382,9 @@ public class EDMService {
         
         // Load temporal mapping terms
         Map<String, EArchTemporalEntity> earchTemporalEntityMap = new HashMap<>();
-        List<TemporalTermEntity> temporalTermEntities = new LinkedList<>();
         Map<String, TemporalTermEntity> temporalTermsMap = new HashMap<>();
         if(temporalEnrichment) {
-            temporalTermEntities = temporalTermRepository.findByMappingId(temporalMappingId);
+            List<TemporalTermEntity> temporalTermEntities = temporalTermRepository.findByMappingId(temporalMappingId);
             for(TemporalTermEntity mp : temporalTermEntities) {
                 temporalTermsMap.put(mp.getNativeTerm(), mp);
             }
@@ -399,18 +396,14 @@ public class EDMService {
                 earchTemporalEntityMap.put(earchTemporalEntity.getAatUid(), earchTemporalEntity);
             }
         }
-            
-        
-        // DEPRECATED
+
         // File system hierarchy
         // storage_tmp
-        // -- <mapping_id>
-        //    -- enrich
-        //        -- <request_id> (at this level store the archives - edm.zip , eEDM.tar.gz)
+        // -- <europeana_arch>
+        //    -- packages
+        //        -- p_<package_id> (at this level store the archives - edm.zip , eEDM.tar.gz)
         //            -- EDM
         //            -- eEDM
-        //    -- uploads
-        //    -- exports
         
         /*
         // Create enrich enrichRequest
@@ -423,7 +416,7 @@ public class EDMService {
         */
         
         int enrichedFileCount = 0;
-        String enrichedArchiveFilePath = "";
+        String enrichedArchiveFilePath;
         String enrichedArchiveName = "";
         int edmFileCount = 0;
         try {
@@ -457,29 +450,25 @@ public class EDMService {
                         // String itemContent = XMLUtils.transform(doc);
 
                         // ~~~~~~~~~~ Thematic ~~~~~~~~~~ //
-                        List<SubjectTermEntity> subjectTermMatches = new LinkedList<> (); // List with matches
                         if(thematicEnrichment) {
 
-                            // Get subjects
+                            // Get thematic values in EDM file
                             List<String> thematicValues =
                                     XMLUtils.getElementValues(doc, "//" + EdmExtractUtils.DC_SUBJECT);
                             thematicValues.addAll(XMLUtils.getElementValues(doc, "//" + EdmExtractUtils.DC_TYPE));
 
-                            // Find subject mappings (if any)
-                            // int subjectTermMatchCount = 0;
-                            // List<String> subjectMappings = new LinkedList<>();
+                            // Find matches with subject terms (if any)
+                            List<SubjectTermEntity> subjectTermMatches = new LinkedList<> (); // List with matches
                             for(String tmpThematicValue : thematicValues) {
                                 if(subjectTermsMap.containsKey(tmpThematicValue)) {
-                                    //subjectTermMatchCount++;
-                                    // subjectMappings.add(dcSubjectValue);
                                     subjectTermMatches.add(subjectTermsMap.get(tmpThematicValue));
                                 }
                             }
-                            // edmFile.getAbsolutePath()
+
                             log.info("File: {} #Thematic Values: {} #Matches: {}",
                                     edmFile.getName(), thematicValues.size(), subjectTermMatches.size());
 
-                            // Enrich with thematic mappings
+                            // Enrich with subject terms
                             if(!subjectTermMatches.isEmpty()) {
                                 EdmXmlUtils.appendThematicElements(doc,
                                         "//edm:ProvidedCHO", "dc:subject", subjectTermMatches, aatSubjectMap);
@@ -614,7 +603,7 @@ public class EDMService {
      * @param thematic flag to extract thematic values
      * @param temporal flag to extract temporal values
      * @param spatial  flag to extract subject values
-     * @param skipEmptyValues
+     * @param skipEmptyValues flag to skip empty values
      */
     public static List<EdmFileTermExtractionResult> extractTerms(
             Path edmExtractDirPath, boolean thematic, boolean temporal, boolean spatial, boolean skipEmptyValues) throws IOException {
@@ -634,7 +623,7 @@ public class EDMService {
         log.info("Extract terms started. RequestId: {} Path: {} #Files: {}", requestId, edmExtractDirPath, edmFilesCount);
         
         long itemsProcessed = 0;
-        long itemsTotal = edmFilesCount;
+        // long itemsTotal = edmFilesCount;
         
         // Process edm file
         for(File edmFile : edmFiles) {
@@ -685,9 +674,9 @@ public class EDMService {
             
             itemsProcessed++;
             
-            if(itemsProcessed % 50 == 0 || itemsProcessed == itemsTotal) {        
+            if(itemsProcessed % 50 == 0 || itemsProcessed == edmFilesCount) {
                 log.info("Extraction progress... {} / {} => {}%",  
-                        itemsProcessed, itemsTotal, new DecimalFormat("#0.0000").format(((double) itemsProcessed / itemsTotal) * 100));
+                        itemsProcessed, edmFilesCount, new DecimalFormat("#0.0000").format(((double) itemsProcessed / edmFilesCount) * 100));
             }
         }
         

@@ -79,13 +79,6 @@ public class TermController {
         return subjectTermRepository.save(term);
     }
     
-    /*
-    @PostMapping("/mappings/{id}/terms")
-    public List<MappingTerm> saveMappingTerm(@RequestBody List<MappingTerm> mappings) { 
-        
-        return subjectMappingRepository.saveAll(mappings);
-    }*/
-    
     @DeleteMapping("/mappings/{id}/terms/{termId}")
     public void deleteMappingTerm(HttpServletRequest requestContext, 
             @PathVariable Long id, @PathVariable Long termId) { 
@@ -94,20 +87,7 @@ public class TermController {
         
         subjectTermRepository.deleteById(termId);
     }
-    
-    /**
-     * Delete all subject terms of a mapping.
-     */
-    @Deprecated // define DELETE /mappings/{id}/terms
-    @DeleteMapping("/mappings/{id}/terms")
-    public void deleteAllTerms(HttpServletRequest requestContext, @PathVariable Long id) { 
-        
-        int userId = authService.authorize(requestContext);
-        
-        subjectTermRepository.deleteByMappingId(id);
-    }
-    
-    
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~ Spatial Terms ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
     @Operation(summary = "Get all spatial terms")
     @GetMapping("/mappings/{id}/spatial_terms")
@@ -149,19 +129,7 @@ public class TermController {
         
         spatialTermRepository.deleteById(termId);
     }
-    
-    /**
-     * Delete all spatial terms of a mapping.
-     */
-    @Deprecated // define DELETE /mappings/{id}/terms
-    @DeleteMapping("/mappings/{id}/spatial_terms")
-    public void deleteAllSpatialTerms(HttpServletRequest requestContext, @PathVariable Long id) { 
-        
-        int userId = authService.authorize(requestContext);
-        
-        spatialTermRepository.deleteByMappingId(id);
-    }
-   
+
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~ Temporal Terms ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ //
     @Operation(summary = "Get all temporal terms")
     @GetMapping("/mappings/{id}/temporal_terms")
@@ -202,17 +170,5 @@ public class TermController {
         int userId = authService.authorize(requestContext);
         
         temporalTermRepository.deleteById(termId);
-    }
-    
-    /**
-     * Delete all temporal terms of a mapping.
-     */
-    @Deprecated // define DELETE /mappings/{id}/terms
-    @DeleteMapping("/mappings/{id}/temporal_terms")
-    public void deleteAllTemporalTerms(HttpServletRequest requestContext, @PathVariable Long id) { 
-        
-        int userId = authService.authorize(requestContext);
-        
-        temporalTermRepository.deleteByMappingId(id);
     }
 }

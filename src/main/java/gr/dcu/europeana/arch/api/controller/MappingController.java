@@ -41,10 +41,7 @@ public class MappingController {
 
     @Operation(summary = "Get all mappings")
     @GetMapping("/mappings/all")
-    public List<MappingEntity> getAllMappings(HttpServletRequest requestContext) {
-        
-        // int userId = authService.authorize(requestContext);
-         
+    public List<MappingEntity> getAllMappings() {
         return mappingService.findAll();
     }
 

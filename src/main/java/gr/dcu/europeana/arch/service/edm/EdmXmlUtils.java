@@ -19,9 +19,15 @@ import org.w3c.dom.NodeList;
  */
 @Slf4j
 public class EdmXmlUtils {
-    
-    public static Document appendThematicElements(Document doc, String xPathExpr, String label,
-                                                  List<SubjectTermEntity> subjectTermEntities, Map<String, AatSubjectEntity> aatSubjectMap) throws XPathExpressionException {
+    /**
+     * Append multiple elements (dc:subject) to XML doc.
+     * @param doc the xml doc
+     * @param subjectTermEntities subject terms to append
+     * @param aatSubjectMap utility map for aat subjects
+     */
+    public static void appendThematicElements(
+            Document doc, String xPathExpr, String label, List<SubjectTermEntity> subjectTermEntities,
+            Map<String, AatSubjectEntity> aatSubjectMap) throws XPathExpressionException {
 		
             try {
                 XPath xPath = XPathFactory.newInstance().newXPath();
@@ -53,12 +59,15 @@ public class EdmXmlUtils {
             } catch (XPathExpressionException ex) {
                 log.error("",ex);
                 throw ex;
-            } 
-
-            return doc;
+            }
 	}
-    
-    public static Document appendSpatialElements(Document doc, String xPathExpr, String label, 
+
+    /**
+     * Append multiple elements (dcterms:spatial) to XML doc.
+     * @param doc the xml doc
+     * @param spatialTermEntities spatial terms to append
+     */
+    public static void appendSpatialElements(Document doc, String xPathExpr, String label,
             List<SpatialTermEntity> spatialTermEntities) throws XPathExpressionException {
 		
             try {
@@ -73,12 +82,8 @@ public class EdmXmlUtils {
                     for(SpatialTermEntity spatialTermEntity : spatialTermEntities) {
                         
                         if(spatialTermEntity.getGeonameId() != null && !spatialTermEntity.getGeonameId().isEmpty()) {
-                            
-                            // AatSubject aatSubject = aatSubjectMap.get(spatialTerm.getAatUid());
-                            
                             Element childElement = doc.createElement(label);
                             childElement.setAttribute("rdf:resource", "https://www.geonames.org/" + spatialTermEntity.getGeonameId());
-                            // childElement.appendChild(doc.createTextNode(spatialTerm));
                             element.appendChild(childElement);
                         } else {
                             termsWithoutMappings ++;
@@ -91,12 +96,17 @@ public class EdmXmlUtils {
             } catch (XPathExpressionException ex) {
                 log.error("",ex);
                 throw ex;
-            } 
-
-            return doc;
+            }
 	}
 
-    public static Document appendTemporalElements(Document doc, String xPathExpr, List<TemporalTermEntity> temporalTermEntities,
+    /**
+     * Append multiple elements (edm:TimeSpan, dc:date) to XML doc.
+     * For each temporal term append two elements. A edm:Timespan and a dc:date
+     * @param doc the xml doc
+     * @param temporalTermEntities temporal terms to append
+     * @param earchTemporalEntityMap utility map for earch temporal
+     */
+    public static void appendTemporalElements(Document doc, String xPathExpr, List<TemporalTermEntity> temporalTermEntities,
                                                   Map<String, EArchTemporalEntity> earchTemporalEntityMap) throws XPathExpressionException {
 
         try {
@@ -114,11 +124,11 @@ public class EdmXmlUtils {
 
                         EArchTemporalEntity eArchTemporalEntity = earchTemporalEntityMap.get(temporalTermEntity.getAatUid());
 
-                        // rdf:about
                         String rdfAboutLabel = "EUROPEANAARCH_" + temporalTermEntity.getId() + "/TMP.1";
+
+                        // ~~~ edm:TimeSpan ~~~
                         Element edmTimespanElement = doc.createElement("edm:TimeSpan");
                         edmTimespanElement.setAttribute("rdf:about", rdfAboutLabel);
-                        // childElement.appendChild(doc.createTextNode(spatialTerm));
                         element.appendChild(edmTimespanElement);
 
                         // skos:prefLabel
@@ -146,6 +156,11 @@ public class EdmXmlUtils {
                         owlSameAsWikidataUriElement.appendChild(doc.createTextNode(eArchTemporalEntity.getWikidataUri()));
                         edmTimespanElement.appendChild(owlSameAsWikidataUriElement);
 
+                        // ~~~ dc:date ~~~
+                        Element dcDateElement = doc.createElement("dc:date");
+                        dcDateElement.setAttribute("rdf:resource", rdfAboutLabel);
+                        element.appendChild(dcDateElement);
+
                     } else {
                         termsWithoutMappings ++;
                     }
@@ -158,8 +173,5 @@ public class EdmXmlUtils {
             log.error("",ex);
             throw ex;
         }
-
-        return doc;
     }
-
 }

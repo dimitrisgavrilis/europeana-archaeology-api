@@ -77,10 +77,6 @@ public class ΧΧΧEnrichEdmController {
     
     /**
      * Upload an EDM package and enrich the EDM files based on subject mapping.
-     * @param id
-     * @param file
-     * @return
-     * @throws IOException 
      */
     @PostMapping("/mappings/{id}/enrich")
     public EnrichDetails enrichEdmArchive(HttpServletRequest requestContext, @PathVariable Long id, 
@@ -95,11 +91,6 @@ public class ΧΧΧEnrichEdmController {
     
     /**
      * Download enriched archive
-     * @param requestContext
-     * @param id
-     * @param requestId
-     * @return
-     * @throws IOException 
      */
     @GetMapping("/mappings/{id}/enrich/{requestId}/download")
     public ResponseEntity<?> downloadEnrichedEdmArchive(HttpServletRequest requestContext, @PathVariable Long id, 
@@ -115,32 +106,4 @@ public class ΧΧΧEnrichEdmController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\"" + filename + "\"")
                 .body(new FileSystemResource(file));
     }
-    
-    /*
-    @GetMapping("/upload/test")
-    public String testUpload() {
-        
-        log.info("trying to upload...");
-        try {
-            String filename = "Subject_Mapping_Template.xlsx";
-            Resource resource = resourceLoader.getResource("classpath:" + filename);
-            File templateFile = resource.getFile();
-            if(templateFile.exists()) {
-                log.info("File exists!!!");
-                
-                List<MappingTerm> mappingTerms = 
-                        excelService.loadMappingTermsFromExcel(filename, 2, 1, -1);
-                
-                subjectTermRepository.saveAll(mappingTerms);
-                
-                log.info("Parsing finished...");
-            }
-            
-        } catch(IOException ex) {
-            log.error("File not found.");
-        }
-        
-        return "OK";
-    } */
-    
 }
