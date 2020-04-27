@@ -155,6 +155,7 @@ public class EDMService {
         File file;
         if(filepath != null && !filepath.isEmpty()) {
             file = fileStorageService.loadFile(filepath);
+            log.info("Load file. ArchiveId: {} Type: {} Name: {} Path: {}", archiveId, type, file.getName(), filepath);
         } else {
             log.error("File not found. ArchiveId: {} Type: {}", archiveId, type);
             throw new NotFoundException("File");
@@ -557,6 +558,7 @@ public class EDMService {
                 enrichedArchiveFilePath = archiveFilePath.toString();
 
                 // Save enrichment filepath
+                edmArchiveEntity.setEnrichedFilename(enrichedArchiveName);
                 edmArchiveEntity.setEnrichedFilepath(enrichedArchiveFilePath);
                 edmArchiveRepository.save(edmArchiveEntity);
                 
@@ -650,8 +652,8 @@ public class EDMService {
                     
                     // Extract temporal subjectTerms
                     if(temporal) {
-                        NodeList dcDateNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_DATE);
-                        extractedData.addAll(EdmExtractUtils.extractNodeData(dcDateNodes, skipEmptyValues));
+                        // NodeList dcDateNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_DATE);
+                        // extractedData.addAll(EdmExtractUtils.extractNodeData(dcDateNodes, skipEmptyValues));
 
                         NodeList dcTermsTemporalNodes = XMLUtils.getNodeList(doc, "//" + EdmExtractUtils.DC_TERMS_TEMPORAL);
                         extractedData.addAll(EdmExtractUtils.extractNodeData(dcTermsTemporalNodes, skipEmptyValues));

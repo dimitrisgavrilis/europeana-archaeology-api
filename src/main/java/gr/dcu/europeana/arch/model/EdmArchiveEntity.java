@@ -40,7 +40,10 @@ public class EdmArchiveEntity {
     
     @Column (name="filepath")
     private String filepath;
-    
+
+    @Column (name="enriched_filename")
+    private String enrichedFilename;
+
     @Column (name="enriched_filepath")
     private String enrichedFilepath;
     

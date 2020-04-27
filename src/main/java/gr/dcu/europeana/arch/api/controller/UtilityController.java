@@ -11,6 +11,8 @@ import gr.dcu.europeana.arch.model.AatSubjectEntity;
 import gr.dcu.europeana.arch.model.LanguageEntity;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import gr.dcu.europeana.arch.repository.LanguageRepository;
+
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import gr.dcu.europeana.arch.service.EArchTemporalService;
@@ -71,8 +73,12 @@ public class UtilityController {
         List<Geonames> geonames = searchResult.getGeonames();
         
         log.info("Search geonames. Query: {} , #Results: {}", q, geonames.size());
-        
-        return geonamesMapper.toDtoList(geonames);
+
+        // Sort result by label
+        List<GeonamesDto> geonamesDtoList = geonamesMapper.toDtoList(geonames);
+        return geonamesDtoList.stream()
+                .sorted(Comparator.comparing(GeonamesDto::getLabel))
+                .collect(Collectors.toList());
     }
 
     @Operation(summary = "Find all earch temporal")
