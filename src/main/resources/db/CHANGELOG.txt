@@ -1,0 +1,3 @@
+DROP id from aat_subjects;
+
+ALTER TABLE `user` ADD `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `active`;

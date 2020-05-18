@@ -1,6 +1,7 @@
 package gr.dcu.europeana.arch.service.edm;
 
 import gr.dcu.europeana.arch.model.*;
+import gr.dcu.europeana.arch.service.AatService;
 import gr.dcu.utils.MoReNamespaceContext;
 import java.util.List;
 import java.util.Map;
@@ -40,16 +41,19 @@ public class EdmXmlUtils {
                     int termsWithoutMappings = 0;
                     for(SubjectTermEntity subjectTermEntity : subjectTermEntities) {
                         
-                        if(subjectTermEntity.getAatUid() != null && !subjectTermEntity.getAatUid().isEmpty()) {
+                        if(subjectTermEntity.getAatUid() != null  && !subjectTermEntity.getAatUid().isEmpty()) {
                             
-                            AatSubjectEntity aatSubjectEntity = aatSubjectMap.get(subjectTermEntity.getAatUid());
-                            
+                            // AatSubjectEntity aatSubjectEntity = aatSubjectMap.get(subjectTermEntity.getAatUid());
+                            String aatUri = AatService.AAT_URI_PREFIX + subjectTermEntity.getAatUid();
                             Element childElement = doc.createElement(label);
-                            childElement.setAttribute("rdf:resource", aatSubjectEntity.getUri());
+                            // childElement.setAttribute("rdf:resource", aatSubjectEntity.getUri());
+                            childElement.setAttribute("rdf:resource", aatUri);
                             // childElement.appendChild(doc.createTextNode(spatialTerm));
                             element.appendChild(childElement);
+                            log.debug("Thematic term added. {}", childElement.toString());
                         } else {
                             termsWithoutMappings ++;
+                            log.debug("Thematic native term without mapping => {}", subjectTermEntity.getNativeTerm());
                         }
                     }
                     

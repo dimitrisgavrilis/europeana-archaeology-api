@@ -5,7 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class EArchTemporalDto {
+public class EArchTemporalViewDto {
     private String label;
     private String aatUid;
     private String aatUri;

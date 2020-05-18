@@ -27,6 +27,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -39,46 +40,45 @@ import gr.dcu.europeana.arch.repository.MappingRepository;
 
 import javax.transaction.Transactional;
 
-/**
- *
- * @author Vangelis Nomikos
- */
 @Slf4j
 @Service
 public class MappingService {
     
     @Autowired
-    MappingRepository mappingRepository;
+    private MappingRepository mappingRepository;
     
     @Autowired
-    SubjectTermRepository subjectTermRepository;
+    private SubjectTermRepository subjectTermRepository;
     
     @Autowired
-    SpatialTermRepository spatialTermRepository;
+    private SpatialTermRepository spatialTermRepository;
     
     @Autowired
-    TemporalTermRepository temporalTermRepository;
+    private TemporalTermRepository temporalTermRepository;
     
     @Autowired
-    FileStorageService fileStorageService;
+    private FileStorageService fileStorageService;
     
     @Autowired
-    ExcelService excelService;
+    private ExcelService excelService;
     
     @Autowired
-    ExportRequestRepository exportRequestRepository;
+    private ExportRequestRepository exportRequestRepository;
     
     @Autowired
-    UploadRequestRepository uploadRequestRepository;
+    private UploadRequestRepository uploadRequestRepository;
     
     @Autowired
-    EnrichRequestRepository enrichRequestRepository;
+    private EnrichRequestRepository enrichRequestRepository;
     
     @Autowired
-    EdmArchiveRepository edmArchiveRepository;
+    private EdmArchiveRepository edmArchiveRepository;
     
     @Autowired
-    EdmArchiveTermsRepository edmArchiveTermsRepository;
+    private EdmArchiveTermsRepository edmArchiveTermsRepository;
+
+    @Autowired
+    private AatService aatService;
     
     /**
      * 
@@ -104,9 +104,7 @@ public class MappingService {
     }
     
     /**
-     * 
-     * @param userId
-     * @param mappingEntity
+     *
      * @return 
      */
     public MappingEntity save(int userId, MappingEntity mappingEntity) {
@@ -224,6 +222,8 @@ public class MappingService {
         return resource;
         
     }
+
+
     
     /**
      * 
@@ -242,16 +242,40 @@ public class MappingService {
         // Upload mapping file
         Path filePath = fileStorageService.buildMappingUploadFilePath(mappingId, file.getOriginalFilename());
         fileStorageService.upload(filePath, file);
-        
-        // Load terms
-        List<SubjectTermEntity> termList =
+
+        log.info("Analyzing terms...");
+        // Load aat subject stored in database
+        Map<String, AatSubjectEntity> aatSubjectEntityMap = aatService.findAllInMap();
+
+        // Load terms from excel
+        List<SubjectTermEntity> subjectTermEntityList =
                 excelService.loadSubjectTermsFromExcel(filePath.toString(), mappingId, 1, -1);
-        
+
+        long termsWoMappingCount = 0;
+        long termsUnknownCount = 0;
+        List<String> aatUidUnknownList = new LinkedList<>();
+        for(SubjectTermEntity tmpSubjectTermEntity : subjectTermEntityList) {
+            String tmpAatUuid = tmpSubjectTermEntity.getAatUid();
+            if(StringUtils.isBlank(tmpAatUuid)) {
+                termsWoMappingCount++;
+            } else {
+                if(!aatSubjectEntityMap.containsKey(tmpAatUuid)) {
+                    termsUnknownCount++;
+                    aatUidUnknownList.add(tmpAatUuid);
+                }
+            }
+        }
+        log.info("#Total: {}, #WO Mapping: {}, #Unkmown: {}",
+                subjectTermEntityList.size(), termsWoMappingCount, termsUnknownCount);
+
+        // Print unknown aatUid
+        aatUidUnknownList.forEach(log::info);
+
         // Save terms
-        log.info("Saving terms. #Terms:{}", termList.size());
-        
+        log.info("Saving terms. #Total Terms:{}", subjectTermEntityList.size());
+
         // TODO: Do not save automatically. Preview first.
-        subjectTermRepository.saveAll(termList);
+        subjectTermRepository.saveAll(subjectTermEntityList);
         
         // Create upload enrichRequest
         MappingUploadRequestEntity uploadRequest = new MappingUploadRequestEntity();
@@ -261,7 +285,7 @@ public class MappingService {
         uploadRequest.setCreatedBy(userId);
         uploadRequestRepository.save(uploadRequest);
         
-        return termList;
+        return subjectTermEntityList;
     }
     
     /**

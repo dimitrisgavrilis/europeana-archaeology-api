@@ -1,7 +1,7 @@
 package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.api.adapter.UtilityControllerMapper;
-import gr.dcu.europeana.arch.api.dto.EArchTemporalDto;
+import gr.dcu.europeana.arch.api.dto.EArchTemporalViewDto;
 import gr.dcu.europeana.arch.api.dto.GeonamesDto;
 import gr.dcu.europeana.arch.api.dto.GeonamesMapper;
 import gr.dcu.europeana.arch.geonames.Geonames;
@@ -83,7 +83,7 @@ public class UtilityController {
 
     @Operation(summary = "Find all earch temporal")
     @GetMapping("/temporal")
-    public List<EArchTemporalDto> findAllEArchTemporal() {
+    public List<EArchTemporalViewDto> findAllEArchTemporal() {
 
         return eArchTemporalService.findAll()
                 .stream()
@@ -93,7 +93,7 @@ public class UtilityController {
 
     @Operation(summary = "Search geonames by name")
     @PostMapping("/temporal/search")
-    public List<EArchTemporalDto> searchEarchTemporal(@RequestParam String q) {
+    public List<EArchTemporalViewDto> searchEarchTemporal(@RequestParam String q) {
 
         return eArchTemporalService.search(q)
                 .stream()
@@ -103,7 +103,7 @@ public class UtilityController {
 
     @Operation(summary = "Extract aat uid")
     @PostMapping("/temporal/extract_aat_uid")
-    public List<EArchTemporalDto> extractAatUid() {
+    public List<EArchTemporalViewDto> extractAatUid() {
 
         return eArchTemporalService.extractAatUid()
                 .stream()
