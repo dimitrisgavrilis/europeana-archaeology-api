@@ -1,9 +1,9 @@
 package gr.dcu.europeana.arch.api.controller;
 
-import gr.dcu.europeana.arch.model.MappingEntity;
-import gr.dcu.europeana.arch.model.SubjectTermEntity;
-import gr.dcu.europeana.arch.model.SpatialTermEntity;
-import gr.dcu.europeana.arch.model.TemporalTermEntity;
+import gr.dcu.europeana.arch.domain.entity.MappingEntity;
+import gr.dcu.europeana.arch.domain.entity.SubjectTermEntity;
+import gr.dcu.europeana.arch.domain.entity.SpatialTermEntity;
+import gr.dcu.europeana.arch.domain.entity.TemporalTermEntity;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.MappingService;
 import java.io.IOException;

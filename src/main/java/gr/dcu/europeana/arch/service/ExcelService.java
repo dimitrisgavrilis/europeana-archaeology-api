@@ -1,10 +1,9 @@
 package gr.dcu.europeana.arch.service;
 
-import gr.dcu.europeana.arch.model.SubjectTermEntity;
+import gr.dcu.europeana.arch.domain.entity.SubjectTermEntity;
 import gr.dcu.europeana.arch.exception.MyFileNotFoundException;
-import gr.dcu.europeana.arch.model.SpatialTermEntity;
-import gr.dcu.europeana.arch.model.TemporalTermEntity;
-import gr.dcu.europeana.arch.repository.AatSubjectRepository;
+import gr.dcu.europeana.arch.domain.entity.SpatialTermEntity;
+import gr.dcu.europeana.arch.domain.entity.TemporalTermEntity;
 import gr.dcu.europeana.arch.service.edm.EdmFileTermExtractionResult;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
 import java.io.File;
@@ -26,7 +25,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
@@ -37,14 +35,14 @@ import org.springframework.stereotype.Service;
 @Service
 public class ExcelService {
     
-    @Autowired
-    FileStorageService fileStorageService;
-    
-    @Autowired
-    private AatSubjectRepository aatSubjectRepository;
-    
+    private final FileStorageService fileStorageService;
+
     private static final String DEFAULT_EXPORT_FILENAME = "mappings.xlsx";
-    
+
+    public ExcelService(FileStorageService fileStorageService) {
+        this.fileStorageService = fileStorageService;
+    }
+
     /**
      * 
      * @param filename

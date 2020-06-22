@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.api.dto;
 
-import gr.dcu.europeana.arch.model.enums.NotificationType;
+import gr.dcu.europeana.arch.domain.enums.NotificationType;
 import lombok.Data;
 
 import javax.persistence.*;

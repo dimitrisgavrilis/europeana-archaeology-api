@@ -1,4 +1,4 @@
-package gr.dcu.europeana.arch.model;
+package gr.dcu.europeana.arch.domain.entity;
 
 import java.io.Serializable;
 import javax.persistence.Column;

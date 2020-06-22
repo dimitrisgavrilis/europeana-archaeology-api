@@ -1,7 +1,7 @@
 package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.api.dto.EnrichDetails;
-import gr.dcu.europeana.arch.model.MappingUploadRequestEntity;
+import gr.dcu.europeana.arch.domain.entity.MappingUploadRequestEntity;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.EDMService;
 import gr.dcu.europeana.arch.service.MappingService;
@@ -37,7 +37,8 @@ public class ΧΧΧEnrichEdmController {
     
     @Autowired
     MappingService mappingService;
-    
+
+    /*
     @GetMapping("/edm_packages")
     public List<MappingUploadRequestEntity> getEdmPackages(HttpServletRequest requestContext) {
         
@@ -75,9 +76,7 @@ public class ΧΧΧEnrichEdmController {
     
     
     
-    /**
-     * Upload an EDM package and enrich the EDM files based on subject mapping.
-     */
+
     @PostMapping("/mappings/{id}/enrich")
     public EnrichDetails enrichEdmArchive(HttpServletRequest requestContext, @PathVariable Long id, 
             @RequestParam("file") MultipartFile file) throws IOException {
@@ -89,9 +88,6 @@ public class ΧΧΧEnrichEdmController {
     }
     
     
-    /**
-     * Download enriched archive
-     */
     @GetMapping("/mappings/{id}/enrich/{requestId}/download")
     public ResponseEntity<?> downloadEnrichedEdmArchive(HttpServletRequest requestContext, @PathVariable Long id, 
             @PathVariable Long requestId) throws IOException {
@@ -106,4 +102,6 @@ public class ΧΧΧEnrichEdmController {
                 .header(HttpHeaders.CONTENT_DISPOSITION,"attachment; filename=\"" + filename + "\"")
                 .body(new FileSystemResource(file));
     }
+
+     */
 }

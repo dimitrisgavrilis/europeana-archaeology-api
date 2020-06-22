@@ -1,7 +1,7 @@
 package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.api.dto.auth.*;
-import gr.dcu.europeana.arch.model.UserEntity;
+import gr.dcu.europeana.arch.domain.entity.UserEntity;
 import gr.dcu.europeana.arch.service.AuthService;
 import java.security.NoSuchAlgorithmException;
 import javax.servlet.http.HttpServletRequest;

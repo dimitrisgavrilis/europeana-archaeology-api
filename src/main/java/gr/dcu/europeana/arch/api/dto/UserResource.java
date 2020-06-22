@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.api.dto;
 
-import gr.dcu.europeana.arch.model.UserEntity;
+import gr.dcu.europeana.arch.domain.entity.UserEntity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

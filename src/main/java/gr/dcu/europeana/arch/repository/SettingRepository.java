@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.repository;
 
-import gr.dcu.europeana.arch.model.SettingEntity;
+import gr.dcu.europeana.arch.domain.entity.SettingEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

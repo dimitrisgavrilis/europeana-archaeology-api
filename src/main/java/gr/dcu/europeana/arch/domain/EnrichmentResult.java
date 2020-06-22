@@ -6,6 +6,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class EnrichmentResult {
-    private int valueCount;
-    private int matchCount;
+    private int valueCount; // Number of all possible values for enrichment
+    private int matchCount; // Number of matches
 }

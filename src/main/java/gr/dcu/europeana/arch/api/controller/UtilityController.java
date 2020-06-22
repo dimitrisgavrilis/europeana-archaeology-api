@@ -7,8 +7,8 @@ import gr.dcu.europeana.arch.api.dto.GeonamesMapper;
 import gr.dcu.europeana.arch.geonames.Geonames;
 import gr.dcu.europeana.arch.geonames.GeonamesSearchResult;
 import gr.dcu.europeana.arch.geonames.GeonamesService;
-import gr.dcu.europeana.arch.model.AatSubjectEntity;
-import gr.dcu.europeana.arch.model.LanguageEntity;
+import gr.dcu.europeana.arch.domain.entity.AatSubjectEntity;
+import gr.dcu.europeana.arch.domain.entity.LanguageEntity;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import gr.dcu.europeana.arch.repository.LanguageRepository;
 

@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.repository;
 
-import gr.dcu.europeana.arch.model.UserEntity;
+import gr.dcu.europeana.arch.domain.entity.UserEntity;
 import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;

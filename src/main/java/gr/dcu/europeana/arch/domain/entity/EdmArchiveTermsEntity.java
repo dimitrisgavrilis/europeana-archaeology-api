@@ -1,6 +1,5 @@
-package gr.dcu.europeana.arch.model;
+package gr.dcu.europeana.arch.domain.entity;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -19,31 +18,36 @@ import org.hibernate.annotations.CreationTimestamp;
  * @author Vangelis Nomikos
  */
 @Entity 
-@Table(name = "mapping_upload")
+@Table(name = "edm_archive_terms")
 @Getter
 @Setter
 @ToString
 @NoArgsConstructor
-public class MappingUploadRequestEntity implements Serializable {
+public class EdmArchiveTermsEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column (name="mapping_id")
-    private Long mappingId;
+    @Column (name="archive_id")
+    private Long archiveId;
     
-    @Column (name="filename")
-    private String filename;
+    @Column (name="subject_terms")
+    private String subjectTerms;
     
-    @Column (name="filepath")
-    private String filepath;
+    @Column (name="spatial_terms")
+    private String spatialTerms;
+    
+    @Column (name="temporal_terms")
+    private String temporalTerms;
     
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
     @Column(name = "created_by")
-    private int createdBy;
-
+    private Integer createdBy;
+    
+    
+    
 }

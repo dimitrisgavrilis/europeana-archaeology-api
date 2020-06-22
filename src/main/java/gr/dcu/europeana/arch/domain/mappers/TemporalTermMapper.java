@@ -1,6 +1,6 @@
-package gr.dcu.europeana.arch.model.mappers;
+package gr.dcu.europeana.arch.domain.mappers;
 
-import gr.dcu.europeana.arch.model.TemporalTermEntity;
+import gr.dcu.europeana.arch.domain.entity.TemporalTermEntity;
 import gr.dcu.europeana.arch.service.edm.ElementExtractionData;
 import java.util.Collection;
 import java.util.LinkedList;

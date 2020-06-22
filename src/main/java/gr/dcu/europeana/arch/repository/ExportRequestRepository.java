@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.repository;
 
-import gr.dcu.europeana.arch.model.MappingExportRequestEntity;
+import gr.dcu.europeana.arch.domain.entity.MappingExportRequestEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 

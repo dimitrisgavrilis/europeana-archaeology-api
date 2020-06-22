@@ -1,7 +1,7 @@
 package gr.dcu.europeana.arch.service.edm;
 
-import gr.dcu.europeana.arch.model.*;
-import gr.dcu.europeana.arch.service.AatService;
+import gr.dcu.europeana.arch.domain.entity.*;
+import gr.dcu.europeana.arch.service.VocabularyService;
 import gr.dcu.utils.MoReNamespaceContext;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +44,7 @@ public class EdmXmlUtils {
                         if(subjectTermEntity.getAatUid() != null  && !subjectTermEntity.getAatUid().isEmpty()) {
                             
                             // AatSubjectEntity aatSubjectEntity = aatSubjectMap.get(subjectTermEntity.getAatUid());
-                            String aatUri = AatService.AAT_URI_PREFIX + subjectTermEntity.getAatUid();
+                            String aatUri = VocabularyService.AAT_LOD_URI_PREFIX + subjectTermEntity.getAatUid();
                             Element childElement = doc.createElement(label);
                             // childElement.setAttribute("rdf:resource", aatSubjectEntity.getUri());
                             childElement.setAttribute("rdf:resource", aatUri);
@@ -110,8 +110,8 @@ public class EdmXmlUtils {
      * @param temporalTermEntities temporal terms to append
      * @param earchTemporalEntityMap utility map for earch temporal
      */
-    public static void appendTemporalElements(Document doc, String xPathExpr, List<TemporalTermEntity> temporalTermEntities,
-                                                  Map<String, EArchTemporalEntity> earchTemporalEntityMap) throws XPathExpressionException {
+    public static void appendTemporalElementEdmTimeSpan(Document doc, String xPathExpr, List<TemporalTermEntity> temporalTermEntities,
+                                                        Map<String, EArchTemporalEntity> earchTemporalEntityMap) throws XPathExpressionException {
 
         try {
             XPath xPath = XPathFactory.newInstance().newXPath();
@@ -159,6 +159,45 @@ public class EdmXmlUtils {
                         Element owlSameAsWikidataUriElement = doc.createElement("owl:sameAs");
                         owlSameAsWikidataUriElement.appendChild(doc.createTextNode(eArchTemporalEntity.getWikidataUri()));
                         edmTimespanElement.appendChild(owlSameAsWikidataUriElement);
+
+                        // ~~~ dc:date ~~~
+                        // Element dcDateElement = doc.createElement("dc:date");
+                        // dcDateElement.setAttribute("rdf:resource", rdfAboutLabel);
+                        // element.appendChild(dcDateElement);
+
+                    } else {
+                        termsWithoutMappings ++;
+                    }
+                }
+
+                log.debug("Temporal Terms wo mappings. #Size: {}", termsWithoutMappings);
+            }
+
+        } catch (XPathExpressionException ex) {
+            log.error("",ex);
+            throw ex;
+        }
+    }
+
+    public static void appendTemporalElementsDcDate(Document doc, String xPathExpr, List<TemporalTermEntity> temporalTermEntities,
+                                                    Map<String, EArchTemporalEntity> earchTemporalEntityMap) throws XPathExpressionException {
+
+        try {
+            XPath xPath = XPathFactory.newInstance().newXPath();
+            xPath.setNamespaceContext(new MoReNamespaceContext());
+            NodeList nodeList = (NodeList)xPath.compile(xPathExpr).evaluate(doc, XPathConstants.NODESET);
+
+            for(int i=0; i<nodeList.getLength(); i++) {
+                Element element = (Element) nodeList.item(i);
+
+                int termsWithoutMappings = 0;
+                for(TemporalTermEntity temporalTermEntity : temporalTermEntities) {
+
+                    if(temporalTermEntity.getAatUid() != null && !temporalTermEntity.getAatUid().isEmpty()) {
+
+                        EArchTemporalEntity eArchTemporalEntity = earchTemporalEntityMap.get(temporalTermEntity.getAatUid());
+
+                        String rdfAboutLabel = "EUROPEANAARCH_" + temporalTermEntity.getId() + "/TMP.1";
 
                         // ~~~ dc:date ~~~
                         Element dcDateElement = doc.createElement("dc:date");

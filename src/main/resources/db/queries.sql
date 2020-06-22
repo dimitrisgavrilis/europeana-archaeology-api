@@ -4,3 +4,8 @@ SELECT aat_uid, COUNT(*) as total FROM `aat_subjects` GROUP BY aat_uid HAVING to
 DELETE FROM `subject_terms` WHERE aat_uid ='' and mapping_id = 73
 
 SELECT * FROM `subject_terms` WHERE native_term = 'ohrazení/fortifikace nesp.' and mapping_id = 73
+
+-- Fix earch_temporal
+UPDATE `earch_temporal` SET `end_year`= `start_year`;
+UPDATE `earch_temporal` SET `start_year`= `aat_uid`;
+UPDATE `earch_temporal` SET `aat_uid`= '';

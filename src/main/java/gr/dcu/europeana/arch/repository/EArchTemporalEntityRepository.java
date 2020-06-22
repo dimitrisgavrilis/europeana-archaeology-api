@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.repository;
 
-import gr.dcu.europeana.arch.model.EArchTemporalEntity;
+import gr.dcu.europeana.arch.domain.entity.EArchTemporalEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

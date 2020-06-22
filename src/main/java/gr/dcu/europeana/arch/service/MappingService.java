@@ -5,8 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.dcu.europeana.arch.api.dto.AppendTermsResult;
 import gr.dcu.europeana.arch.api.dto.EnrichDetails;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
-import gr.dcu.europeana.arch.model.*;
-import gr.dcu.europeana.arch.model.EdmArchiveTermsEntity;
+import gr.dcu.europeana.arch.domain.*;
+import gr.dcu.europeana.arch.domain.entity.*;
 import gr.dcu.europeana.arch.repository.EdmArchiveRepository;
 import gr.dcu.europeana.arch.repository.EdmArchiveTermsRepository;
 import gr.dcu.europeana.arch.repository.EnrichRequestRepository;
@@ -45,16 +45,16 @@ import javax.transaction.Transactional;
 public class MappingService {
     
     @Autowired
-    private MappingRepository mappingRepository;
+    private MappingRepository mappingRepo;
     
     @Autowired
-    private SubjectTermRepository subjectTermRepository;
+    private SubjectTermRepository subjectTermRepo;
     
     @Autowired
-    private SpatialTermRepository spatialTermRepository;
+    private SpatialTermRepository spatialTermRepo;
     
     @Autowired
-    private TemporalTermRepository temporalTermRepository;
+    private TemporalTermRepository temporalTermRepo;
     
     @Autowired
     private FileStorageService fileStorageService;
@@ -63,22 +63,22 @@ public class MappingService {
     private ExcelService excelService;
     
     @Autowired
-    private ExportRequestRepository exportRequestRepository;
+    private ExportRequestRepository exportRequestRepo;
     
     @Autowired
-    private UploadRequestRepository uploadRequestRepository;
+    private UploadRequestRepository uploadRequestRepo;
     
     @Autowired
-    private EnrichRequestRepository enrichRequestRepository;
+    private EnrichRequestRepository enrichRequestRepo;
     
     @Autowired
-    private EdmArchiveRepository edmArchiveRepository;
+    private EdmArchiveRepository edmArchiveRepo;
     
     @Autowired
-    private EdmArchiveTermsRepository edmArchiveTermsRepository;
+    private EdmArchiveTermsRepository edmArchiveTermsRepo;
 
     @Autowired
-    private AatService aatService;
+    private VocabularyService vocabularyService;
     
     /**
      * 
@@ -86,7 +86,7 @@ public class MappingService {
      */
     public List<MappingEntity> findAll() {
         
-        return mappingRepository.findAll();
+        return mappingRepo.findAll();
     }
     
     /**
@@ -96,11 +96,11 @@ public class MappingService {
      */
     public List<MappingEntity> findAllByUserId(int userId) {
         
-        return mappingRepository.findAllByCreatedBy(userId);
+        return mappingRepo.findAllByCreatedBy(userId);
     }
 
     public MappingEntity findById(Long id) {
-        return mappingRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException(id));
+        return mappingRepo.findById(id).orElseThrow(() -> new ResourceNotFoundException(id));
     }
     
     /**
@@ -111,12 +111,12 @@ public class MappingService {
         
         mappingEntity.setCreatedBy(userId);
         
-        return mappingRepository.save(mappingEntity);
+        return mappingRepo.save(mappingEntity);
     }
 
     public MappingEntity updateMapping(Long id, MappingEntity mappingEntity) {
 
-        MappingEntity existingMappingEntity = mappingRepository.findById(id)
+        MappingEntity existingMappingEntity = mappingRepo.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(id));
 
         existingMappingEntity.setLabel(mappingEntity.getLabel());
@@ -125,7 +125,7 @@ public class MappingService {
         existingMappingEntity.setProviderName(mappingEntity.getProviderName());
         existingMappingEntity.setVocabularyName(mappingEntity.getVocabularyName());
 
-        return mappingRepository.save(existingMappingEntity);
+        return mappingRepo.save(existingMappingEntity);
     }
     
     /**
@@ -137,26 +137,26 @@ public class MappingService {
     public void delete(int userId, long mappingId) {
         
         // Check if mapping exists
-        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepo.findById(mappingId)
                     .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Delete terms
         switch(mappingEntity.getType()) {
             case MappingType.MAPPING_TYPE_SUBJECT:
-                subjectTermRepository.deleteByMappingId(mappingId);
+                subjectTermRepo.deleteByMappingId(mappingId);
                 break;
             case MappingType.MAPPING_TYPE_SPATIAL:
-                spatialTermRepository.deleteByMappingId(mappingId);
+                spatialTermRepo.deleteByMappingId(mappingId);
                 break;
             case MappingType.MAPPING_TYPE_TEMPORAL:
-                temporalTermRepository.deleteByMappingId(mappingId);
+                temporalTermRepo.deleteByMappingId(mappingId);
                 break;
             default:
                 log.warn("Unknown mapping type.");
          }
         
         // Delete mapping
-        mappingRepository.deleteById(mappingId);
+        mappingRepo.deleteById(mappingId);
     }
     
     /**
@@ -172,7 +172,7 @@ public class MappingService {
         
         try {
             // Check if mapping exists
-            MappingEntity mappingEntity = mappingRepository.findById(mappingId)
+            MappingEntity mappingEntity = mappingRepo.findById(mappingId)
                     .orElseThrow(() -> new ResourceNotFoundException(mappingId));
 
             // Export to tmp file
@@ -181,19 +181,19 @@ public class MappingService {
             switch(mappingEntity.getType()) {
                 case MappingType.MAPPING_TYPE_SUBJECT:
                     // Get terms
-                    List<SubjectTermEntity> termList = subjectTermRepository.findByMappingId(mappingId);
+                    List<SubjectTermEntity> termList = subjectTermRepo.findByMappingId(mappingId);
                     log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, termList.size());
             
                     // Export
                     excelService.exportSubjectTermsToExcel(filePath, termList);
                     break;
                 case MappingType.MAPPING_TYPE_SPATIAL:
-                    List<SpatialTermEntity> spatialTermEntityList = spatialTermRepository.findByMappingId(mappingId);
+                    List<SpatialTermEntity> spatialTermEntityList = spatialTermRepo.findByMappingId(mappingId);
                     log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, spatialTermEntityList.size());
                     excelService.exportSpatialTermsToExcel(filePath, spatialTermEntityList);
                     break;
                 case MappingType.MAPPING_TYPE_TEMPORAL:
-                    List<TemporalTermEntity> temporalTermEntityList = temporalTermRepository.findByMappingId(mappingId);
+                    List<TemporalTermEntity> temporalTermEntityList = temporalTermRepo.findByMappingId(mappingId);
                     log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, temporalTermEntityList.size());
 
                     // Export
@@ -213,7 +213,7 @@ public class MappingService {
             exportRequest.setMappingId(mappingId);
             exportRequest.setFilepath(filePath.toString());
             exportRequest.setCreatedBy(userId);
-            exportRequestRepository.save(exportRequest);
+            exportRequestRepo.save(exportRequest);
             
         } catch(IOException ex) {
             throw ex;
@@ -236,7 +236,7 @@ public class MappingService {
     public List<SubjectTermEntity> uploadSubjectTerms(long mappingId, MultipartFile file, int userId) throws IOException {
         
         // Check existemce of mapping
-        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepo.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Upload mapping file
@@ -245,7 +245,7 @@ public class MappingService {
 
         log.info("Analyzing terms...");
         // Load aat subject stored in database
-        Map<String, AatSubjectEntity> aatSubjectEntityMap = aatService.findAllInMap();
+        Map<String, AatSubjectEntity> aatSubjectEntityMap = vocabularyService.loadAatTerms();
 
         // Load terms from excel
         List<SubjectTermEntity> subjectTermEntityList =
@@ -275,7 +275,7 @@ public class MappingService {
         log.info("Saving terms. #Total Terms:{}", subjectTermEntityList.size());
 
         // TODO: Do not save automatically. Preview first.
-        subjectTermRepository.saveAll(subjectTermEntityList);
+        subjectTermRepo.saveAll(subjectTermEntityList);
         
         // Create upload enrichRequest
         MappingUploadRequestEntity uploadRequest = new MappingUploadRequestEntity();
@@ -283,7 +283,7 @@ public class MappingService {
         uploadRequest.setFilename(file.getOriginalFilename());
         uploadRequest.setFilepath(filePath.toString());
         uploadRequest.setCreatedBy(userId);
-        uploadRequestRepository.save(uploadRequest);
+        uploadRequestRepo.save(uploadRequest);
         
         return subjectTermEntityList;
     }
@@ -299,7 +299,7 @@ public class MappingService {
     public List<SpatialTermEntity> uploadSpatialTerms(long mappingId, MultipartFile file, int userId) throws IOException {
         
         // Check existemce of mapping
-        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepo.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Upload mapping file
@@ -314,7 +314,7 @@ public class MappingService {
         log.info("Saving terms. #Terms:{}", termList.size());
         
         // TODO: Do not save automatically. Preview first.
-        spatialTermRepository.saveAll(termList);
+        spatialTermRepo.saveAll(termList);
         
         // Create upload enrichRequest
         MappingUploadRequestEntity uploadRequest = new MappingUploadRequestEntity();
@@ -322,7 +322,7 @@ public class MappingService {
         uploadRequest.setFilename(file.getOriginalFilename());
         uploadRequest.setFilepath(filePath.toString());
         uploadRequest.setCreatedBy(userId);
-        uploadRequestRepository.save(uploadRequest);
+        uploadRequestRepo.save(uploadRequest);
         
         return termList;
     }
@@ -330,7 +330,7 @@ public class MappingService {
     public List<TemporalTermEntity> uploadTemporalTerms(long mappingId, MultipartFile file, int userId) throws IOException {
         
         // Check existemce of mapping
-        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepo.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         
         // Upload mapping file
@@ -345,7 +345,7 @@ public class MappingService {
         log.info("Saving terms. #Terms:{}", termList.size());
         
         // TODO: Do not save automatically. Preview first.
-        temporalTermRepository.saveAll(termList);
+        temporalTermRepo.saveAll(termList);
         
         // Create upload enrichRequest
         MappingUploadRequestEntity uploadRequest = new MappingUploadRequestEntity();
@@ -353,163 +353,12 @@ public class MappingService {
         uploadRequest.setFilename(file.getOriginalFilename());
         uploadRequest.setFilepath(filePath.toString());
         uploadRequest.setCreatedBy(userId);
-        uploadRequestRepository.save(uploadRequest);
+        uploadRequestRepo.save(uploadRequest);
         
         return termList;
     }
     
-    /**
-     * 
-     * @param mappingId
-     * @param file
-     * @return
-     * @throws IOException 
-     */
-    public EnrichDetails enrich(long mappingId, MultipartFile file, int userId) throws IOException {
-         
-        // Check existemce of mapping
-        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
-                .orElseThrow(() -> new ResourceNotFoundException(mappingId));
-        
-        // Get mapping terms. Convert them to map
-        List<SubjectTermEntity> terms = subjectTermRepository.findByMappingId(mappingId);
-        Map<String, SubjectTermEntity> termsMap = new HashMap<>();
-        for(SubjectTermEntity mp : terms) {
-            termsMap.put(mp.getNativeTerm(), mp);
-        }
-        log.info("Mapping: {} #Terms: {}", mappingId, terms.size());
-        
-        // File system hierarchy
-        // storage_tmp
-        // -- <mapping_id>
-        //    -- enrich
-        //        -- <request_id> (at this level store the archives - edm.zip , eEDM.tar.gz)
-        //            -- EDM
-        //            -- eEDM
-        //    -- uploads
-        //    -- exports
-        
-        // Create enrich enrichRequest
-        EnrichRequestEntity enrichRequestEntity = new EnrichRequestEntity();
-        enrichRequestEntity.setMappingId(mappingId);
-        enrichRequestEntity.setFilename(file.getOriginalFilename());
-        enrichRequestEntity.setCreatedBy(userId);
-        enrichRequestEntity = enrichRequestRepository.save(enrichRequestEntity);
-        long requestId = enrichRequestEntity.getId();
-        
-        // Upload EDM archive
-        log.info("Upload EDM archive. RequestId: {}", requestId);
-        Path edmArchiveFilePath = fileStorageService.buildUploadEdmArchiveFilePath(mappingId, file.getOriginalFilename(), requestId);
-        fileStorageService.upload(edmArchiveFilePath, file);
-        log.info("EDM archive uploaded. Path: {}", edmArchiveFilePath);
-        
-        // Update enrich enrichRequest
-        enrichRequestEntity.setFilepath(edmArchiveFilePath.toString());
-        enrichRequestEntity = enrichRequestRepository.save(enrichRequestEntity);
-        
-        // Extract EDM archive
-        log.info("Extract EDM archive. RequestId: {}", requestId);
-        Path edmExtractDirPath = Paths.get(edmArchiveFilePath.getParent().toString(), "EDM");
-        fileStorageService.extractArchive(edmArchiveFilePath, edmExtractDirPath);
-        File[] edmFiles = edmExtractDirPath.toFile().listFiles(); 
-        log.info("EDM archive extracted. Path: {} #Files: {}", edmExtractDirPath, edmFiles.length);
-        
-        // Enrich archive
-        boolean enrichedDirCreated = false;
-        Path enrichedDirPath = null;
-        int enrichedFileCount = 0;
-        for(File edmFile : edmFiles) {
-            if(edmFile.exists() && edmFile.isFile()) {
-                
-                try {
-                    // Retrieve xml content. ATTENTION: Namespace aware is true.
-                    Document doc = XMLUtils.parse(edmFile, true);
-                    // String itemContent = XMLUtils.transform(doc);
 
-                    // Get subjects
-                    List<String> subjectValues = XMLUtils.getElementValues(doc, "//dc:subject");
-                    
-                    // Find subject mapppings (if any)
-                    int termMatchCount = 0;
-                    List<String> subjectMappings = new LinkedList<>();
-                    for(String value : subjectValues) {
-                        if(termsMap.containsKey(value)) {
-                            termMatchCount++;
-                            subjectMappings.add(value);
-                        }
-                    }
-                    
-                    // edmFile.getAbsolutePath()
-                    log.info("File: {} #Subjects: {} #Matches: {}", edmFile.getName(), subjectValues.size(), termMatchCount);
-                    
-                    if(!subjectMappings.isEmpty()) {
-                        
-                        // Add subject mappings
-                        doc = XMLUtils.appendElements(doc, "//edm:ProvidedCHO", "dc:subject", subjectMappings);
-                        
-                        // Create enriched directory (if not)
-                        if(!enrichedDirCreated) {
-                            enrichedDirPath = Paths.get(edmExtractDirPath.getParent().toString(), "eEDM");
-                            Files.createDirectories(enrichedDirPath);
-                        }
-                        
-                        // Save enriched file
-                        Path enrichedFilePath = Paths.get(enrichedDirPath.toString(), edmFile.getName());
-                        XMLUtils.transform(doc, enrichedFilePath.toFile());
-                        
-                        enrichedFileCount++;
-                        
-                        log.info("File enriched. {} subjects added.Stored at: {}", 
-                                termMatchCount, enrichedFilePath);
-                    }
-                } catch(ParserConfigurationException | SAXException | 
-                        TransformerException | XPathExpressionException ex) {
-                    log.error("Cannot parse file. File: {}", edmFile.getAbsolutePath());
-                }
-                
-            }
-        }
-        
-        // Create archive with enriched files
-        String enrichedArchiveFilePath = "";
-        String enrichedArchiveName = "";
-        if(enrichedFileCount > 0) {
-            log.info("#Files: {} #Enriched: {}", edmFiles.length, enrichedFileCount);
-            
-            // Example eEDM_m2_r4 => mapping 2, enrichRequest 4
-            String filenamePrefix = "eEDM_m" + mappingId + "_r" + requestId; 
-            Path archiveFilePath = fileStorageService.createArchiveFromDirectory(enrichedDirPath, filenamePrefix);
-            
-            enrichedArchiveName = archiveFilePath.getFileName().toString();
-            enrichedArchiveFilePath = archiveFilePath.toString();
-            log.info("Enriched archive created at {}", archiveFilePath.toString());
-            
-        } 
-        
-        String message = enrichedFileCount + " files enriched successfully.";
-                
-        // Set enrich details
-        EnrichDetails enrichDetails = new EnrichDetails();
-        enrichDetails.setSuccess(true);
-        enrichDetails.setMessage(message);
-        enrichDetails.setEdmFileCount(edmFiles.length);
-        enrichDetails.setEdmArchiveName(file.getOriginalFilename());
-        enrichDetails.setEnrichedFileCount(enrichedFileCount);
-        enrichDetails.setEnrichedArchiveName(enrichedArchiveName);
-       // enrichDetails.setEnrichedArchiveUrl("/enrich/requests/" + requestId + "/download");
-        
-        ObjectMapper objectMaper = new ObjectMapper();
-        String details = objectMaper.writeValueAsString(enrichDetails);
-        
-        // Update enrich enrichRequest
-        enrichRequestEntity.setEnrichedFilename(enrichedArchiveName);
-        enrichRequestEntity.setEnrichedFilepath(enrichedArchiveFilePath);
-        enrichRequestEntity.setDetails(details);
-        enrichRequestRepository.save(enrichRequestEntity);
-        
-        return enrichDetails;
-    }
-    
     
     
     /**
@@ -520,7 +369,7 @@ public class MappingService {
      */
     public File loadEnrichedArchive(long requestId) throws IOException {
         
-        EnrichRequestEntity enrichRequestEntity = enrichRequestRepository.findById(requestId)
+        EnrichRequestEntity enrichRequestEntity = enrichRequestRepo.findById(requestId)
                 .orElseThrow(() -> new ResourceNotFoundException(requestId));
         
         String filename = enrichRequestEntity.getFilename();
@@ -541,10 +390,10 @@ public class MappingService {
     @Transactional
     public MappingEntity createMappingByArchiveId(Long archiveId, String type, Integer userId) {
         
-        EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(archiveId)
+        EdmArchiveEntity edmArchiveEntity = edmArchiveRepo.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
-        EdmArchiveTermsEntity edmArchiveTermsEntity = edmArchiveTermsRepository.findByArchiveId(archiveId);
+        EdmArchiveTermsEntity edmArchiveTermsEntity = edmArchiveTermsRepo.findByArchiveId(archiveId);
         
         log.info("Create mapping for archive. Archive: {} Type: {}", archiveId, type);
         List<SubjectTermEntity> subjectTermEntities = new LinkedList<>();
@@ -584,7 +433,7 @@ public class MappingService {
         mappingEntity.setProviderName(edmArchiveEntity.getFilename());
         mappingEntity.setVocabularyName(edmArchiveEntity.getFilename());
         mappingEntity.setCreatedBy(userId);
-        long mappingId = mappingRepository.save(mappingEntity).getId();
+        long mappingId = mappingRepo.save(mappingEntity).getId();
         log.info("Mapping created. MappingId:{}", mappingId);
         
         // Add terms to mapping
@@ -595,7 +444,7 @@ public class MappingService {
             for(SubjectTermEntity term : subjectTermEntities) {
                 term.setMappingId(mappingId);
             }
-            subjectTermRepository.saveAll(subjectTermEntities);
+            subjectTermRepo.saveAll(subjectTermEntities);
             edmArchiveEntity.setThematicMapping(mappingId);
         } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !spatialTermEntities.isEmpty()) {
             
@@ -604,7 +453,7 @@ public class MappingService {
             for(SpatialTermEntity term : spatialTermEntities) {
                 term.setMappingId(mappingId);
             }
-            spatialTermRepository.saveAll(spatialTermEntities);
+            spatialTermRepo.saveAll(spatialTermEntities);
             edmArchiveEntity.setSpatialMapping(mappingId);
         } else if(type.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !temporalTermEntities.isEmpty()) {
             
@@ -613,11 +462,11 @@ public class MappingService {
             for(TemporalTermEntity term : temporalTermEntities) {
                 term.setMappingId(mappingId);
             }
-            temporalTermRepository.saveAll(temporalTermEntities);
+            temporalTermRepo.saveAll(temporalTermEntities);
             edmArchiveEntity.setTemporalMapping(mappingId);
         }
         
-        edmArchiveRepository.save(edmArchiveEntity);
+        edmArchiveRepo.save(edmArchiveEntity);
         
         return mappingEntity;
     }
@@ -629,17 +478,17 @@ public class MappingService {
         long existingTermCount = 0;
         long appendTermCount = 0;
         
-        MappingEntity mappingEntity = mappingRepository.findById(mappingId)
+        MappingEntity mappingEntity = mappingRepo.findById(mappingId)
                 .orElseThrow(() -> new ResourceNotFoundException(mappingId));
         String mappingType = mappingEntity.getType();
         
         log.info("Append archive terms to mapping. Archive: {} Mapping: {} Type: {}", 
                 archiveId, mappingId, mappingType);
         
-        EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(archiveId)
+        EdmArchiveEntity edmArchiveEntity = edmArchiveRepo.findById(archiveId)
                 .orElseThrow(() -> new ResourceNotFoundException(archiveId));
         
-        EdmArchiveTermsEntity edmArchiveTermsEntity = edmArchiveTermsRepository.findByArchiveId(archiveId);
+        EdmArchiveTermsEntity edmArchiveTermsEntity = edmArchiveTermsRepo.findByArchiveId(archiveId);
         
         List<SubjectTermEntity> mappingSubjectTermEntities = new LinkedList<>();
         List<SpatialTermEntity> mappingSpatialTermEntities = new LinkedList<>();
@@ -657,7 +506,7 @@ public class MappingService {
                         archiveSubjectTermEntities = mapper.readValue(edmArchiveTermsEntity.getSubjectTerms(),
                                 new TypeReference<List<SubjectTermEntity>>(){});
                         
-                        mappingSubjectTermEntities = subjectTermRepository.findByMappingId(mappingId);
+                        mappingSubjectTermEntities = subjectTermRepo.findByMappingId(mappingId);
                         
                         log.info("ArchiveSubjectTerms: {}, MappingSubjectTerms: {}", 
                                 archiveSubjectTermEntities.size(), mappingSubjectTermEntities.size());
@@ -666,7 +515,7 @@ public class MappingService {
                         archiveSpatialTermEntities = mapper.readValue(edmArchiveTermsEntity.getSpatialTerms(),
                                 new TypeReference<List<SpatialTermEntity>>(){});
                         
-                        mappingSpatialTermEntities = spatialTermRepository.findByMappingId(mappingId);
+                        mappingSpatialTermEntities = spatialTermRepo.findByMappingId(mappingId);
                         
                         log.info("ArchiveSpatialTerms: {}, MappingSpatialTerms: {}", 
                                 archiveSpatialTermEntities.size(), mappingSpatialTermEntities.size());
@@ -675,7 +524,7 @@ public class MappingService {
                         archiveTemporalTermEntities = mapper.readValue(edmArchiveTermsEntity.getTemporalTerms(),
                                 new TypeReference<List<TemporalTermEntity>>(){});
                         
-                        mappingTemporalTermEntities = temporalTermRepository.findByMappingId(mappingId);
+                        mappingTemporalTermEntities = temporalTermRepo.findByMappingId(mappingId);
                         
                         log.info("ArchiveTemporalTerms: {}, MappingTemporalTerms: {}", 
                                 archiveTemporalTermEntities.size(), mappingTemporalTermEntities.size());
@@ -699,7 +548,7 @@ public class MappingService {
             }
             
             mappingSubjectTermEntities.addAll(archiveSubjectTermEntities);
-            subjectTermRepository.saveAll(mappingSubjectTermEntities);
+            subjectTermRepo.saveAll(mappingSubjectTermEntities);
 
             edmArchiveEntity.setThematicMapping(mappingId);
 
@@ -713,7 +562,7 @@ public class MappingService {
             }
             
             mappingSpatialTermEntities.addAll(archiveSpatialTermEntities);
-            spatialTermRepository.saveAll(mappingSpatialTermEntities);
+            spatialTermRepo.saveAll(mappingSpatialTermEntities);
 
             edmArchiveEntity.setSpatialMapping(mappingId);
 
@@ -726,7 +575,7 @@ public class MappingService {
                 term.setMappingId(mappingId);
             }
             mappingTemporalTermEntities.addAll(archiveTemporalTermEntities);
-            temporalTermRepository.saveAll(mappingTemporalTermEntities);
+            temporalTermRepo.saveAll(mappingTemporalTermEntities);
 
             edmArchiveEntity.setTemporalMapping(mappingId);
         }
@@ -738,4 +587,214 @@ public class MappingService {
         
         return appendTermResult;
     }
+
+    /**
+     * Load thematic terms
+     * @param mappingId the mapping id
+     * @return a map with terms
+     */
+    public Map<String, SubjectTermEntity> loadThematicTerms(long mappingId) {
+        Map<String, SubjectTermEntity> subjectTermsMap = new HashMap<>();
+
+        // Get mapping subjectTerms. Convert them to map
+        List<SubjectTermEntity> subjectTermEntities = subjectTermRepo.findByMappingId(mappingId);
+        for(SubjectTermEntity mp : subjectTermEntities) {
+            subjectTermsMap.put(mp.getNativeTerm(), mp);
+        }
+        log.info("Thematic mapping loaded. MappingId: {} #Terms: {}", mappingId, subjectTermEntities.size());
+
+        return subjectTermsMap;
+    }
+
+    /**
+     * Load spatial terms
+     * @param mappingId the mapping id
+     * @return a map with terms
+     */
+    public Map<String, SpatialTermEntity> loadSpatialTerms(long mappingId) {
+
+        Map<String, SpatialTermEntity> spatialTermsMap = new HashMap<>();
+
+        List<SpatialTermEntity> spatialTermEntities = spatialTermRepo.findByMappingId(mappingId);
+        for(SpatialTermEntity mp : spatialTermEntities) {
+            spatialTermsMap.put(mp.getNativeTerm(), mp);
+        }
+        log.info("Spatial mapping loaded. MappingId: {} #Terms: {}", mappingId, spatialTermEntities.size());
+
+        return spatialTermsMap;
+    }
+
+    /**
+     * Load temporal terms
+     * @param mappingId the mapping id
+     * @return a map with terms
+     */
+    public Map<String, TemporalTermEntity> loadTemporalTerms(long mappingId) {
+        Map<String, TemporalTermEntity> temporalTermsMap = new HashMap<>();
+
+        List<TemporalTermEntity> temporalTermEntities = temporalTermRepo.findByMappingId(mappingId);
+        for(TemporalTermEntity mp : temporalTermEntities) {
+            temporalTermsMap.put(mp.getNativeTerm(), mp);
+        }
+        log.info("Temporal mapping loaded. MappingId: {} #Terms: {}", mappingId, temporalTermEntities.size());
+
+        return temporalTermsMap;
+    }
+
+
+
+
+    /**
+     *
+     * @param mappingId
+     * @param file
+     * @return
+     * @throws IOException
+     */
+    @Deprecated
+    public EnrichDetails enrich(long mappingId, MultipartFile file, int userId) throws IOException {
+
+        // Check existemce of mapping
+        MappingEntity mappingEntity = mappingRepo.findById(mappingId)
+                .orElseThrow(() -> new ResourceNotFoundException(mappingId));
+
+        // Get mapping terms. Convert them to map
+        List<SubjectTermEntity> terms = subjectTermRepo.findByMappingId(mappingId);
+        Map<String, SubjectTermEntity> termsMap = new HashMap<>();
+        for(SubjectTermEntity mp : terms) {
+            termsMap.put(mp.getNativeTerm(), mp);
+        }
+        log.info("Mapping: {} #Terms: {}", mappingId, terms.size());
+
+        // File system hierarchy
+        // storage_tmp
+        // -- <mapping_id>
+        //    -- enrich
+        //        -- <request_id> (at this level store the archives - edm.zip , eEDM.tar.gz)
+        //            -- EDM
+        //            -- eEDM
+        //    -- uploads
+        //    -- exports
+
+        // Create enrich enrichRequest
+        EnrichRequestEntity enrichRequestEntity = new EnrichRequestEntity();
+        enrichRequestEntity.setMappingId(mappingId);
+        enrichRequestEntity.setFilename(file.getOriginalFilename());
+        enrichRequestEntity.setCreatedBy(userId);
+        enrichRequestEntity = enrichRequestRepo.save(enrichRequestEntity);
+        long requestId = enrichRequestEntity.getId();
+
+        // Upload EDM archive
+        log.info("Upload EDM archive. RequestId: {}", requestId);
+        Path edmArchiveFilePath = fileStorageService.buildUploadEdmArchiveFilePath(mappingId, file.getOriginalFilename(), requestId);
+        fileStorageService.upload(edmArchiveFilePath, file);
+        log.info("EDM archive uploaded. Path: {}", edmArchiveFilePath);
+
+        // Update enrich enrichRequest
+        enrichRequestEntity.setFilepath(edmArchiveFilePath.toString());
+        enrichRequestEntity = enrichRequestRepo.save(enrichRequestEntity);
+
+        // Extract EDM archive
+        log.info("Extract EDM archive. RequestId: {}", requestId);
+        Path edmExtractDirPath = Paths.get(edmArchiveFilePath.getParent().toString(), "EDM");
+        fileStorageService.extractArchive(edmArchiveFilePath, edmExtractDirPath);
+        File[] edmFiles = edmExtractDirPath.toFile().listFiles();
+        log.info("EDM archive extracted. Path: {} #Files: {}", edmExtractDirPath, edmFiles.length);
+
+        // Enrich archive
+        boolean enrichedDirCreated = false;
+        Path enrichedDirPath = null;
+        int enrichedFileCount = 0;
+        for(File edmFile : edmFiles) {
+            if(edmFile.exists() && edmFile.isFile()) {
+
+                try {
+                    // Retrieve xml content. ATTENTION: Namespace aware is true.
+                    Document doc = XMLUtils.parse(edmFile, true);
+                    // String itemContent = XMLUtils.transform(doc);
+
+                    // Get subjects
+                    List<String> subjectValues = XMLUtils.getElementValues(doc, "//dc:subject");
+
+                    // Find subject mapppings (if any)
+                    int termMatchCount = 0;
+                    List<String> subjectMappings = new LinkedList<>();
+                    for(String value : subjectValues) {
+                        if(termsMap.containsKey(value)) {
+                            termMatchCount++;
+                            subjectMappings.add(value);
+                        }
+                    }
+
+                    // edmFile.getAbsolutePath()
+                    log.info("File: {} #Subjects: {} #Matches: {}", edmFile.getName(), subjectValues.size(), termMatchCount);
+
+                    if(!subjectMappings.isEmpty()) {
+
+                        // Add subject mappings
+                        doc = XMLUtils.appendElements(doc, "//edm:ProvidedCHO", "dc:subject", subjectMappings);
+
+                        // Create enriched directory (if not)
+                        if(!enrichedDirCreated) {
+                            enrichedDirPath = Paths.get(edmExtractDirPath.getParent().toString(), "eEDM");
+                            Files.createDirectories(enrichedDirPath);
+                        }
+
+                        // Save enriched file
+                        Path enrichedFilePath = Paths.get(enrichedDirPath.toString(), edmFile.getName());
+                        XMLUtils.transform(doc, enrichedFilePath.toFile());
+
+                        enrichedFileCount++;
+
+                        log.info("File enriched. {} subjects added.Stored at: {}",
+                                termMatchCount, enrichedFilePath);
+                    }
+                } catch(ParserConfigurationException | SAXException |
+                        TransformerException | XPathExpressionException ex) {
+                    log.error("Cannot parse file. File: {}", edmFile.getAbsolutePath());
+                }
+
+            }
+        }
+
+        // Create archive with enriched files
+        String enrichedArchiveFilePath = "";
+        String enrichedArchiveName = "";
+        if(enrichedFileCount > 0) {
+            log.info("#Files: {} #Enriched: {}", edmFiles.length, enrichedFileCount);
+
+            // Example eEDM_m2_r4 => mapping 2, enrichRequest 4
+            String filenamePrefix = "eEDM_m" + mappingId + "_r" + requestId;
+            Path archiveFilePath = fileStorageService.createArchiveFromDirectory(enrichedDirPath, filenamePrefix);
+
+            enrichedArchiveName = archiveFilePath.getFileName().toString();
+            enrichedArchiveFilePath = archiveFilePath.toString();
+            log.info("Enriched archive created at {}", archiveFilePath.toString());
+
+        }
+
+        String message = enrichedFileCount + " files enriched successfully.";
+
+        // Set enrich details
+        EnrichDetails enrichDetails = new EnrichDetails();
+        enrichDetails.setSuccess(true);
+        enrichDetails.setMessage(message);
+        enrichDetails.setEdmFileCount(edmFiles.length);
+        enrichDetails.setEdmArchiveName(file.getOriginalFilename());
+        enrichDetails.setEnrichedFileCount(enrichedFileCount);
+        enrichDetails.setEnrichedArchiveName(enrichedArchiveName);
+        // enrichDetails.setEnrichedArchiveUrl("/enrich/requests/" + requestId + "/download");
+
+        ObjectMapper objectMaper = new ObjectMapper();
+        String details = objectMaper.writeValueAsString(enrichDetails);
+
+        // Update enrich enrichRequest
+        enrichRequestEntity.setEnrichedFilename(enrichedArchiveName);
+        enrichRequestEntity.setEnrichedFilepath(enrichedArchiveFilePath);
+        enrichRequestEntity.setDetails(details);
+        enrichRequestRepo.save(enrichRequestEntity);
+
+        return enrichDetails;
+    }
+
 }

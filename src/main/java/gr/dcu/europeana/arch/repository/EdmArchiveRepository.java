@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.repository;
 
-import gr.dcu.europeana.arch.model.EdmArchiveEntity;
+import gr.dcu.europeana.arch.domain.entity.EdmArchiveEntity;
 
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;

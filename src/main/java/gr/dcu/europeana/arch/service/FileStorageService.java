@@ -14,30 +14,33 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-/**
- *
- * @author Vangelis Nomikos
- */
+// File storage structure
+// storage_tmp/europeana_arch
+// -- packages
+//    -- p_i
+//       -- EDM  (directory with source EDM files after extraction)
+//       -- eEDM (directory with enriched EDM files)
+//       -- original_file.tar.gz  (original archive)
+//       -- archiveId_eEDM.tar.gz (enriched archive)
+
 @Slf4j
 @Service
 public class FileStorageService {
-    
-    @Autowired
-    private FileStorageProperties fileStorageProperties;
-    
-    public FileStorageProperties getFileStorageProperties() {
-        return fileStorageProperties;
+
+    private final FileStorageProperties fileStorageProperties;
+
+    public FileStorageService(FileStorageProperties fileStorageProperties) {
+        this.fileStorageProperties = fileStorageProperties;
     }
 
-    public void setFileStorageProperties(FileStorageProperties fileStorageProperties) {
-        this.fileStorageProperties = fileStorageProperties;
+    public FileStorageProperties getFileStorageProperties() {
+        return fileStorageProperties;
     }
 
     public Resource loadFileAsResource(Path filePath) {

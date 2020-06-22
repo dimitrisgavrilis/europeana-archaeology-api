@@ -3,8 +3,8 @@ package gr.dcu.europeana.arch.api.controller.mapper;
 import gr.dcu.europeana.arch.api.dto.AatSubjectCreateDto;
 import gr.dcu.europeana.arch.api.dto.EArchTemporalCreateDto;
 import gr.dcu.europeana.arch.api.dto.EArchTemporalViewDto;
-import gr.dcu.europeana.arch.model.AatSubjectEntity;
-import gr.dcu.europeana.arch.model.EArchTemporalEntity;
+import gr.dcu.europeana.arch.domain.entity.AatSubjectEntity;
+import gr.dcu.europeana.arch.domain.entity.EArchTemporalEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 

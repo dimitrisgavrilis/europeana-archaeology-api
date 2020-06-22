@@ -1,6 +1,8 @@
-package gr.dcu.europeana.arch.model;
+package gr.dcu.europeana.arch.domain;
 
 import java.util.List;
+
+import gr.dcu.europeana.arch.domain.entity.SubjectTermEntity;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

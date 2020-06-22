@@ -1,4 +1,4 @@
-package gr.dcu.europeana.arch.model;
+package gr.dcu.europeana.arch.domain.entity;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

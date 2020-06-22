@@ -1,4 +1,4 @@
-package gr.dcu.europeana.arch.model;
+package gr.dcu.europeana.arch.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
@@ -12,47 +12,43 @@ import javax.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
 /**
  *
  * @author Vangelis Nomikos
  */
-@Entity
-@Table (name = "mapping")
+@Entity 
+@Table(name = "spatial_terms")
 @Getter
 @Setter
+@ToString
 @NoArgsConstructor
-public class MappingEntity implements Serializable {
+public class SpatialTermEntity implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column (name="label")
-    private String label;
+    @JsonIgnore
+    @Column (name="mapping_id")
+    private Long mappingId;
     
-    @Column (name="description")
-    private String description;
+    @Column (name="native_term")
+    private String nativeTerm;
     
-    @Column (name="type")
-    private String type;
+    @Column (name="geoname_name")
+    private String geonameName;
+    
+    @Column (name="geoname_id")
+    private String geonameId;
     
     @Column (name="language")
     private String language;
     
-    @Column (name="provider_name")
-    private String providerName;
-    
-    @Column (name="vocabulary_name")
-    private String vocabularyName;
-    
-    @JsonIgnore
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
     
-    @JsonIgnore
-    @Column (name="created_by")
-    private int createdBy;
 }

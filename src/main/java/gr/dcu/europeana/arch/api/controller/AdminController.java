@@ -5,7 +5,7 @@ import gr.dcu.europeana.arch.api.dto.EArchTemporalCreateDto;
 import gr.dcu.europeana.arch.api.dto.EArchTemporalViewDto;
 import gr.dcu.europeana.arch.api.dto.AatSubjectCreateDto;
 import gr.dcu.europeana.arch.exception.NotFoundException;
-import gr.dcu.europeana.arch.model.AatSubjectEntity;
+import gr.dcu.europeana.arch.domain.entity.AatSubjectEntity;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import gr.dcu.europeana.arch.repository.EArchTemporalEntityRepository;
 import io.swagger.v3.oas.annotations.Operation;

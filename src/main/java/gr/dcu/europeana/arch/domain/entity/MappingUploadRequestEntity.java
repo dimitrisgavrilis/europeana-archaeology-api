@@ -1,4 +1,4 @@
-package gr.dcu.europeana.arch.model;
+package gr.dcu.europeana.arch.domain.entity;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -19,12 +19,12 @@ import org.hibernate.annotations.CreationTimestamp;
  * @author Vangelis Nomikos
  */
 @Entity 
-@Table(name = "enrich_request")
+@Table(name = "mapping_upload")
 @Getter
 @Setter
 @ToString
 @NoArgsConstructor
-public class EnrichRequestEntity implements Serializable {
+public class MappingUploadRequestEntity implements Serializable {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,20 +39,11 @@ public class EnrichRequestEntity implements Serializable {
     @Column (name="filepath")
     private String filepath;
     
-    @Column (name="enriched_filename")
-    private String enrichedFilename;
-    
-    @Column (name="enriched_filepath")
-    private String enrichedFilepath;
-    
-    @Column (name="details")
-    private String details;
-    
     @CreationTimestamp
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
     @Column(name = "created_by")
     private int createdBy;
-    
+
 }

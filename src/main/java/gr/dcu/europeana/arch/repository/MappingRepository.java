@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.repository;
 
-import gr.dcu.europeana.arch.model.MappingEntity;
+import gr.dcu.europeana.arch.domain.entity.MappingEntity;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;

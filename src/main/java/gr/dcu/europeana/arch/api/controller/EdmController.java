@@ -4,9 +4,9 @@ import gr.dcu.europeana.arch.api.dto.AppendTermsResult;
 import gr.dcu.europeana.arch.api.dto.EnrichDetails;
 import gr.dcu.europeana.arch.api.dto.ExtractTermResult;
 import gr.dcu.europeana.arch.exception.BadRequestException;
-import gr.dcu.europeana.arch.model.EdmArchiveEntity;
-import gr.dcu.europeana.arch.model.MappingEntity;
-import gr.dcu.europeana.arch.model.MappingType;
+import gr.dcu.europeana.arch.domain.entity.EdmArchiveEntity;
+import gr.dcu.europeana.arch.domain.entity.MappingEntity;
+import gr.dcu.europeana.arch.domain.MappingType;
 import gr.dcu.europeana.arch.service.AuthService;
 import gr.dcu.europeana.arch.service.EDMService;
 import gr.dcu.europeana.arch.service.MappingService;
@@ -168,6 +168,6 @@ public class EdmController {
             HttpServletRequest requestContext, @PathVariable Long id) {
         
         int userId = authService.authorize(requestContext);
-        return edmService.enrich(id, userId);
+        return edmService.enrichArchive(id, userId);
     }
 }

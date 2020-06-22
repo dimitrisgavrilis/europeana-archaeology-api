@@ -1,7 +1,7 @@
 package gr.dcu.europeana.arch.api.adapter;
 
 import gr.dcu.europeana.arch.api.dto.EArchTemporalViewDto;
-import gr.dcu.europeana.arch.model.EArchTemporalEntity;
+import gr.dcu.europeana.arch.domain.entity.EArchTemporalEntity;
 import org.mapstruct.Mapper;
 
 @Mapper

@@ -1,6 +1,6 @@
-package gr.dcu.europeana.arch.model;
+package gr.dcu.europeana.arch.domain.entity;
 
-import gr.dcu.europeana.arch.model.enums.NotificationType;
+import gr.dcu.europeana.arch.domain.enums.NotificationType;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 

@@ -17,11 +17,11 @@ import java.io.IOException;
 @Slf4j
 @CrossOrigin
 @RestController
-public class DebugController {
+public class EnrichController {
 
     private final EDMService edmService;
 
-    public DebugController(EDMService edmService) {
+    public EnrichController(EDMService edmService) {
         this.edmService = edmService;
     }
 
@@ -34,15 +34,15 @@ public class DebugController {
             @RequestParam (required = false, defaultValue = "-1") Long spatialMappingId,
             @RequestParam (required = false, defaultValue = "-1") Long temporalMappingId) {
 
-        log.info("On demand enrichment. ThematicMapping: {}", thematicMappingId);
+        log.info("On demand enrichment. ThematicMapping: {}, SpatialMapping: {}, TemporalMapping: {}",
+                thematicMappingId, spatialMappingId, temporalMappingId);
+
         // log.info(xmlContent);
-        // spatialMappingId = -1L;
-        // temporalMappingId = -1L;
 
         // int userId = authService.authorize(requestContext);
         String enrichedXmlContent = null;
         try {
-            Document doc = edmService.enrich(xmlContent, thematicMappingId, spatialMappingId, temporalMappingId);
+            Document doc = edmService.enrichXml(xmlContent, thematicMappingId, spatialMappingId, temporalMappingId);
             enrichedXmlContent = XMLUtils.transform(doc);
         } catch (IOException | SAXException | ParserConfigurationException
                 | XPathExpressionException | TransformerException ex) {

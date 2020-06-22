@@ -1,6 +1,6 @@
 package gr.dcu.europeana.arch.repository;
 
-import gr.dcu.europeana.arch.model.UserSessionEntity;
+import gr.dcu.europeana.arch.domain.entity.UserSessionEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserSessionRepository extends JpaRepository<UserSessionEntity, Long>{
