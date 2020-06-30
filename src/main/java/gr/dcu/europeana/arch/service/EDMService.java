@@ -359,11 +359,19 @@ public class EDMService {
         Document doc = XMLUtils.parse(xmlContent, true);
 
         // EnrichmentResult thematicEnrichemtnResult =
-                thematicEnrichment("on_demand_enrichment", doc, aatTerms, subjectTerms);
 
-                spatialEnrichment("on_demand_enrichment", doc, spatialTerms);
+        if(thematicEnrichment) {
+            thematicEnrichment("on_demand_enrichment", doc, aatTerms, subjectTerms);
+        }
 
-                temporalEnrichment("on_demand_enrichment", doc, earchTemporalTerms, temporalTerms);
+        if(spatialEnrichment) {
+            spatialEnrichment("on_demand_enrichment", doc, spatialTerms);
+        }
+
+        if(temporalEnrichment) {
+            temporalEnrichment("on_demand_enrichment", doc, earchTemporalTerms, temporalTerms);
+        }
+
         // logXmlToString(doc);
 
         return doc;
@@ -401,14 +409,17 @@ public class EDMService {
         Map<String, AatSubjectEntity> aatTerms = new HashMap<>();
         Map<String, SubjectTermEntity> subjectTerms = new HashMap<>();
         if(thematicEnrichment) {
-            // TODO: This is not mandatory because a mapping can contain more aat terms from what we have in our database
+            // This is not mandatory because a mapping can contain more aat terms from what we have in our database
             aatTerms = vocabularyService.loadAatTerms();
+
+            // TODO: Possible performance improvement. Load only terms with mappings
             subjectTerms = mappingService.loadThematicTerms(thematicMappingId);
         }
 
         // Load spatial mapping terms
         Map<String, SpatialTermEntity> spatialTerms = new HashMap<>();
         if(spatialEnrichment) {
+            // TODO: Possible performance improvement. Load only terms with mappings
             spatialTerms = mappingService.loadSpatialTerms(spatialMappingId);
         }
 
@@ -416,6 +427,7 @@ public class EDMService {
         Map<String, EArchTemporalEntity> earchTemporalTerms = new HashMap<>();
         Map<String, TemporalTermEntity> temporalTerms = new HashMap<>();
         if(temporalEnrichment) {
+            // TODO: Possible performance improvement. Load only terms with mappings
             temporalTerms = mappingService.loadTemporalTerms(temporalMappingId);
             earchTemporalTerms = vocabularyService.loadEArchTemporal();
         }
@@ -477,9 +489,11 @@ public class EDMService {
                     try {
                         // Retrieve xml content. ATTENTION: Namespace aware is true.
                         Document doc = XMLUtils.parse(edmFile, true);
+                        // String xmlContent = XMLUtils.parseToString(edmFile, true);
                         // String itemContent = XMLUtils.transform(doc);
 
                         // ~~~~~~~~~~ Thematic ~~~~~~~~~~ //
+                        // EnrichmentResult thematicEnrichmentResult;
                         if(thematicEnrichment) {
                             thematicEnrichment(filename, doc, aatTerms, subjectTerms);
                         }
@@ -514,7 +528,7 @@ public class EDMService {
                 fileProcessedCount++;
 
                 if(fileProcessedCount % 50 == 0 || fileProcessedCount == fileTotalCount) {
-                    log.info("Extraction progress... {} / {} => {}%",
+                    log.info("Enrichment progress... {} / {} => {}%",
                             fileProcessedCount, fileTotalCount, new DecimalFormat("#0.0000").format(((double) fileProcessedCount / fileTotalCount) * 100));
                 }
             }
@@ -589,7 +603,7 @@ public class EDMService {
             Map<String, AatSubjectEntity> aatTerms, Map<String, SubjectTermEntity> subjectTerms)
             throws XPathExpressionException, NullPointerException{
 
-        EnrichmentResult result = new EnrichmentResult(0, 0);
+        EnrichmentResult result = new EnrichmentResult(0, 0, 0);
         try {
 
             // Get thematic values in EDM file
@@ -605,18 +619,20 @@ public class EDMService {
                 }
             }
 
-            log.info("File: {} #Thematic Values: {} #Matches: {}",
+            log.debug("File: {} #Thematic Values: {} #Matches: {}",
                     filename, thematicValues.size(), subjectTermMatches.size());
 
             // Enrich with subject terms
+            int elementAddedCount = 0;
             if (!subjectTermMatches.isEmpty()) {
                 // log.info("Trying to append thematic elements...");
-                EdmXmlUtils.appendThematicElements(doc,
+                elementAddedCount = EdmXmlUtils.appendThematicElements(doc,
                         "//edm:ProvidedCHO", "dc:subject", subjectTermMatches, aatTerms);
             }
 
             result.setValueCount(thematicValues.size());
             result.setMatchCount(subjectTermMatches.size());
+            result.setElementAddedCount(elementAddedCount);
 
         } catch (XPathExpressionException | NullPointerException ex) {
             log.error("Cannot parse file. File: {}", filename);
@@ -650,7 +666,7 @@ public class EDMService {
                 }
             }
             // edmFile.getAbsolutePath()
-            log.info("File: {} #Spatial Values: {} #Matches: {}",
+            log.debug("File: {} #Spatial Values: {} #Matches: {}",
                     filename, spatialValues.size(), spatialTermsMatches.size());
 
             // Enrich with spatial mappings
@@ -693,7 +709,7 @@ public class EDMService {
                     temporalTermMatches.add(temporalTerms.get(tmpTemporalValue));
                 }
             }
-            log.info("File: {} #Temporal Values: {} #Matches: {}",
+            log.debug("File: {} #Temporal Values: {} #Matches: {}",
                     filename, temporalValues.size(), temporalTermMatches.size());
 
             // Enrich with temporal mappings

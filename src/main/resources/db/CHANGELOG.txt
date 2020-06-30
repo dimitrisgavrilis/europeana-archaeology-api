@@ -1,3 +1,8 @@
+01/07/2020
+----------
+ALTER TABLE `temporal_terms` ADD `start_year` VARCHAR(10) NULL AFTER `language`;
+ALTER TABLE `temporal_terms` ADD `end_year` VARCHAR(10) NULL AFTER `start_year`;
+
 18-05-2020
 ----------
 ALTER TABLE `user` ADD `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP AFTER `active`;

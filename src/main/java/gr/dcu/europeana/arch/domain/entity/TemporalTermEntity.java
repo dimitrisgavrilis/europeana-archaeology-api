@@ -43,6 +43,12 @@ public class TemporalTermEntity implements Serializable {
     @Column (name="language")
     private String language;
 
+    @Column(name = "start_year")
+    private String startYear;
+
+    @Column(name = "end_year")
+    private String endYear;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

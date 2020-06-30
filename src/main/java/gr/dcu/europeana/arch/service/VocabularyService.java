@@ -5,6 +5,7 @@ import gr.dcu.europeana.arch.domain.entity.EArchTemporalEntity;
 import gr.dcu.europeana.arch.repository.AatSubjectRepository;
 import gr.dcu.europeana.arch.repository.EArchTemporalEntityRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.stereotype.Service;
 import java.util.HashMap;
 import java.util.List;
@@ -74,5 +75,13 @@ public class VocabularyService {
         log.info("EArch Temporal terms loaded. #Terms: {}", eArchTemporalEntities.size());
 
         return earchTemporalEntityMap;
+    }
+
+    public static String toAatLodUriFromAatUri(String aatUri) {
+        return aatUri.replace("/page", "");
+    }
+
+    public static String toAatLodUriFromAatUid(String aatUid) {
+        return AAT_LOD_URI_PREFIX + aatUid;
     }
 }

@@ -27,10 +27,6 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
-/**
- *
- * @author Vangelis Nomikos
- */
 @Slf4j
 @Service
 public class ExcelService {
@@ -44,12 +40,12 @@ public class ExcelService {
     }
 
     /**
-     * 
-     * @param filename
-     * @param mappingId
-     * @param skipLineCount
-     * @param limitCount
-     * @return 
+     * Load subject terms from excel
+     * @param filename the filename
+     * @param mappingId the mapping id
+     * @param skipLineCount number of lines to skip
+     * @param limitCount limit input
+     * @return list of subject terms
      */
     public List<SubjectTermEntity> loadSubjectTermsFromExcel(String filename, long mappingId,
                                                              int skipLineCount, int limitCount) {
@@ -174,12 +170,12 @@ public class ExcelService {
     }
     
     /**
-     * 
-     * @param filename
-     * @param mappingId
-     * @param skipLineCount
-     * @param limitCount
-     * @return 
+     * Load spatial terms from excel
+     * @param filename the filename
+     * @param mappingId the mapping id
+     * @param skipLineCount number of lines to skip
+     * @param limitCount limit input
+     * @return list of spatial terms
      */
     public List<SpatialTermEntity> loadSpatialTermsFromExcel(String filename, long mappingId,
                                                              int skipLineCount, int limitCount) {
@@ -333,11 +329,13 @@ public class ExcelService {
                         String language;
                         String earchTemporalLabel;
                         String aatUid;
+                        String startYear;
+                        String endYear;
 
                         // Get Native Term - It is mandatory
                         Cell nativeTermCell = currentRow.getCell(0);
                         if(nativeTermCell == null) {
-                            log.info("NULL native term");
+                            // log.info("NULL native term");
                             continue;
                         } else {
                             nativeTermCell.setCellType(CellType.STRING);
@@ -347,7 +345,7 @@ public class ExcelService {
                         // Get language - it is mandatory
                         Cell languageCell = currentRow.getCell(1);
                         if(languageCell == null) {
-                            log.info("NULL language");
+                            // log.info("NULL language");
                             continue;
                         } else {
                             // This guarantess that you will read the value as string
@@ -359,7 +357,7 @@ public class ExcelService {
                         // Get AAT Concept label
                         Cell earchTemporalLabelCell = currentRow.getCell(2);
                         if(earchTemporalLabelCell == null) {
-                            earchTemporalLabel = "";
+                            earchTemporalLabel = null;
                         } else {
                             // This guarantess that you will read the value as string
                             earchTemporalLabelCell.setCellType(CellType.STRING);
@@ -369,11 +367,29 @@ public class ExcelService {
                         // Get AAT uid
                         Cell aatUidCell = currentRow.getCell(3);
                         if(aatUidCell == null) {
-                            aatUid = "";
+                            aatUid = null;
                         } else {
                             // This guarantees that you will read the value as string
                             aatUidCell.setCellType(CellType.STRING);
                             aatUid = aatUidCell.getStringCellValue();
+                        }
+
+                        // Get start year - it is optional
+                        Cell startYearCell = currentRow.getCell(4);
+                        if(startYearCell == null) {
+                            startYear = null;
+                        } else {
+                            startYearCell.setCellType(CellType.STRING);
+                            startYear = startYearCell.getStringCellValue();
+                        }
+
+                        // Get end year - it is optional
+                        Cell endYearCell = currentRow.getCell(5);
+                        if(endYearCell == null) {
+                            endYear = null;
+                        } else {
+                            endYearCell.setCellType(CellType.STRING);
+                            endYear = endYearCell.getStringCellValue();
                         }
 
                         // Create mapping value
@@ -384,6 +400,8 @@ public class ExcelService {
                         temporalTermEntity.setLanguage(language);
                         temporalTermEntity.setEarchTemporalLabel(earchTemporalLabel);
                         temporalTermEntity.setAatUid(aatUid);
+                        temporalTermEntity.setStartYear(startYear);
+                        temporalTermEntity.setEndYear(endYear);
 
                         terms.add(temporalTermEntity);
                     }
@@ -592,7 +610,7 @@ public class ExcelService {
             Row headerRow = sheet.createRow(0);
 
             // 4 columns 
-            String[] columns = {"Native Term", "Language", "Earch Temporal label", "Aat uid"};
+            String[] columns = {"Native Term", "Language", "Earch Temporal label", "Aat uid", "Start year", "End year"};
             
             // Create cells
             for(int i = 0; i < columns.length; i++) {
@@ -614,6 +632,10 @@ public class ExcelService {
                         .setCellValue(term.getEarchTemporalLabel());
                 row.createCell(3)
                         .setCellValue(term.getAatUid());
+                row.createCell(4)
+                        .setCellValue(term.getStartYear());
+                row.createCell(5)
+                        .setCellValue(term.getEndYear());
 
 //                Cell dateOfBirthCell = row.createCell(2);
 //                dateOfBirthCell.setCellValue(employee.getDateOfBirth());

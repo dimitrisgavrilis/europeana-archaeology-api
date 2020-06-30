@@ -3,12 +3,16 @@ package gr.dcu.europeana.arch.service.edm;
 import gr.dcu.europeana.arch.domain.entity.*;
 import gr.dcu.europeana.arch.service.VocabularyService;
 import gr.dcu.utils.MoReNamespaceContext;
+
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
+
+import io.micrometer.core.instrument.util.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -26,10 +30,12 @@ public class EdmXmlUtils {
      * @param subjectTermEntities subject terms to append
      * @param aatSubjectMap utility map for aat subjects
      */
-    public static void appendThematicElements(
+    public static int appendThematicElements(
             Document doc, String xPathExpr, String label, List<SubjectTermEntity> subjectTermEntities,
             Map<String, AatSubjectEntity> aatSubjectMap) throws XPathExpressionException {
-		
+
+            int elementsAddedCount = 0;
+
             try {
                 XPath xPath = XPathFactory.newInstance().newXPath();
                 xPath.setNamespaceContext(new MoReNamespaceContext());
@@ -41,15 +47,12 @@ public class EdmXmlUtils {
                     int termsWithoutMappings = 0;
                     for(SubjectTermEntity subjectTermEntity : subjectTermEntities) {
                         
-                        if(subjectTermEntity.getAatUid() != null  && !subjectTermEntity.getAatUid().isEmpty()) {
-                            
-                            // AatSubjectEntity aatSubjectEntity = aatSubjectMap.get(subjectTermEntity.getAatUid());
-                            String aatUri = VocabularyService.AAT_LOD_URI_PREFIX + subjectTermEntity.getAatUid();
+                        if(StringUtils.isNotBlank(subjectTermEntity.getAatUid())) {
                             Element childElement = doc.createElement(label);
-                            // childElement.setAttribute("rdf:resource", aatSubjectEntity.getUri());
-                            childElement.setAttribute("rdf:resource", aatUri);
-                            // childElement.appendChild(doc.createTextNode(spatialTerm));
+                            childElement.setAttribute("rdf:resource",
+                                    VocabularyService.toAatLodUriFromAatUid(subjectTermEntity.getAatUid()));
                             element.appendChild(childElement);
+                            elementsAddedCount++;
                             log.debug("Thematic term added. {}", childElement.toString());
                         } else {
                             termsWithoutMappings ++;
@@ -57,13 +60,15 @@ public class EdmXmlUtils {
                         }
                     }
                     
-                    log.info("Thematic Terms wo mappings. #Size: {}", termsWithoutMappings);
+                    log.debug("Thematic Terms wo mappings. #Size: {}", termsWithoutMappings);
                 }
 
             } catch (XPathExpressionException ex) {
                 log.error("",ex);
                 throw ex;
             }
+
+            return elementsAddedCount;
 	}
 
     /**
@@ -71,9 +76,11 @@ public class EdmXmlUtils {
      * @param doc the xml doc
      * @param spatialTermEntities spatial terms to append
      */
-    public static void appendSpatialElements(Document doc, String xPathExpr, String label,
+    public static int appendSpatialElements(Document doc, String xPathExpr, String label,
             List<SpatialTermEntity> spatialTermEntities) throws XPathExpressionException {
-		
+
+            int elementsAddedCount = 0;
+
             try {
                 XPath xPath = XPathFactory.newInstance().newXPath();
                 xPath.setNamespaceContext(new MoReNamespaceContext());
@@ -85,10 +92,11 @@ public class EdmXmlUtils {
                     int termsWithoutMappings = 0;
                     for(SpatialTermEntity spatialTermEntity : spatialTermEntities) {
                         
-                        if(spatialTermEntity.getGeonameId() != null && !spatialTermEntity.getGeonameId().isEmpty()) {
+                        if(StringUtils.isNotBlank(spatialTermEntity.getGeonameId())) {
                             Element childElement = doc.createElement(label);
                             childElement.setAttribute("rdf:resource", "https://www.geonames.org/" + spatialTermEntity.getGeonameId());
                             element.appendChild(childElement);
+                            elementsAddedCount++;
                         } else {
                             termsWithoutMappings ++;
                         }
@@ -101,6 +109,8 @@ public class EdmXmlUtils {
                 log.error("",ex);
                 throw ex;
             }
+
+            return elementsAddedCount;
 	}
 
     /**
@@ -110,8 +120,10 @@ public class EdmXmlUtils {
      * @param temporalTermEntities temporal terms to append
      * @param earchTemporalEntityMap utility map for earch temporal
      */
-    public static void appendTemporalElementEdmTimeSpan(Document doc, String xPathExpr, List<TemporalTermEntity> temporalTermEntities,
+    public static int appendTemporalElementEdmTimeSpan(Document doc, String xPathExpr, List<TemporalTermEntity> temporalTermEntities,
                                                         Map<String, EArchTemporalEntity> earchTemporalEntityMap) throws XPathExpressionException {
+
+        int elementsAddedCount = 0;
 
         try {
             XPath xPath = XPathFactory.newInstance().newXPath();
@@ -121,66 +133,94 @@ public class EdmXmlUtils {
             for(int i=0; i<nodeList.getLength(); i++) {
                 Element element = (Element) nodeList.item(i);
 
-                int termsWithoutMappings = 0;
+                int termsWithoutMappingCount = 0;
+                List<String> missingAatUidInEarchTemporalList = new LinkedList<>();
+                // int termsWithMissingAatUidInEarchTemporalCount = 0;
                 for(TemporalTermEntity temporalTermEntity : temporalTermEntities) {
 
-                    if(temporalTermEntity.getAatUid() != null && !temporalTermEntity.getAatUid().isEmpty()) {
-
-                        EArchTemporalEntity eArchTemporalEntity = earchTemporalEntityMap.get(temporalTermEntity.getAatUid());
-
-                        String rdfAboutLabel = "EUROPEANAARCH_" + temporalTermEntity.getId() + "/TMP.1";
+                    if(!StringUtils.isBlank(temporalTermEntity.getAatUid())) {
+                    // temporalTermEntity.getAatUid() != null && !temporalTermEntity.getAatUid().isEmpty()) {
 
                         // ~~~ edm:TimeSpan ~~~
+                        String rdfAboutLabel = "EUROPEANAARCH_" + temporalTermEntity.getId() + "/TMP.1";
                         Element edmTimespanElement = doc.createElement("edm:TimeSpan");
                         edmTimespanElement.setAttribute("rdf:about", rdfAboutLabel);
                         element.appendChild(edmTimespanElement);
 
                         // skos:prefLabel
-                        Element skosPrefLabelElement = doc.createElement("skos:prefLabel");
-                        skosPrefLabelElement.appendChild(doc.createTextNode(eArchTemporalEntity.getLabel()));
-                        edmTimespanElement.appendChild(skosPrefLabelElement);
+                        if (!StringUtils.isBlank(temporalTermEntity.getEarchTemporalLabel())) {
+                            Element skosPrefLabelElement = doc.createElement("skos:prefLabel");
+                            skosPrefLabelElement.appendChild(doc.createTextNode(temporalTermEntity.getEarchTemporalLabel()));
+                            edmTimespanElement.appendChild(skosPrefLabelElement);
+                        }
+
+                        // Get start_year and end_year at instance level
 
                         // edm:begin
-                        Element edmBeginElement = doc.createElement("edm:begin");
-                        edmBeginElement.appendChild(doc.createTextNode(eArchTemporalEntity.getStartYear()));
-                        edmTimespanElement.appendChild(edmBeginElement);
+                        if (!StringUtils.isBlank(temporalTermEntity.getStartYear())) {
+                            Element edmBeginElement = doc.createElement("edm:begin");
+                            edmBeginElement.appendChild(doc.createTextNode(temporalTermEntity.getStartYear()));
+                            edmTimespanElement.appendChild(edmBeginElement);
+                        }
 
                         // edm:end
-                        Element edmEndElement = doc.createElement("edm:end");
-                        edmEndElement.appendChild(doc.createTextNode(eArchTemporalEntity.getEndYear()));
-                        edmTimespanElement.appendChild(edmEndElement);
+                        if (!StringUtils.isBlank(temporalTermEntity.getEndYear())) {
+                            Element edmEndElement = doc.createElement("edm:end");
+                            edmEndElement.appendChild(doc.createTextNode(temporalTermEntity.getEndYear()));
+                            edmTimespanElement.appendChild(edmEndElement);
+                        }
 
                         // owl:sameAs - aat_uri
-                        Element owlSameAsAatUriElement = doc.createElement("owl:sameAs");
-                        owlSameAsAatUriElement.appendChild(doc.createTextNode(eArchTemporalEntity.getAatUri()));
-                        edmTimespanElement.appendChild(owlSameAsAatUriElement);
+                        if (!StringUtils.isBlank(temporalTermEntity.getAatUid())) {
+                            Element owlSameAsAatUriElement = doc.createElement("owl:sameAs");
+                            owlSameAsAatUriElement.setAttribute("rdf:resource",
+                                    VocabularyService.toAatLodUriFromAatUid(temporalTermEntity.getAatUid()));
+                            edmTimespanElement.appendChild(owlSameAsAatUriElement);
+                        }
 
-                        // owl:sameAs - wikidata_uri
-                        Element owlSameAsWikidataUriElement = doc.createElement("owl:sameAs");
-                        owlSameAsWikidataUriElement.appendChild(doc.createTextNode(eArchTemporalEntity.getWikidataUri()));
-                        edmTimespanElement.appendChild(owlSameAsWikidataUriElement);
+                        // Get wikidata_uri from EArchTemporal
+                        if(earchTemporalEntityMap.containsKey(temporalTermEntity.getAatUid())) {
 
-                        // ~~~ dc:date ~~~
-                        // Element dcDateElement = doc.createElement("dc:date");
-                        // dcDateElement.setAttribute("rdf:resource", rdfAboutLabel);
-                        // element.appendChild(dcDateElement);
+                            EArchTemporalEntity eArchTemporalEntity = earchTemporalEntityMap.get(temporalTermEntity.getAatUid());
 
+                            // owl:sameAs - wikidata_uri
+                            if (!StringUtils.isBlank(eArchTemporalEntity.getWikidataUri())) {
+                                Element owlSameAsWikidataUriElement = doc.createElement("owl:sameAs");
+                                owlSameAsWikidataUriElement.setAttribute("rdf:resource", eArchTemporalEntity.getWikidataUri());
+                                edmTimespanElement.appendChild(owlSameAsWikidataUriElement);
+                            }
+
+                            // ~~~ dc:date ~~~
+                            // Element dcDateElement = doc.createElement("dc:date");
+                            // dcDateElement.setAttribute("rdf:resource", rdfAboutLabel);
+                            // element.appendChild(dcDateElement);
+                        } else {
+                            missingAatUidInEarchTemporalList.add(temporalTermEntity.getAatUid());
+                        }
+
+                        elementsAddedCount++;
                     } else {
-                        termsWithoutMappings ++;
+                        termsWithoutMappingCount ++;
                     }
                 }
 
-                log.debug("Temporal Terms wo mappings. #Size: {}", termsWithoutMappings);
+                log.debug("Temporal Terms wo mappings. #Size: {}", termsWithoutMappingCount);
+                log.debug("Temporal Terms with mappings but no earch temporal. #Size: {} Missing earch aat terms:{}",
+                        missingAatUidInEarchTemporalList.size(), missingAatUidInEarchTemporalList);
             }
 
         } catch (XPathExpressionException ex) {
             log.error("",ex);
             throw ex;
         }
+
+        return elementsAddedCount;
     }
 
-    public static void appendTemporalElementsDcDate(Document doc, String xPathExpr, List<TemporalTermEntity> temporalTermEntities,
+    public static int appendTemporalElementsDcDate(Document doc, String xPathExpr, List<TemporalTermEntity> temporalTermEntities,
                                                     Map<String, EArchTemporalEntity> earchTemporalEntityMap) throws XPathExpressionException {
+
+        int elementsAddedCount = 0;
 
         try {
             XPath xPath = XPathFactory.newInstance().newXPath();
@@ -203,6 +243,7 @@ public class EdmXmlUtils {
                         Element dcDateElement = doc.createElement("dc:date");
                         dcDateElement.setAttribute("rdf:resource", rdfAboutLabel);
                         element.appendChild(dcDateElement);
+                        elementsAddedCount++;
 
                     } else {
                         termsWithoutMappings ++;
@@ -216,5 +257,7 @@ public class EdmXmlUtils {
             log.error("",ex);
             throw ex;
         }
+
+        return  elementsAddedCount;
     }
 }

@@ -185,19 +185,19 @@ public class MappingService {
                     log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, termList.size());
             
                     // Export
-                    excelService.exportSubjectTermsToExcel(filePath, termList);
+                    ExcelService.exportSubjectTermsToExcel(filePath, termList);
                     break;
                 case MappingType.MAPPING_TYPE_SPATIAL:
                     List<SpatialTermEntity> spatialTermEntityList = spatialTermRepo.findByMappingId(mappingId);
                     log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, spatialTermEntityList.size());
-                    excelService.exportSpatialTermsToExcel(filePath, spatialTermEntityList);
+                    ExcelService.exportSpatialTermsToExcel(filePath, spatialTermEntityList);
                     break;
                 case MappingType.MAPPING_TYPE_TEMPORAL:
                     List<TemporalTermEntity> temporalTermEntityList = temporalTermRepo.findByMappingId(mappingId);
                     log.info("Load terms. Mapping: {} | #Terms: {}", mappingId, temporalTermEntityList.size());
 
                     // Export
-                    excelService.exportTemporalTermsToExcel(filePath, temporalTermEntityList);
+                    ExcelService.exportTemporalTermsToExcel(filePath, temporalTermEntityList);
                     break;
                 default:
                     log.warn("Unknown mapping type.");
