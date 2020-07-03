@@ -5,10 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- *
- * @author Vangelis Nomikos
- */
 @Getter
 @Setter
 @NoArgsConstructor
@@ -19,6 +15,8 @@ public class UserResource {
     private String name;
     
     private String email;
+
+    private Boolean isAdmin;
     
     // private int favoriteCount;
     
@@ -34,6 +32,7 @@ public class UserResource {
         resource.setId(userEntity.getId());
         resource.setName(userEntity.getName());
         resource.setEmail(userEntity.getEmail());
+        resource.setIsAdmin(userEntity.isAdmin());
         
         return resource;
         

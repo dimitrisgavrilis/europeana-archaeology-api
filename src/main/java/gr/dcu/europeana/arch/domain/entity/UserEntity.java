@@ -32,7 +32,10 @@ public class UserEntity implements Serializable {
     private String password;
     
     private String organization;
-    
+
+    @Column (name="is_admin")
+    private boolean isAdmin;
+
     private short active;
 
     @JsonIgnore

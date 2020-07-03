@@ -2,6 +2,8 @@
 ----------
 ALTER TABLE `temporal_terms` ADD `start_year` VARCHAR(10) NULL AFTER `language`;
 ALTER TABLE `temporal_terms` ADD `end_year` VARCHAR(10) NULL AFTER `start_year`;
+ALTER TABLE `user` ADD `is_admin` BOOLEAN NOT NULL DEFAULT FALSE AFTER `organization`;
+UPDATE `user` SET `is_admin`=false WHERE 1
 
 18-05-2020
 ----------

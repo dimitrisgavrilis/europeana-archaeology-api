@@ -86,6 +86,7 @@ public class AuthService {
         // log.debug("Plain: {} | PasswordHash: {}", request.getPassword(), passwordhash);
         
         userEntity.setOrganization(request.getOrganization());
+        userEntity.setAdmin(false);
         userEntity.setActive((short) 1);
 
         userEntity = userRepository.save(userEntity);
@@ -177,7 +178,7 @@ public class AuthService {
             userResource.setId(userEntity.getId());
             userResource.setName(userEntity.getName());
             userResource.setEmail(userEntity.getEmail());
-            
+            userResource.setIsAdmin(userEntity.isAdmin());
             response.setUser(userResource);
             
             return response;
