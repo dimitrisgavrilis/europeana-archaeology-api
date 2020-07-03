@@ -149,6 +149,8 @@ public class TermController {
         existingTerm.setLanguage(term.getLanguage());
         existingTerm.setEarchTemporalLabel(term.getEarchTemporalLabel());
         existingTerm.setAatUid(term.getAatUid());
+        existingTerm.setStartYear(term.getStartYear());
+        existingTerm.setEndYear(term.getEndYear());
         
         return temporalTermRepository.save(existingTerm);
     }
