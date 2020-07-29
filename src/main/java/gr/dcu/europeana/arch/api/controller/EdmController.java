@@ -97,6 +97,15 @@ public class EdmController {
         return edmService.extractAndSaveTermsFromEdmArchive(id, userId);
     }
 
+    @Operation(summary = "Extract and save terms from an EDM archive")
+    @GetMapping("/edm_archives/{id}/extract_terms/status")
+    public ExtractTermResult extractTermsFromEdmArchiveStatus(
+            HttpServletRequest requestContext, @PathVariable Long id) {
+
+        int userId = authService.authorize(requestContext);
+        return edmService.extractAndSaveTermsFromEdmArchive(id, userId);
+    }
+
     @Operation(summary = "Load terms from an EDM archive (saved or extracted)")
     @GetMapping("/edm_archives/{id}/terms")
     public ExtractTermResult loadTermsFromEdmArchive(

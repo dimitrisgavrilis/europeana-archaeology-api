@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import gr.dcu.europeana.arch.api.dto.EnrichDetails;
 import gr.dcu.europeana.arch.api.dto.ExtractTermResult;
 import gr.dcu.europeana.arch.domain.EnrichmentResult;
+import gr.dcu.europeana.arch.exception.ConflictException;
 import gr.dcu.europeana.arch.exception.NotFoundException;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
 import gr.dcu.europeana.arch.domain.entity.*;
@@ -14,6 +15,7 @@ import gr.dcu.europeana.arch.domain.mappers.SubjectTermMapper;
 import gr.dcu.europeana.arch.domain.mappers.TemporalTermMapper;
 import gr.dcu.europeana.arch.repository.*;
 import gr.dcu.europeana.arch.service.edm.*;
+import gr.dcu.utils.FileUtilities;
 import gr.dcu.utils.XMLUtils;
 import java.io.File;
 import java.io.IOException;
@@ -21,11 +23,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.*;
-import javax.mail.search.SubjectTerm;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -107,8 +109,14 @@ public class EDMService {
         log.info("Extract EDM archive. RequestId: {}", edmUploadId);
         Path edmExtractDirPath = Paths.get(edmArchiveFilePath.getParent().toString(), "EDM");
         fileStorageService.extractArchive(edmArchiveFilePath, edmExtractDirPath);
-        File[] edmFiles = edmExtractDirPath.toFile().listFiles();
-        int edmFilesCount = edmFiles != null ? edmFiles.length : 0;
+
+        // File[] edmFiles = edmExtractDirPath.toFile().listFiles();
+        // int edmFilesCount = edmFiles != null ? edmFiles.length : 0;
+
+        // List all file (ignore internal structure)
+        List<File> edmFiles = FileUtilities.listAllFiles(edmExtractDirPath.toFile());
+        int edmFilesCount = edmFiles.size();
+
         log.info("EDM archive extracted. Path: {} #Files: {}", edmExtractDirPath, edmFilesCount);
 
         // Update upload request
@@ -209,6 +217,64 @@ public class EDMService {
         return extractTermResult;
 
     }
+
+    /*
+    public void getStatusForExtractTermsFromEdmArchive(Long edmArchiveId, int userId) {
+
+        ExtractTermResult extractTermResult = new ExtractTermResult();
+
+        // Extract terms
+        List<EdmFileTermExtractionResult> extractionResult = extractTermsFromEdmArchive(edmArchiveId);
+
+        // Create separate categories(thematic, spatial, temporal)
+        ElementExtractionDataCategories extractionCategories =
+                EdmExtractUtils.splitExtractionDataInCategories(extractionResult);
+
+        // Get thematic terms
+        Set<ElementExtractionData> thematicElementValues = extractionCategories.getThematicElementValues();
+        if (!thematicElementValues.isEmpty()) {
+            extractTermResult.setSubjectTermEntities(
+                    subjectTermMapper.toSubjectTermList(thematicElementValues, extractionCategories.getThematicElementValuesCountMap())
+                            .stream()
+                            .sorted(Comparator.comparingInt(SubjectTermEntity::getCount).reversed())
+                            .collect(Collectors.toList())
+            );
+        } else {
+            extractTermResult.setSubjectTermEntities(new LinkedList<>());
+            log.warn("No thematic terms to extract.");
+        }
+
+        Set<ElementExtractionData> spatialElementValues = extractionCategories.getSpatialElementValues();
+        if (!spatialElementValues.isEmpty()) {
+            extractTermResult.setSpatialTermEntities(
+                    spatialTermMapper.toSpatialTermList(spatialElementValues, extractionCategories.getSpatialElementValuesCountMap())
+                            .stream()
+                            .sorted(Comparator.comparingInt(SpatialTermEntity::getCount).reversed())
+                            .collect(Collectors.toList())
+            );
+        } else {
+            extractTermResult.setSpatialTermEntities(new LinkedList<>());
+            log.warn("No spatial terms to extract.");
+        }
+
+        Set<ElementExtractionData> temporalElementValues = extractionCategories.getTemporalElementValues();
+        if (!temporalElementValues.isEmpty()) {
+            extractTermResult.setTemporalTermEntities(
+                    temporalTermMapper.toTemporalTermList(temporalElementValues, extractionCategories.getTemporalElementValuesCountMap())
+                            .stream()
+                            .sorted(Comparator.comparingInt(TemporalTermEntity::getCount).reversed())
+                            .collect(Collectors.toList())
+            );
+        } else {
+            extractTermResult.setTemporalTermEntities(new LinkedList<>());
+            log.warn("No temporal terms to extract.");
+        }
+
+        saveTerms(edmArchiveId, extractTermResult, userId);
+
+        return extractTermResult;
+
+    } */
 
     public List<EdmFileTermExtractionResult> extractTermsFromEdmArchive(Long edmArchiveId) {
 
@@ -443,6 +509,10 @@ public class EDMService {
         log.info("Enrich archive. ArchiveId:{} ThematicMappingId: {} SpatialMappingId: {} TemporalMappingId: {}",
                 archiveId, thematicMappingId, spatialMappingId, temporalMappingId);
 
+        if(!thematicEnrichment && !spatialEnrichment && !temporalEnrichment) {
+            throw new ConflictException("Cannot enrich the archive. Missing thematic and spatial and temporal mapping.");
+        }
+
         // Load thematic mapping terms
         Map<String, AatSubjectEntity> aatTerms = new HashMap<>();
         Map<String, SubjectTermEntity> subjectTerms = new HashMap<>();
@@ -496,8 +566,10 @@ public class EDMService {
             // Get EDM files
             Path edmArchiveFilePath =  Paths.get(edmArchiveEntity.getFilepath());
             Path edmExtractDirPath = Paths.get(edmArchiveFilePath.getParent().toString(), "EDM");
-            File[] edmFiles = edmExtractDirPath.toFile().listFiles();
-            edmFileCount = edmFiles != null ? edmFiles.length : 0;
+            List<File> edmFiles =  FileUtilities.listAllFiles(edmExtractDirPath.toFile());
+            edmFileCount = edmFiles.size();
+            // File[] edmFiles = edmExtractDirPath.toFile().listFiles();
+            // edmFileCount = edmFiles != null ? edmFiles.length : 0;
             log.info("List EDM files. Path: {} #Files: {}", edmExtractDirPath, edmFileCount);
 
             // Update enrich enrichRequest
@@ -511,9 +583,11 @@ public class EDMService {
                 enrichedDirPath = Paths.get(edmExtractDirPath.getParent().toString(), "eEDM");
                 Files.createDirectories(enrichedDirPath);
                 log.info("Create eEDM directory. Path: {} ", enrichedDirPath);
+            } else {
+                throw new ConflictException("Cannot enrich an empty archive. No files found." );
             }
 
-            long fileTotalCount = edmFiles != null ? edmFiles.length : 0;
+            long fileTotalCount = edmFileCount;
             long fileProcessedCount = 0;
             long fileErrorCount = 0;
             List<String> filesWithErrors = new LinkedList<>();
@@ -595,7 +669,7 @@ public class EDMService {
                 edmArchiveRepository.save(edmArchiveEntity);
 
                 log.info("Enrichment Result. #Files: {} #Enriched: {} Enriched Archive: {}",
-                        edmFiles.length, enrichedFileCount, archiveFilePath.toString());
+                        edmFileCount, enrichedFileCount, archiveFilePath.toString());
             }
         }catch (IOException ex) {
             log.error("Enrichment failed.");
@@ -790,8 +864,10 @@ public class EDMService {
         }
                     
         // List edm files
-        File[] edmFiles = edmExtractDirPath.toFile().listFiles();
-        int edmFilesCount = edmFiles != null ? edmFiles.length : 0;
+        List<File> edmFiles = FileUtilities.listAllFiles(edmExtractDirPath.toFile());
+        int edmFilesCount = edmFiles.size();
+        // File[] edmFiles = edmExtractDirPath.toFile().listFiles();
+        // int edmFilesCount = edmFiles != null ? edmFiles.length : 0;
         log.info("Extract terms started. RequestId: {} Path: {} #Files: {}", requestId, edmExtractDirPath, edmFilesCount);
         
         long itemsProcessed = 0;

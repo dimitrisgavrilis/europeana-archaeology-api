@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -19,9 +20,10 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.tika.detect.Detector;
 import org.apache.tika.detect.Detector;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.mime.MediaType;
@@ -29,17 +31,14 @@ import org.apache.tika.parser.AutoDetectParser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.xml.sax.ContentHandler;
 
-/**
- *
- * @author Vangelis
- */
+
 @Slf4j
 public class FileUtilities {
     
     /**
-     * 
-     * @param path
-     * @return
+     * Read file
+     * @param path filepath
+     * @return file's content
      * @throws IOException 
      */
     public static String readFile(String path) throws IOException {
@@ -67,6 +66,48 @@ public class FileUtilities {
        
        return results;
     }
+
+    public static List<File> listAllFiles(File file) throws IOException {
+
+        List<File> result = new LinkedList<>();
+        try (Stream<Path> walk = Files.walk(file.toPath()))  {
+
+            result = walk
+                    .filter(Files::isRegularFile)
+                    .map(Path::toFile)
+                    .collect(Collectors.toList());
+
+            // result.forEach(System.out::println);
+
+        } catch(IOException ex) {
+            log.error("", ex);
+            throw ex;
+        }
+
+        return result;
+    }
+
+    public static List<String> listAllFilesByExtension(File file, String extension) throws IOException {
+
+        List<String> result = new LinkedList<>();
+        try (Stream<Path> walk = Files.walk(file.toPath()))  {
+            result = walk
+                    .map(Path::toString)
+                    .filter(f -> f.endsWith(extension))
+                    .collect(Collectors.toList());
+
+
+            // result.forEach(System.out::println);
+
+        } catch(IOException ex) {
+            log.error("", ex);
+            throw ex;
+        }
+
+        return result;
+    }
+
+
     
     /**
      * 
@@ -247,8 +288,7 @@ public class FileUtilities {
     }
     
     /**
-     * 
-     * @param endpoint
+     *
      * @return
      * @throws IOException 
      */

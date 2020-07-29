@@ -19,10 +19,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
@@ -475,7 +473,8 @@ public class MappingService {
     public AppendTermsResult appendTermsToMappingByArchiveId(Long mappingId, Long archiveId, Integer userId) {
         
         AppendTermsResult appendTermResult = new AppendTermsResult();
-        long existingTermCount = 0;
+        long mappingTermCount = 0;
+        long archiveTermCount = 0;
         long appendTermCount = 0;
         
         MappingEntity mappingEntity = mappingRepo.findById(mappingId)
@@ -493,7 +492,11 @@ public class MappingService {
         List<SubjectTermEntity> mappingSubjectTermEntities = new LinkedList<>();
         List<SpatialTermEntity> mappingSpatialTermEntities = new LinkedList<>();
         List<TemporalTermEntity> mappingTemporalTermEntities = new LinkedList<>();
-        
+
+        Set<String> nativeTermsInSubjectMapping = new HashSet<>();
+        Set<String> nativeTermsInSpatialMapping = new HashSet<>();
+        Set<String> nativeTermsInTemporalMapping = new HashSet<>();
+
         List<SubjectTermEntity> archiveSubjectTermEntities = new LinkedList<>();
         List<SpatialTermEntity> archiveSpatialTermEntities = new LinkedList<>();
         List<TemporalTermEntity> archiveTemporalTermEntities = new LinkedList<>();
@@ -507,6 +510,10 @@ public class MappingService {
                                 new TypeReference<List<SubjectTermEntity>>(){});
                         
                         mappingSubjectTermEntities = subjectTermRepo.findByMappingId(mappingId);
+
+                        nativeTermsInSubjectMapping = mappingSubjectTermEntities.stream()
+                                .map(SubjectTermEntity::getNativeTerm)
+                                .collect(Collectors.toSet());
                         
                         log.info("ArchiveSubjectTerms: {}, MappingSubjectTerms: {}", 
                                 archiveSubjectTermEntities.size(), mappingSubjectTermEntities.size());
@@ -516,6 +523,10 @@ public class MappingService {
                                 new TypeReference<List<SpatialTermEntity>>(){});
                         
                         mappingSpatialTermEntities = spatialTermRepo.findByMappingId(mappingId);
+
+                        nativeTermsInSpatialMapping = mappingSpatialTermEntities.stream()
+                                .map(SpatialTermEntity::getNativeTerm)
+                                .collect(Collectors.toSet());
                         
                         log.info("ArchiveSpatialTerms: {}, MappingSpatialTerms: {}", 
                                 archiveSpatialTermEntities.size(), mappingSpatialTermEntities.size());
@@ -525,6 +536,10 @@ public class MappingService {
                                 new TypeReference<List<TemporalTermEntity>>(){});
                         
                         mappingTemporalTermEntities = temporalTermRepo.findByMappingId(mappingId);
+
+                        nativeTermsInTemporalMapping = mappingTemporalTermEntities.stream()
+                                .map(TemporalTermEntity::getNativeTerm)
+                                .collect(Collectors.toSet());
                         
                         log.info("ArchiveTemporalTerms: {}, MappingTemporalTerms: {}", 
                                 archiveTemporalTermEntities.size(), mappingTemporalTermEntities.size());
@@ -540,50 +555,79 @@ public class MappingService {
         // Add terms to mapping
         if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_SUBJECT) && !archiveSubjectTermEntities.isEmpty()) {
             
-            existingTermCount = mappingSubjectTermEntities.size();
-            appendTermCount = archiveSubjectTermEntities.size();
-            
+            mappingTermCount = mappingSubjectTermEntities.size();
+            archiveTermCount = archiveSubjectTermEntities.size();
+
+            // Append to mapping only new native terms
+            // log.info("{}", nativeTermsInSubjectMapping);
+            List<SubjectTermEntity> archiveSubjectTermEntitiesFiltered = new LinkedList<>();
             for(SubjectTermEntity term : archiveSubjectTermEntities) {
+                // log.info("--> {}", term.getNativeTerm());
+                if(nativeTermsInSubjectMapping.contains(term.getNativeTerm())) {
+                    continue;
+                }
                 term.setMappingId(mappingId);
+                archiveSubjectTermEntitiesFiltered.add(term);
             }
             
-            mappingSubjectTermEntities.addAll(archiveSubjectTermEntities);
-            subjectTermRepo.saveAll(mappingSubjectTermEntities);
+            // mappingSubjectTermEntities.addAll(archiveSubjectTermEntitiesFiltered);
+            subjectTermRepo.saveAll(archiveSubjectTermEntitiesFiltered);
+
+            appendTermCount = archiveSubjectTermEntitiesFiltered.size();
 
             edmArchiveEntity.setThematicMapping(mappingId);
 
         } else if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_SPATIAL) && !archiveSpatialTermEntities.isEmpty()) {
             
-            existingTermCount = mappingSpatialTermEntities.size();
-            appendTermCount = archiveSpatialTermEntities.size();
-            
+            mappingTermCount = mappingSpatialTermEntities.size();
+            archiveTermCount = archiveSpatialTermEntities.size();
+
+            // Append to mapping only new native terms
+            List<SpatialTermEntity> archiveSpatialTermEntitiesFiltered = new LinkedList<>();
             for(SpatialTermEntity term : archiveSpatialTermEntities) {
+                if(nativeTermsInSpatialMapping.contains(term.getNativeTerm())) {
+                    continue;
+                }
                 term.setMappingId(mappingId);
+                archiveSpatialTermEntitiesFiltered.add(term);
             }
             
-            mappingSpatialTermEntities.addAll(archiveSpatialTermEntities);
-            spatialTermRepo.saveAll(mappingSpatialTermEntities);
+            // mappingSpatialTermEntities.addAll(archiveSpatialTermEntities);
+            spatialTermRepo.saveAll(archiveSpatialTermEntitiesFiltered);
+
+            appendTermCount = archiveSpatialTermEntitiesFiltered.size();
 
             edmArchiveEntity.setSpatialMapping(mappingId);
 
         } else if(mappingType.equalsIgnoreCase(MappingType.MAPPING_TYPE_TEMPORAL) && !archiveTemporalTermEntities.isEmpty()) {
             
-            existingTermCount = mappingTemporalTermEntities.size();
-            appendTermCount = archiveTemporalTermEntities.size();
-            
+            mappingTermCount = mappingTemporalTermEntities.size();
+            archiveTermCount = archiveTemporalTermEntities.size();
+
+            // Append to mapping only new native terms
+            List<TemporalTermEntity> archiveTemporalTermEntitiesFiltered = new LinkedList<>();
             for(TemporalTermEntity term : archiveTemporalTermEntities) {
+                if(nativeTermsInTemporalMapping.contains(term.getNativeTerm())) {
+                    continue;
+                }
                 term.setMappingId(mappingId);
+                archiveTemporalTermEntitiesFiltered.add(term);
             }
-            mappingTemporalTermEntities.addAll(archiveTemporalTermEntities);
-            temporalTermRepo.saveAll(mappingTemporalTermEntities);
+            // mappingTemporalTermEntities.addAll(archiveTemporalTermEntities);
+            temporalTermRepo.saveAll(archiveTemporalTermEntitiesFiltered);
+
+            appendTermCount = archiveTemporalTermEntitiesFiltered.size();
 
             edmArchiveEntity.setTemporalMapping(mappingId);
         }
 
         // edmArchiveRepository.save(edmArchiveEntity);
         
-        appendTermResult.setExistingTermCount(existingTermCount);
+        appendTermResult.setMappingTermCount(mappingTermCount);
+        appendTermResult.setArchiveTermCount(archiveTermCount);
         appendTermResult.setAppendTermCount(appendTermCount);
+
+        log.info("#MappingTerms: {}, #ArchiveTerms: {}, #AppendTerms: {}", mappingTermCount, archiveTermCount, appendTermCount);
         
         return appendTermResult;
     }
@@ -796,5 +840,7 @@ public class MappingService {
 
         return enrichDetails;
     }
+
+    // public void
 
 }
