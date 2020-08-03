@@ -342,6 +342,7 @@ public class AuthService {
                     variables.put(EmailBuilderService.VAR_USER_NAME, userEntity.getName());
                     variables.put(EmailBuilderService.VAR_SERVICE_NAME, AppConfig.SERVICE_NAME);
                     variables.put(EmailBuilderService.VAR_PASSWORD, password);
+                    variables.put(EmailBuilderService.VAR_PROJECT_NAME, "Europeana Archaelogy");
 
                     String body = emailBuilderService.buildResetPasswordTemplate(
                             "Reset password request.", variables);

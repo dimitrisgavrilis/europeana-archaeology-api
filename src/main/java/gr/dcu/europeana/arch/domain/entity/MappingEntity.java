@@ -9,19 +9,13 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
-/**
- *
- * @author Vangelis Nomikos
- */
 @Entity
 @Table (name = "mapping")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 public class MappingEntity implements Serializable {
     

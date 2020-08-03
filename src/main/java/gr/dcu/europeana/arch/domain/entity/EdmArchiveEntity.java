@@ -13,10 +13,6 @@ import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.annotations.CreationTimestamp;
 
-/**
- *
- * @author Vangelis Nomikos
- */
 @Entity 
 @Table(name = "edm_archive")
 @Getter
