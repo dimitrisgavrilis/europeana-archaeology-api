@@ -2,8 +2,8 @@ package gr.dcu.europeana.arch.service;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
+import gr.dcu.europeana.arch.api.controller.mapper.UserMapper;
 import gr.dcu.europeana.arch.api.dto.auth.*;
-import gr.dcu.europeana.arch.api.dto.UserResource;
 import gr.dcu.europeana.arch.config.AppConfig;
 import gr.dcu.europeana.arch.domain.entity.SettingEntity;
 import gr.dcu.europeana.arch.domain.entity.UserEntity;
@@ -28,10 +28,6 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-/**
- *
- * @author Vangelis Nomikos
- */
 @Slf4j
 @Service
 public class AuthService {
@@ -53,6 +49,9 @@ public class AuthService {
 
     @Autowired
     private MailgunService mailgunService;
+
+    @Autowired
+    private UserMapper userMapper;
     
     public static final String HEADER_AUTHORIZATION = "Authorization";
     
@@ -173,14 +172,8 @@ public class AuthService {
             
             // Prepare response
             response.setToken(token);
-            
-            UserResource userResource = new UserResource();
-            userResource.setId(userEntity.getId());
-            userResource.setName(userEntity.getName());
-            userResource.setEmail(userEntity.getEmail());
-            userResource.setIsAdmin(userEntity.isAdmin());
-            response.setUser(userResource);
-            
+            response.setUser(userMapper.toUserViewDto(userEntity));
+
             return response;
         }
         

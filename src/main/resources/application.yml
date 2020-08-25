@@ -27,9 +27,9 @@ spring:
     driver-class-name: com.mysql.jdbc.Driver
   hikari:
     minimumIdle: 1
-    maximunPoolSize: 1
+    maximum-pool-size: 1
     idleTimeout: 10000
-    poolName: "revstarDatabaseConnectionPool"
+    poolName: "euArchaeologyDatabaseConnectionPool"
   jpa:
     show-sql: false
     database-platform: org.hibernate.dialect.MySQLInnoDBDialect
