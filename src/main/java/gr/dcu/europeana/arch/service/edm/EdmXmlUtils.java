@@ -130,6 +130,7 @@ public class EdmXmlUtils {
             xPath.setNamespaceContext(new MoReNamespaceContext());
             NodeList nodeList = (NodeList)xPath.compile(xPathExpr).evaluate(doc, XPathConstants.NODESET);
 
+            int currentIndex = 1;
             for(int i=0; i<nodeList.getLength(); i++) {
                 Element element = (Element) nodeList.item(i);
 
@@ -142,7 +143,8 @@ public class EdmXmlUtils {
                     // temporalTermEntity.getAatUid() != null && !temporalTermEntity.getAatUid().isEmpty()) {
 
                         // ~~~ edm:TimeSpan ~~~
-                        String rdfAboutLabel = "EUROPEANAARCH_" + temporalTermEntity.getId() + "/TMP.1";
+                        String rdfAboutLabel = "EUROPEANAARCH_" + temporalTermEntity.getId() + "/TMP." + currentIndex;
+                        currentIndex++;
                         Element edmTimespanElement = doc.createElement("edm:TimeSpan");
                         edmTimespanElement.setAttribute("rdf:about", rdfAboutLabel);
                         element.appendChild(edmTimespanElement);
@@ -227,6 +229,7 @@ public class EdmXmlUtils {
             xPath.setNamespaceContext(new MoReNamespaceContext());
             NodeList nodeList = (NodeList)xPath.compile(xPathExpr).evaluate(doc, XPathConstants.NODESET);
 
+            int currentIndex = 1;
             for(int i=0; i<nodeList.getLength(); i++) {
                 Element element = (Element) nodeList.item(i);
 
@@ -237,7 +240,8 @@ public class EdmXmlUtils {
 
                         EArchTemporalEntity eArchTemporalEntity = earchTemporalEntityMap.get(temporalTermEntity.getAatUid());
 
-                        String rdfAboutLabel = "EUROPEANAARCH_" + temporalTermEntity.getId() + "/TMP.1";
+                        String rdfAboutLabel = "EUROPEANAARCH_" + temporalTermEntity.getId() + "/TMP." + currentIndex;
+                        currentIndex++;
 
                         // ~~~ dc:date ~~~
                         Element dcDateElement = doc.createElement("dc:date");
