@@ -9,10 +9,6 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
-/**
- *
- * @author Vangelis Nomikos
- */
 @Component
 public class TemporalTermMapper {
     

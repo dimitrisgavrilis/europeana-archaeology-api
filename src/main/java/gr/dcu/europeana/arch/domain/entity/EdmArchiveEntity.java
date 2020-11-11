@@ -1,22 +1,15 @@
 package gr.dcu.europeana.arch.domain.entity;
 
 import java.time.LocalDateTime;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.Table;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import javax.persistence.*;
+
+import gr.dcu.europeana.arch.domain.enums.EdmArchiveStatus;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 @Entity 
 @Table(name = "edm_archive")
-@Getter
-@Setter
+@Data
 @ToString
 @NoArgsConstructor
 public class EdmArchiveEntity {
@@ -51,6 +44,10 @@ public class EdmArchiveEntity {
     
     @Column (name="temporal_mapping")
     private Long temporalMapping;
+
+    @Enumerated(EnumType.STRING)
+    @Column (name="status")
+    private EdmArchiveStatus status;
     
     @CreationTimestamp
     @Column(name = "created_at")

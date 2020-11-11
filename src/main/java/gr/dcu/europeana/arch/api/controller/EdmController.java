@@ -1,6 +1,7 @@
 package gr.dcu.europeana.arch.api.controller;
 
 import gr.dcu.europeana.arch.api.dto.AppendTermsResult;
+import gr.dcu.europeana.arch.api.dto.EdmArchiveWithJobs;
 import gr.dcu.europeana.arch.api.dto.EnrichDetails;
 import gr.dcu.europeana.arch.api.dto.ExtractTermResult;
 import gr.dcu.europeana.arch.exception.BadRequestException;
@@ -97,13 +98,13 @@ public class EdmController {
         return edmService.extractAndSaveTermsFromEdmArchive(id, userId);
     }
 
-    @Operation(summary = "Extract and save terms from an EDM archive")
-    @GetMapping("/edm_archives/{id}/extract_terms/status")
-    public ExtractTermResult extractTermsFromEdmArchiveStatus(
+    @Operation(summary = "Get status of EDM archive")
+    @GetMapping("/edm_archives/{id}/status")
+    public EdmArchiveWithJobs getEdmArchiveStatus(
             HttpServletRequest requestContext, @PathVariable Long id) {
 
         int userId = authService.authorize(requestContext);
-        return edmService.extractAndSaveTermsFromEdmArchive(id, userId);
+        return edmService.getEdmArciveStatus(id, userId);
     }
 
     @Operation(summary = "Load terms from an EDM archive (saved or extracted)")

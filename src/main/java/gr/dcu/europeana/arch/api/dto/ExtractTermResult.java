@@ -4,16 +4,13 @@ import gr.dcu.europeana.arch.domain.entity.SpatialTermEntity;
 import gr.dcu.europeana.arch.domain.entity.SubjectTermEntity;
 import gr.dcu.europeana.arch.domain.entity.TemporalTermEntity;
 import java.util.List;
+
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- *
- * @author Vangelis Nomikos
- */
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 public class ExtractTermResult {
     

@@ -1,3 +1,9 @@
+03/08/2020
+----------
+-- update the status of all existing archives
+UPDATE `edm_archive` SET `status`='HARVEST' WHERE 1
+ALTER TABLE `edm_archive` ADD `status` VARCHAR(25) NOT NULL AFTER `temporal_mapping`;
+
 01/07/2020
 ----------
 ALTER TABLE `temporal_terms` ADD `start_year` VARCHAR(10) NULL AFTER `language`;

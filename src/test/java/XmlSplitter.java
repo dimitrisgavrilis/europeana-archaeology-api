@@ -19,19 +19,22 @@ public class XmlSplitter {
     private static final String FILE_DIR          = "/home/vangelis/tests/xml-split/";
     private static final String LARGE_FILE_SAMPLE = "ariadne_greylit_test.xml";
     private static final String LARGE_FILE        = "ariadne_1093.xml";
+    // private static final String COLLECTION_446    = "collectionid446.xml";
+    private static final String COLLECTION_446    = "col446-170920.xml";
 
     public static void main(String[] args) {
 
-        File largeFile = new File(FILE_DIR + LARGE_FILE);
+        File largeFile = new File(FILE_DIR + COLLECTION_446);
         if(!largeFile.exists() || !largeFile.isFile()) {
             log.error("File does not exist.");
             return;
         }
 
         try {
-            Document doc = XMLUtils.parse(largeFile, true);
+            Document doc = XMLUtils.parse(largeFile, false);
 
             NodeList recordNodes = XMLUtils.getNodeList(doc, "//record");
+            // NodeList recordNodes = XMLUtils.getNodeList(doc, "//oai_qdc:qualifieddc");
             log.info("#Record Nodes: {}", recordNodes.getLength());
 
             for(int i=0; i<recordNodes.getLength(); i++) {

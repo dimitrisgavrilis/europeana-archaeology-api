@@ -10,6 +10,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.LinkedList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,8 +38,8 @@ public class EdmServiceTest {
         try {
             // Extract terms
             Path stefanSamplePath = Paths.get(ARCHIVE_DIR);
-            List<EdmFileTermExtractionResult> extractionResult = 
-                    EDMService.extractTerms(stefanSamplePath, true, true, true, skipEmptyValues);
+            List<EdmFileTermExtractionResult> extractionResult = new LinkedList<>();
+                    // EDMService.extractTerms(-1L, stefanSamplePath, true, true, true, skipEmptyValues, -1);
 
             LocalDateTime now = LocalDateTime.now();
             

@@ -66,9 +66,10 @@ public class UtilityController {
     @Operation(summary = "Search geonames by name")
     @PostMapping("/geonames/search")
     public List<GeonamesDto> searchGeonamesByName(@RequestParam String q, 
-            @RequestParam(required = false, defaultValue = "en") String lang) {
+            @RequestParam(required = false, defaultValue = "en") String lang,
+            @RequestParam(required = false, defaultValue = "25") int maxRows) {
         
-        GeonamesSearchResult searchResult = geonamesService.search(q, lang, 10);
+        GeonamesSearchResult searchResult = geonamesService.search(q, lang, maxRows);
         
         List<Geonames> geonames = searchResult.getGeonames();
         

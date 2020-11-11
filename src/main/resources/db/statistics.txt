@@ -1,0 +1,51 @@
+Europeana Archaeology DB Statitics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#aat_terms: 2508
+#edm_archives: 50
+#enrich_requests: 24
+#mappings: 90
+--> subject_mappings: 45
+--> spatial_mappings: 16
+--> temporal_mappings: 29
+#spatial_terms:  1041
+--> max_terms_in_mapping: 520 (153) - 222 (45) - 180 (165) - 69 (160)
+#subject_terms:  8006
+--> max_terms_in_mapping: 2213 (163) - 839 (170) - 475 (134) - 269 (19)
+#temporal_terms: 2396
+--> max_terms_in_mapping: 931 (161) - 839 (142) -  147 (169) -  76 (155)
+#users: 19
+
+
+SELECT created_by, COUNT(* ) as total FROM `enrich_request` GROUP BY created_by
+
+SELECT mapping_id, COUNT(*)  as total
+FROM `spatial_terms`
+GROUP BY mapping_id
+ORDER BY total DESC
+
+SELECT mapping_id, COUNT(*)  as total
+FROM `subject_terms`
+GROUP BY mapping_id
+ORDER BY total DESC
+
+SELECT mapping_id, COUNT(*)  as total
+FROM `temporal_terms`
+GROUP BY mapping_id
+ORDER BY total DESC
+
+Europeana Archaeology DB Statitics
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#users: 19
+#aat_terms: 2508
+#edm_archives: 50
+#enrich_requests: 24
+#mappings: 90
+--> subject_mappings: 45
+--> spatial_mappings: 16
+--> temporal_mappings: 29
+#mapping_terms: 11443
+--> #spatial_terms:  1041 | max_terms_in_single_mapping: 520
+--> #subject_terms:  8006 | max_terms_in_single_mapping: 2213
+--> #temporal_terms: 2396 | max_terms_in_single_mapping: 931
+
+

@@ -3,9 +3,13 @@ package gr.dcu.europeana.arch.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.dcu.europeana.arch.api.controller.mapper.EdmArchiveMapper;
+import gr.dcu.europeana.arch.api.dto.EdmArchiveWithJobs;
 import gr.dcu.europeana.arch.api.dto.EnrichDetails;
 import gr.dcu.europeana.arch.api.dto.ExtractTermResult;
 import gr.dcu.europeana.arch.domain.EnrichmentResult;
+import gr.dcu.europeana.arch.domain.enums.EdmArchiveStatus;
+import gr.dcu.europeana.arch.domain.enums.JobType;
 import gr.dcu.europeana.arch.exception.ConflictException;
 import gr.dcu.europeana.arch.exception.NotFoundException;
 import gr.dcu.europeana.arch.exception.ResourceNotFoundException;
@@ -27,7 +31,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathExpressionException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
@@ -43,6 +46,7 @@ public class EDMService {
 
     private final UploadRequestRepository uploadRequestRepository;
     private final EdmArchiveRepository edmArchiveRepository;
+    private final EdmArchiveJobsRepository edmArchiveJobsRepository;
     private final EdmArchiveTermsRepository edmArchiveTermsRepository;
     private final SubjectTermRepository subjectTermRepository;
     private final SpatialTermRepository spatialTermRepository;
@@ -53,15 +57,18 @@ public class EDMService {
     private final SubjectTermMapper subjectTermMapper;
     private final SpatialTermMapper spatialTermMapper;
     private final TemporalTermMapper temporalTermMapper;
+    private final EdmArchiveMapper edmArchiveMapper;
 
     public EDMService(UploadRequestRepository uploadRequestRepository, EdmArchiveRepository edmArchiveRepository,
-                      EdmArchiveTermsRepository edmArchiveTermsRepository,
+                      EdmArchiveJobsRepository edmArchiveJobsRepository, EdmArchiveTermsRepository edmArchiveTermsRepository,
                       SubjectTermRepository subjectTermRepository, SpatialTermRepository spatialTermRepository,
                       TemporalTermRepository temporalTermRepository,
                       FileStorageService fileStorageService, MappingService mappingService, VocabularyService vocabularyService,
-                      SubjectTermMapper subjectTermMapper, SpatialTermMapper spatialTermMapper, TemporalTermMapper temporalTermMapper) {
+                      SubjectTermMapper subjectTermMapper, SpatialTermMapper spatialTermMapper, TemporalTermMapper temporalTermMapper,
+                      EdmArchiveMapper edmArchiveMapper) {
         this.uploadRequestRepository = uploadRequestRepository;
         this.edmArchiveRepository = edmArchiveRepository;
+        this.edmArchiveJobsRepository = edmArchiveJobsRepository;
         this.edmArchiveTermsRepository = edmArchiveTermsRepository;
         this.subjectTermRepository = subjectTermRepository;
         this.spatialTermRepository = spatialTermRepository;
@@ -72,6 +79,7 @@ public class EDMService {
         this.subjectTermMapper = subjectTermMapper;
         this.spatialTermMapper = spatialTermMapper;
         this.temporalTermMapper = temporalTermMapper;
+        this.edmArchiveMapper = edmArchiveMapper;
     }
 
     public List<EdmArchiveEntity> getEdmArchives(Integer userId) {
@@ -96,8 +104,20 @@ public class EDMService {
         edmArchiveEntity.setThematicMapping(0L);
         edmArchiveEntity.setSpatialMapping(0L);
         edmArchiveEntity.setTemporalMapping(0L);
+        edmArchiveEntity.setStatus(EdmArchiveStatus.HARVEST);
         edmArchiveEntity.setCreatedBy(userId);
         long edmUploadId = edmArchiveRepository.save(edmArchiveEntity).getId();
+
+        // Create archive job
+        EdmArchiveJobEntity edmArchiveJobEntity = new EdmArchiveJobEntity();
+        edmArchiveJobEntity.setArchiveId(edmUploadId);
+        edmArchiveJobEntity.setJobType(JobType.HARVEST);
+        edmArchiveJobEntity.setProgress(0.00);
+        edmArchiveJobEntity.setCompleted(false);
+        edmArchiveJobEntity.setError(false);
+        edmArchiveJobEntity.setDetails("");
+        edmArchiveJobEntity.setCreatedBy(userId);
+        long jobId = edmArchiveJobsRepository.save(edmArchiveJobEntity).getId();
 
         // Upload EDM archive
         log.info("Upload EDM archive. RequestId: {}", edmUploadId);
@@ -125,6 +145,12 @@ public class EDMService {
         edmArchiveEntity.setEnrichedFilepath(null);
         edmArchiveEntity.setItemCount(edmFilesCount);
         edmArchiveEntity = edmArchiveRepository.save(edmArchiveEntity);
+
+        // Update job
+        edmArchiveJobEntity.setId(jobId);
+        edmArchiveJobEntity.setProgress(100.0);
+        edmArchiveJobEntity.setCompleted(true);
+        edmArchiveJobsRepository.save(edmArchiveJobEntity);
 
         return edmArchiveEntity;
     }
@@ -166,7 +192,7 @@ public class EDMService {
         ExtractTermResult extractTermResult = new ExtractTermResult();
 
         // Extract terms
-        List<EdmFileTermExtractionResult> extractionResult = extractTermsFromEdmArchive(edmArchiveId);
+        List<EdmFileTermExtractionResult> extractionResult = extractTermsFromEdmArchive(edmArchiveId, userId);
 
         // Create separate categories(thematic, spatial, temporal)
         ElementExtractionDataCategories extractionCategories =
@@ -218,65 +244,20 @@ public class EDMService {
 
     }
 
-    /*
-    public void getStatusForExtractTermsFromEdmArchive(Long edmArchiveId, int userId) {
+    public EdmArchiveWithJobs getEdmArciveStatus(Long edmArchiveId, int userId) {
 
-        ExtractTermResult extractTermResult = new ExtractTermResult();
+        EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(edmArchiveId).orElseThrow(()
+                -> new NotFoundException("EDM Archive", edmArchiveId));
 
-        // Extract terms
-        List<EdmFileTermExtractionResult> extractionResult = extractTermsFromEdmArchive(edmArchiveId);
+        List<EdmArchiveJobEntity> jobs = edmArchiveJobsRepository.findAllByArchiveId(edmArchiveId);
 
-        // Create separate categories(thematic, spatial, temporal)
-        ElementExtractionDataCategories extractionCategories =
-                EdmExtractUtils.splitExtractionDataInCategories(extractionResult);
+        return edmArchiveMapper.toDto(edmArchiveEntity, jobs.stream()
+                .map(edmArchiveMapper::toDto)
+                .collect(Collectors.toList()));
 
-        // Get thematic terms
-        Set<ElementExtractionData> thematicElementValues = extractionCategories.getThematicElementValues();
-        if (!thematicElementValues.isEmpty()) {
-            extractTermResult.setSubjectTermEntities(
-                    subjectTermMapper.toSubjectTermList(thematicElementValues, extractionCategories.getThematicElementValuesCountMap())
-                            .stream()
-                            .sorted(Comparator.comparingInt(SubjectTermEntity::getCount).reversed())
-                            .collect(Collectors.toList())
-            );
-        } else {
-            extractTermResult.setSubjectTermEntities(new LinkedList<>());
-            log.warn("No thematic terms to extract.");
-        }
+    }
 
-        Set<ElementExtractionData> spatialElementValues = extractionCategories.getSpatialElementValues();
-        if (!spatialElementValues.isEmpty()) {
-            extractTermResult.setSpatialTermEntities(
-                    spatialTermMapper.toSpatialTermList(spatialElementValues, extractionCategories.getSpatialElementValuesCountMap())
-                            .stream()
-                            .sorted(Comparator.comparingInt(SpatialTermEntity::getCount).reversed())
-                            .collect(Collectors.toList())
-            );
-        } else {
-            extractTermResult.setSpatialTermEntities(new LinkedList<>());
-            log.warn("No spatial terms to extract.");
-        }
-
-        Set<ElementExtractionData> temporalElementValues = extractionCategories.getTemporalElementValues();
-        if (!temporalElementValues.isEmpty()) {
-            extractTermResult.setTemporalTermEntities(
-                    temporalTermMapper.toTemporalTermList(temporalElementValues, extractionCategories.getTemporalElementValuesCountMap())
-                            .stream()
-                            .sorted(Comparator.comparingInt(TemporalTermEntity::getCount).reversed())
-                            .collect(Collectors.toList())
-            );
-        } else {
-            extractTermResult.setTemporalTermEntities(new LinkedList<>());
-            log.warn("No temporal terms to extract.");
-        }
-
-        saveTerms(edmArchiveId, extractTermResult, userId);
-
-        return extractTermResult;
-
-    } */
-
-    public List<EdmFileTermExtractionResult> extractTermsFromEdmArchive(Long edmArchiveId) {
+    public List<EdmFileTermExtractionResult> extractTermsFromEdmArchive(Long edmArchiveId, int userId) {
 
         EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(edmArchiveId).orElseThrow(()
                 -> new NotFoundException("EDM Archive", edmArchiveId));
@@ -285,7 +266,7 @@ public class EDMService {
         try {
             Path edmExtractDirPath = fileStorageService.buildEdmArchiveExtractionPath(edmArchiveId);
 
-            extractionResult = extractTerms(edmExtractDirPath, true, true, true, true);
+            extractionResult = extractTerms(edmArchiveId, edmExtractDirPath, true, true, true, true, userId);
         } catch (IOException ex) {
             log.error("Cannot extract terms from edm archive.");
             log.error("", ex);
@@ -320,34 +301,43 @@ public class EDMService {
         edmArchiveTermsEntity.setCreatedBy(userId);
         edmArchiveTermsEntity = edmArchiveTermsRepository.save(edmArchiveTermsEntity);
 
+        // Update EDM archive status
+        edmArchiveEntity.setStatus(EdmArchiveStatus.EXTRACT_TERMS);
+
         return edmArchiveTermsEntity;
     }
 
     public ExtractTermResult loadTerms(Long archiveId, Integer userId) {
 
         EdmArchiveEntity edmArchiveEntity = edmArchiveRepository.findById(archiveId)
-                .orElseThrow(() -> new ResourceNotFoundException(archiveId));
+                .orElseThrow(() -> new NotFoundException("Archive", archiveId));
 
         EdmArchiveTermsEntity edmArchiveTermsEntity = edmArchiveTermsRepository.findByArchiveId(archiveId);
+//        if(edmArchiveTermsEntity == null) {
+//                throw new NotFoundException("Terms for archive", archiveId);
+//        }
 
         ObjectMapper mapper = new ObjectMapper();
         List<SubjectTermEntity> subjectTermEntities = new LinkedList<>();
         List<SpatialTermEntity> spatialTermEntities = new LinkedList<>();
         List<TemporalTermEntity> temporalTermEntities = new LinkedList<>();
-        try {
-            subjectTermEntities = mapper.readValue(edmArchiveTermsEntity.getSubjectTerms(),
-                    new TypeReference<List<SubjectTermEntity>>() {
-                    });
 
-            spatialTermEntities = mapper.readValue(edmArchiveTermsEntity.getSpatialTerms(),
-                    new TypeReference<List<SpatialTermEntity>>() {
-                    });
+        if(edmArchiveTermsEntity != null) {
+            try {
+                subjectTermEntities = mapper.readValue(edmArchiveTermsEntity.getSubjectTerms(),
+                        new TypeReference<List<SubjectTermEntity>>() {
+                        });
 
-            temporalTermEntities = mapper.readValue(edmArchiveTermsEntity.getTemporalTerms(),
-                    new TypeReference<List<TemporalTermEntity>>() {
-                    });
-        } catch (JsonProcessingException ex) {
-            log.error("Cannot load extartced terms for archive with id: {}", archiveId);
+                spatialTermEntities = mapper.readValue(edmArchiveTermsEntity.getSpatialTerms(),
+                        new TypeReference<List<SpatialTermEntity>>() {
+                        });
+
+                temporalTermEntities = mapper.readValue(edmArchiveTermsEntity.getTemporalTerms(),
+                        new TypeReference<List<TemporalTermEntity>>() {
+                        });
+            } catch (JsonProcessingException ex) {
+                log.error("Cannot load extartced terms for archive with id: {}", archiveId);
+            }
         }
 
         ExtractTermResult extractTermResult = new ExtractTermResult();
@@ -851,8 +841,9 @@ public class EDMService {
      * @param spatial  flag to extract subject values
      * @param skipEmptyValues flag to skip empty values
      */
-    public static List<EdmFileTermExtractionResult> extractTerms(
-            Path edmExtractDirPath, boolean thematic, boolean temporal, boolean spatial, boolean skipEmptyValues) throws IOException {
+    public List<EdmFileTermExtractionResult> extractTerms(
+            Long archiveId, Path edmExtractDirPath,
+            boolean thematic, boolean temporal, boolean spatial, boolean skipEmptyValues, int userId) throws IOException {
         
         List<EdmFileTermExtractionResult> extractionResult = new LinkedList<>();
         
@@ -872,7 +863,18 @@ public class EDMService {
         
         long itemsProcessed = 0;
         // long itemsTotal = edmFilesCount;
-        
+
+        // Create archive job
+        EdmArchiveJobEntity edmArchiveJobEntity = new EdmArchiveJobEntity();
+        edmArchiveJobEntity.setArchiveId(archiveId);
+        edmArchiveJobEntity.setJobType(JobType.EXTRACT_TERMS);
+        edmArchiveJobEntity.setProgress(0.00);
+        edmArchiveJobEntity.setCompleted(false);
+        edmArchiveJobEntity.setError(false);
+        edmArchiveJobEntity.setDetails("");
+        edmArchiveJobEntity.setCreatedBy(userId);
+        edmArchiveJobEntity= edmArchiveJobsRepository.save(edmArchiveJobEntity);
+
         // Process edm file
         for(File edmFile : edmFiles) {
             if(edmFile.exists() && edmFile.isFile()) {
@@ -925,8 +927,18 @@ public class EDMService {
             if(itemsProcessed % 50 == 0 || itemsProcessed == edmFilesCount) {
                 log.info("Extraction progress... {} / {} => {}%",  
                         itemsProcessed, edmFilesCount, new DecimalFormat("#0.0000").format(((double) itemsProcessed / edmFilesCount) * 100));
+
+                edmArchiveJobEntity.setProgress(100.0);
+                edmArchiveJobsRepository.save(edmArchiveJobEntity);
+
             }
         }
+
+        edmArchiveJobEntity.setCompleted(true);
+        edmArchiveJobEntity.setProgress(100.0);
+        edmArchiveJobsRepository.save(edmArchiveJobEntity);
+        log.info("Extract terms completed. RequestId: {} Path: {} #Files: {} #Files Procssed: {}",
+                requestId, edmExtractDirPath, edmFilesCount, itemsProcessed);
         
         return extractionResult;
     }
